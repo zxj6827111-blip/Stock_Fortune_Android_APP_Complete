@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">股运通</string>
+    <string name="app_subtitle">股票八字 · 十神择日</string>
+    <string name="app_slogan">顺势而为 · 知命行思</string>
+
+    <string name="nav_home">首页</string>
+    <string name="nav_pick">选股</string>
+    <string name="nav_scan">扫描</string>
+    <string name="nav_calendar">日历</string>
+    <string name="nav_mine">我的</string>
+
+    <string name="entry_stock_query">股票查询</string>
+    <string name="entry_stock_query_sub">查看八字信息</string>
+    <string name="entry_daily_scan">每日扫描</string>
+    <string name="entry_daily_scan_sub">正财/偏财股票</string>
+    <string name="entry_trade_calendar">交易日历</string>
+    <string name="entry_trade_calendar_sub">查看交易日</string>
+    <string name="calendar_jump_month_hint">点击跳至其他月份</string>
+    <string name="calendar_this_month">本月</string>
+    <string name="calendar_picker_title">选择查看的日期</string>
+    <string name="entry_date_select">八字择日</string>
+    <string name="entry_date_select_sub">日度关系分析</string>
+
+    <string name="search_hint">请输入股票代码/名称</string>
+    <string name="today_overview">今日概览</string>
+    <string name="wealth_zheng">正财股票</string>
+    <string name="wealth_pian">偏财股票</string>
+    <string name="unit_only">只</string>
+
+    <string name="tab_basic">基本信息</string>
+    <string name="tab_year">年度运势</string>
+    <string name="tab_month">月度运势</string>
+    <string name="tab_daily">每日分析</string>
+
+    <string name="basic_info">基本信息</string>
+    <string name="bazi_info">八字信息</string>
+    <string name="yinyang_info">阴阳属性</string>
+    <string name="field_code">股票代码</string>
+    <string name="field_name">股票名称</string>
+    <string name="field_listing_date">上市日期</string>
+    <string name="field_industry">所属行业</string>
+    <string name="field_industry_full">细分行业</string>
+    <string name="field_market">市场</string>
+    <string name="field_nature">股票属性</string>
+    <string name="field_yinyang">阴阳类型</string>
+    <string name="field_first_day_flag">首日涨跌</string>
+    <string name="field_wuxing">五行属性</string>
+    <string name="field_nayin">纳音五行</string>
+    <string name="field_fate_feature">命理特征</string>
+
+    <string name="year_overview">%1$d年运势概览</string>
+    <string name="year_flow">流年干支</string>
+    <string name="year_wealth_summary">整体财运</string>
+    <string name="year_industry">行业影响</string>
+    <string name="year_advice">总体建议</string>
+    <string name="month_ten_god_list">各月十神出现情况</string>
+    <string name="legend_zheng">正财</string>
+    <string name="legend_pian">偏财</string>
+    <string name="legend_none">无</string>
+    <string name="legend_none_hint">（无明显财星）</string>
+    <string name="legend_zheng_hint">（传统口径·主守成）</string>
+    <string name="legend_pian_hint">（传统口径·主流动）</string>
+
+    <string name="month_info">月度信息</string>
+    <string name="month_element">五行属性</string>
+    <string name="month_relation">与日主关系</string>
+    <string name="month_summary">月运简述</string>
+    <string name="month_trade_days">本月交易日十神分布</string>
+    <string name="month_tip_title">本月提示</string>
+    <string name="only_trade_days_hint">仅显示交易日，共 %1$d 个交易日</string>
+    <string name="daily_col_date">日期</string>
+    <string name="daily_col_week">星期</string>
+    <string name="daily_col_ganzhi">干支</string>
+    <string name="daily_col_ten_god">天干十神</string>
+    <string name="daily_col_wealth">财星</string>
+    <string name="daily_col_hint">「天干十神」只看流日天干；「财星」是 Rule v1.1 判定（天干不透财时看地支本气），与每日扫描页的归类同口径。</string>
+
+    <string name="scanner_title">每日选股扫描</string>
+    <string name="scanner_subtitle">结合八字十神 · 筛选当日有缘股票</string>
+    <string name="filter_title">十神筛选</string>
+    <string name="filter_subtitle">按股票的八字十神特征进行筛选</string>
+    <string name="filter_desc">多维度组合筛选 · 按十神特征归类</string>
+    <string name="filter_group_hidden">藏干十神</string>
+    <string name="filter_group_hidden_desc">筛选股票八字中藏干含所选的十神</string>
+    <string name="filter_group_year">流年十神</string>
+    <string name="filter_group_year_desc">筛选股票在当前流年出现的十神</string>
+    <string name="filter_group_month">流月十神</string>
+    <string name="filter_group_month_desc">筛选股票在当前流月出现的十神</string>
+    <string name="filter_group_day">流日十神</string>
+    <string name="filter_group_day_desc">筛选股票在当前流日出现的十神</string>
+    <string name="filter_start">开始筛选</string>
+    <string name="filter_reset">重置</string>
+
+    <string name="date_select_title">八字择日</string>
+    <string name="date_select_subtitle">干支历法 · 研究参考</string>
+    <string name="date_select_code">股票代码</string>
+    <string name="date_select_start">开始日期</string>
+    <string name="date_select_end">结束日期</string>
+    <string name="date_select_run">开始分析</string>
+    <string name="date_select_hint">基于八字、节气、五行生克，筛选适合该股票的交易吉日</string>
+    <string name="date_select_result_title">择日结果</string>
+    <string name="date_select_found">共找到 %1$d 个吉日</string>
+    <string name="col_is_trade_day">是否交易日</string>
+    <string name="col_wealth_type">财星判定</string>
+    <string name="trade_day_yes">交易日</string>
+    <string name="trade_day_no">非交易日</string>
+    <string name="only_trade_days">仅看交易日</string>
+
+    <string name="disclaimer">以上为基于传统八字命理模型与时间规则的推演结果，仅供参考，不构成任何投资建议。请结合基本面、技术面等综合判断。</string>
+    <string name="disclaimer_short">仅供参考 · 不构成投资建议</string>
+
+    <string name="mine_data_version">数据版本</string>
+    <string name="mine_calendar_version">交易日历版本</string>
+    <string name="mine_stock_count">收录股票数</string>
+    <string name="mine_algorithm">算法口径说明</string>
+    <string name="mine_clear_cache">清除计算缓存</string>
+    <string name="mine_offline">完全离线运行 · 无网络权限</string>
+    <string name="favorites">我的收藏</string>
+    <string name="empty_result">没有符合条件的结果</string>
+    <string name="empty_result_hint">换个日期或放宽筛选条件试试</string>
+    <string name="not_found">未找到相关股票</string>
+    <string name="back">返回</string>
+    <string name="clear">清空</string>
+    <string name="prev">上一页</string>
+    <string name="next">下一页</string>
+
+    <string name="day_prev">前一天</string>
+    <string name="day_next">后一天</string>
+    <string name="loading">加载中</string>
+    <string name="scan_tab_all">全部</string>
+    <string name="scan_date_prefix">扫描日期 </string>
+    <string name="scan_trade_only">· 仅统计交易日</string>
+    <string name="scan_empty_note">%1$s 非交易日或当日无财星命中，扫描仅统计交易日。</string>
+    <string name="rank_nth">第 %1$d 名</string>
+    <string name="filter_none_hint">未勾选任何十神时，开始筛选将返回当日全部股票。</string>
+    <string name="filter_result_title">筛选结果</string>
+    <string name="filter_result_total">共 %1$d 只</string>
+    <string name="filter_result_limit">仅显示前 %1$d 条，可继续缩小条件</string>
+    <string name="filter_base_day">基准日 · 流日%1$s（点击选择日期）</string>
+    <string name="filter_nearest_trade">最近交易日</string>
+    <string name="picker_title">选择基准日期</string>
+    <string name="picker_title_scan">选择扫描日期</string>
+    <string name="picker_open_hint">点击选择日期</string>
+    <string name="mine_data_group">数据与离线</string>
+    <string name="mine_rule">算法口径</string>
+    <string name="mine_cache">计算缓存</string>
+    <string name="mine_run_mode">运行方式</string>
+    <string name="count_rows">%1$d 条</string>
+    <string name="count_stocks">%1$d 只</string>
+    <string name="favorites_empty">还没有收藏，去搜索一只股票吧</string>
+    <string name="listing_date_prefix">上市日期 %1$s</string>
+    <string name="snapshot_suffix">（快照日期）</string>
+</resources>

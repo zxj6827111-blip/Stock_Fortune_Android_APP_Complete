@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 仅保留主题引用项；Compose 侧配色统一在 ui/theme/Theme.kt 的 SfColors，避免双份色板。 -->
+<resources>
+    <color name="deep_blue">#123A57</color>
+    <color name="page_bg">#F6F8FB</color>
+</resources>

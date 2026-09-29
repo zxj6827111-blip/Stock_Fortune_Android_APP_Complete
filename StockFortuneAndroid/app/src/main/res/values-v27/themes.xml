@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- windowLightNavigationBar 需 API 27；minSdk 26 上该属性不存在，放在 v27 目录避免
+     Android 8.0 出现"浅色导航栏 + 浅色图标"导致导航键不可见。 -->
+<resources>
+    <style name="Theme.StockFortune" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/deep_blue</item>
+        <item name="android:navigationBarColor">@color/page_bg</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

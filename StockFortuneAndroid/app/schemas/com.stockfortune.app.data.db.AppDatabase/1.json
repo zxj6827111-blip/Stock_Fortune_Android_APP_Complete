@@ -1,0 +1,601 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "0f00a3a6ebe0367dc7c071be074f1091",
+    "entities": [
+      {
+        "tableName": "stock",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `code` TEXT NOT NULL, `symbol` TEXT NOT NULL, `name` TEXT NOT NULL, `exchange` TEXT NOT NULL, `board` TEXT NOT NULL, `listing_date` TEXT NOT NULL, `first_open` REAL, `first_close` REAL, `first_change` REAL, `first_day_flag` TEXT NOT NULL, `industry` TEXT NOT NULL, `industry_full` TEXT NOT NULL, `stock_nature` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "code",
+            "columnName": "code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "symbol",
+            "columnName": "symbol",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exchange",
+            "columnName": "exchange",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "board",
+            "columnName": "board",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "listingDate",
+            "columnName": "listing_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstOpen",
+            "columnName": "first_open",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "firstClose",
+            "columnName": "first_close",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "firstChange",
+            "columnName": "first_change",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "firstDayFlag",
+            "columnName": "first_day_flag",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "industry",
+            "columnName": "industry",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "industryFull",
+            "columnName": "industry_full",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stockNature",
+            "columnName": "stock_nature",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_stock_code",
+            "unique": true,
+            "columnNames": [
+              "code"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_stock_code` ON `${TABLE_NAME}` (`code`)"
+          },
+          {
+            "name": "index_stock_name",
+            "unique": false,
+            "columnNames": [
+              "name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_stock_name` ON `${TABLE_NAME}` (`name`)"
+          },
+          {
+            "name": "index_stock_symbol",
+            "unique": false,
+            "columnNames": [
+              "symbol"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_stock_symbol` ON `${TABLE_NAME}` (`symbol`)"
+          },
+          {
+            "name": "index_stock_listing_date",
+            "unique": false,
+            "columnNames": [
+              "listing_date"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_stock_listing_date` ON `${TABLE_NAME}` (`listing_date`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "stock_bazi",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`stock_id` INTEGER NOT NULL, `full_bazi` TEXT NOT NULL, `year_pillar` TEXT NOT NULL, `month_pillar` TEXT NOT NULL, `day_pillar` TEXT NOT NULL, `hour_pillar` TEXT NOT NULL, `year_stem` TEXT NOT NULL, `year_branch` TEXT NOT NULL, `month_stem` TEXT NOT NULL, `month_branch` TEXT NOT NULL, `day_stem` TEXT NOT NULL, `day_branch` TEXT NOT NULL, `hour_stem` TEXT NOT NULL, `hour_branch` TEXT NOT NULL, `day_master_element` TEXT NOT NULL, `month_season_element` TEXT NOT NULL, `na_yin` TEXT NOT NULL, PRIMARY KEY(`stock_id`))",
+        "fields": [
+          {
+            "fieldPath": "stockId",
+            "columnName": "stock_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fullBazi",
+            "columnName": "full_bazi",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "yearPillar",
+            "columnName": "year_pillar",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "monthPillar",
+            "columnName": "month_pillar",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dayPillar",
+            "columnName": "day_pillar",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hourPillar",
+            "columnName": "hour_pillar",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "yearStem",
+            "columnName": "year_stem",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "yearBranch",
+            "columnName": "year_branch",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "monthStem",
+            "columnName": "month_stem",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "monthBranch",
+            "columnName": "month_branch",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dayStem",
+            "columnName": "day_stem",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dayBranch",
+            "columnName": "day_branch",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hourStem",
+            "columnName": "hour_stem",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hourBranch",
+            "columnName": "hour_branch",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dayMasterElement",
+            "columnName": "day_master_element",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "monthSeasonElement",
+            "columnName": "month_season_element",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "naYin",
+            "columnName": "na_yin",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "stock_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_stock_bazi_day_pillar",
+            "unique": false,
+            "columnNames": [
+              "day_pillar"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_stock_bazi_day_pillar` ON `${TABLE_NAME}` (`day_pillar`)"
+          },
+          {
+            "name": "index_stock_bazi_year_pillar",
+            "unique": false,
+            "columnNames": [
+              "year_pillar"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_stock_bazi_year_pillar` ON `${TABLE_NAME}` (`year_pillar`)"
+          },
+          {
+            "name": "index_stock_bazi_month_pillar",
+            "unique": false,
+            "columnNames": [
+              "month_pillar"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_stock_bazi_month_pillar` ON `${TABLE_NAME}` (`month_pillar`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "stock_hidden_ten_god",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`stock_id` INTEGER NOT NULL, `pillar` TEXT NOT NULL, `branch` TEXT NOT NULL, `hidden_stem` TEXT NOT NULL, `ten_god` TEXT NOT NULL, `rank` TEXT NOT NULL, PRIMARY KEY(`stock_id`, `pillar`, `hidden_stem`))",
+        "fields": [
+          {
+            "fieldPath": "stockId",
+            "columnName": "stock_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pillar",
+            "columnName": "pillar",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "branch",
+            "columnName": "branch",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hiddenStem",
+            "columnName": "hidden_stem",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tenGod",
+            "columnName": "ten_god",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rank",
+            "columnName": "rank",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "stock_id",
+            "pillar",
+            "hidden_stem"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_stock_hidden_ten_god_ten_god_stock_id",
+            "unique": false,
+            "columnNames": [
+              "ten_god",
+              "stock_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_stock_hidden_ten_god_ten_god_stock_id` ON `${TABLE_NAME}` (`ten_god`, `stock_id`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "ganzhi_calendar",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`date` TEXT NOT NULL, `year_ganzhi` TEXT NOT NULL, `month_ganzhi` TEXT NOT NULL, `day_ganzhi` TEXT NOT NULL, `year_stem` TEXT NOT NULL, `year_branch` TEXT NOT NULL, `month_stem` TEXT NOT NULL, `month_branch` TEXT NOT NULL, `day_stem` TEXT NOT NULL, `day_branch` TEXT NOT NULL, `month_branch_label` TEXT NOT NULL, `solar_term` TEXT, PRIMARY KEY(`date`))",
+        "fields": [
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "yearGanzhi",
+            "columnName": "year_ganzhi",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "monthGanzhi",
+            "columnName": "month_ganzhi",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dayGanzhi",
+            "columnName": "day_ganzhi",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "yearStem",
+            "columnName": "year_stem",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "yearBranch",
+            "columnName": "year_branch",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "monthStem",
+            "columnName": "month_stem",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "monthBranch",
+            "columnName": "month_branch",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dayStem",
+            "columnName": "day_stem",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dayBranch",
+            "columnName": "day_branch",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "monthBranchLabel",
+            "columnName": "month_branch_label",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "solarTerm",
+            "columnName": "solar_term",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "date"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "trade_calendar",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`date` TEXT NOT NULL, `is_trade_day` INTEGER NOT NULL, `weekday` INTEGER NOT NULL, `closed_reason` TEXT, `confidence` TEXT NOT NULL, PRIMARY KEY(`date`))",
+        "fields": [
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isTradeDay",
+            "columnName": "is_trade_day",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "weekday",
+            "columnName": "weekday",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "closedReason",
+            "columnName": "closed_reason",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "confidence",
+            "columnName": "confidence",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "date"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "scan_cache",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`stock_id` INTEGER NOT NULL, `date` TEXT NOT NULL, `year_ten_god` TEXT NOT NULL, `month_ten_god` TEXT NOT NULL, `day_ten_god` TEXT NOT NULL, `wealth_type` TEXT NOT NULL, `is_trade_day` INTEGER NOT NULL, `computed_at` INTEGER NOT NULL, PRIMARY KEY(`stock_id`, `date`))",
+        "fields": [
+          {
+            "fieldPath": "stockId",
+            "columnName": "stock_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "yearTenGod",
+            "columnName": "year_ten_god",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "monthTenGod",
+            "columnName": "month_ten_god",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dayTenGod",
+            "columnName": "day_ten_god",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wealthType",
+            "columnName": "wealth_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isTradeDay",
+            "columnName": "is_trade_day",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "computedAt",
+            "columnName": "computed_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "stock_id",
+            "date"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "favorite",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`stock_id` INTEGER NOT NULL, `added_at` INTEGER NOT NULL, PRIMARY KEY(`stock_id`))",
+        "fields": [
+          {
+            "fieldPath": "stockId",
+            "columnName": "stock_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "addedAt",
+            "columnName": "added_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "stock_id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "app_meta",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `value` TEXT NOT NULL, PRIMARY KEY(`key`))",
+        "fields": [
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "key"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0f00a3a6ebe0367dc7c071be074f1091')"
+    ]
+  }
+}

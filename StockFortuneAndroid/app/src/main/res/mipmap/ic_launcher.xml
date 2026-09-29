@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- minSdk 26 全量支持自适应图标，故无需密度位图回退；monochrome 供 Android 13+ 主题化图标。 -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/deep_blue" />
+    <foreground android:drawable="@drawable/hero_emblem" />
+    <monochrome android:drawable="@drawable/hero_emblem" />
+</adaptive-icon>

@@ -1,0 +1,43 @@
+{
+  "source": {
+    "source_file": "生辰八字.xlsx",
+    "sha256": "57a26df309b769d723cc8da8afb4fb6f6a90561b0857c8bae07c5e1289d49eb9",
+    "sheets": [
+      "总表",
+      "筛选1",
+      "筛选2",
+      "SH",
+      "SZ",
+      "BJ"
+    ],
+    "row_count": 5395,
+    "skipped": [],
+    "snapshot_max_listing_date": "2025-02-06"
+  },
+  "counts": {
+    "stock": 5395,
+    "ganzhi_calendar": 16467,
+    "trade_calendar": 16467,
+    "trade_days": 11188,
+    "stock_bazi": 5395,
+    "stock_hidden_ten_god": 53347,
+    "app_meta": 10
+  },
+  "calendar": {
+    "start": "1990-12-01",
+    "end": "2035-12-31",
+    "version": "2026-09-29",
+    "observed_corrections": 7,
+    "correction_samples": [
+      "1996-09-27:中秋节",
+      "1996-10-03:国庆节",
+      "1997-06-09:端午节",
+      "1999-05-07:劳动节",
+      "1999-06-18:端午节",
+      "2004-06-22:端午节",
+      "2007-09-25:中秋节"
+    ]
+  },
+  "db_bytes": 8503296,
+  "sql_lines": 97102
+}

@@ -1,0 +1,13 @@
+# 构建产物与本机环境
+.gradle/
+build/
+app/build/
+.kotlin/
+local.properties
+.DS_Store
+
+# 签名材料与口令：只允许存在于用户目录 ~/.stockfortune-keystore/
+keystore/
+*.jks
+*.keystore
+secrets.env
