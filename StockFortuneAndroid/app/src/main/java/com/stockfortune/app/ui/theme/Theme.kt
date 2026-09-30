@@ -33,6 +33,26 @@ object SfColors {
     val OtherTagBg = Color(0xFFEFF2F7)
     val TradeGreen = Color(0xFF2FA36B)
     val Divider = Color(0xFFEDF0F5)
+    val CardBorder = Color(0xFFE8EDF5)
+    val CardBorderSubtle = Color(0x0F0D2743)
+
+    /** 提示与徽标色 */
+    val HintAmberBg = Color(0xFFFFF9EE)
+    val HintAmberBorder = Color(0xFFFFE8BD)
+    val HintAmberText = Color(0xFF9E6514)
+
+    /** 排名冠亚季军徽标色 */
+    val RankGold = Color(0xFFF5A623)
+    val RankSilver = Color(0xFF9EABB8)
+    val RankBronze = Color(0xFFCD7F32)
+
+    /** 磁贴组件（如十神筛选）选中与未选中态 */
+    val TileUnselectedBg = Color(0xFFF4F7FC)
+    val TileSelectedBg = Color(0xFFEAF2FD)
+
+    /** 渐变色 */
+    val GoldGradient = listOf(Color(0xFFFFEEB8), Color(0xFFE8BD65), Color(0xFFD6A84F))
+    val GoldButtonGradient = listOf(Color(0xFFF5D38A), Color(0xFFD6A84F))
 
     /** 首页四宫格底色 */
     val EntryBlue = Color(0xFF3B82F6)

@@ -60,6 +60,7 @@ import com.stockfortune.app.domain.calculator.GanzhiCalculator
 import com.stockfortune.app.domain.model.DateSelectionRow
 import com.stockfortune.app.ui.common.sfContainer
 import com.stockfortune.app.ui.common.sfViewModel
+import com.stockfortune.app.ui.components.SfAmberCallout
 import com.stockfortune.app.ui.components.SfCard
 import com.stockfortune.app.ui.components.SfDatePickerDialog
 import com.stockfortune.app.ui.components.SfDisclaimer
@@ -273,8 +274,9 @@ fun DateSelectScreen(nav: NavHostController, initialCode: String) {
         }
 
         Spacer(Modifier.height(SfDimens.CardGap))
-        SfDisclaimer(
-            stringResource(R.string.disclaimer),
+        SfAmberCallout(
+            title = "温馨提示",
+            text = "以上为基于传统八字命理与市场时间的择日参考，仅供参考，不构成任何投资建议。请结合基本面、技术面等综合分析。",
             modifier = Modifier.padding(horizontal = SfDimens.PagePadding),
         )
         Spacer(Modifier.height(SfDimens.CardGap))

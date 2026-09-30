@@ -1,5 +1,6 @@
 package com.stockfortune.app.ui.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -27,11 +29,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,7 +52,7 @@ import com.stockfortune.app.ui.theme.wealthBg
 import com.stockfortune.app.ui.theme.wealthColor
 import com.stockfortune.app.domain.model.TenGod
 
-/** 白色大圆角卡片。 */
+/** 白色大圆角卡片，带微阴影与极细描边，营造悬浮景深。 */
 @Composable
 fun SfCard(
     modifier: Modifier = Modifier,
@@ -58,8 +64,15 @@ fun SfCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .shadow(
+                elevation = 2.dp,
+                shape = shape,
+                ambientColor = Color(0x0D0D2743),
+                spotColor = Color(0x120D2743),
+            )
             .clip(shape)
             .background(SfColors.CardBg)
+            .border(width = 0.8.dp, color = SfColors.CardBorder, shape = shape)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(padding),
         content = content,
@@ -110,7 +123,7 @@ fun TenGodTag(god: TenGod, modifier: Modifier = Modifier) {
     SfTag(god.cn, fg, bg, modifier)
 }
 
-/** 顶部主视觉：深蓝夜空山脉 + 金月 + 品牌信息。 */
+/** 顶部主视觉：深蓝夜空山脉 + 金月 + 东方流金品牌信息。 */
 @Composable
 fun SfHero(
     title: String,
@@ -136,10 +149,20 @@ fun SfHero(
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
         )
+        // 柔和暗夜与星宿感多层微渐变遮罩
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(Color(0x660D2743), Color(0x220D2743), Color(0x990D2743)))),
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0x66061325),
+                            Color(0x220D2743),
+                            Color(0x770D2743),
+                            Color(0xB3061325),
+                        )
+                    )
+                ),
         )
         Column(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -150,20 +173,50 @@ fun SfHero(
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (showLogo) {
-                    // Hero 用裁掉文字后的徽标：整张 brand_logo 含"股运通"字样，会与标题重复
-                    androidx.compose.foundation.Image(
-                        painter = painterResource(id = R.drawable.hero_emblem),
-                        contentDescription = null,
-                        modifier = Modifier.size(54.dp).clip(RoundedCornerShape(14.dp)),
-                        contentScale = ContentScale.Fit,
-                    )
+                    // Logo 外层增加古铜金微光描边容器
+                    Box(
+                        modifier = Modifier
+                            .size(54.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color(0x330D2743))
+                            .border(1.2.dp, Brush.verticalGradient(listOf(Color(0xFFFFDF88), Color(0x66D6A84F))), RoundedCornerShape(14.dp))
+                            .padding(2.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        androidx.compose.foundation.Image(
+                            painter = painterResource(id = R.drawable.hero_emblem),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
+                            contentScale = ContentScale.Fit,
+                        )
+                    }
                     Spacer(Modifier.width(12.dp))
                 }
                 Column {
-                    Text(title, color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-                    Text(subtitle, color = SfColors.GoldLight, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text(
+                        text = title,
+                        style = TextStyle(
+                            brush = Brush.verticalGradient(SfColors.GoldGradient),
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                        ),
+                    )
+                    Text(
+                        text = subtitle,
+                        color = SfColors.GoldLight,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 0.3.sp,
+                    )
                     if (slogan != null) {
-                        Text(slogan, color = Color(0xB3FFFFFF), fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+                        Text(
+                            text = slogan,
+                            color = Color(0xCCFFFFFF),
+                            fontSize = 11.sp,
+                            letterSpacing = 1.sp,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
                     }
                 }
             }
@@ -173,7 +226,7 @@ fun SfHero(
     }
 }
 
-/** 首页四宫格入口。 */
+/** 首页四宫格入口（醒目原色图标与微淡底色呼吸感）。 */
 @Composable
 fun SfEntryTile(
     label: String,
@@ -183,22 +236,27 @@ fun SfEntryTile(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
+    val bgTint = tint.copy(alpha = 0.05f)
+    val borderTint = tint.copy(alpha = 0.16f)
     Row(
         modifier = modifier
+            .shadow(1.5.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x080D2743), spotColor = Color(0x0E0D2743))
             .clip(RoundedCornerShape(18.dp))
             .background(SfColors.CardBg)
+            .background(bgTint)
+            .border(0.8.dp, borderTint, RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(tint.copy(alpha = 0.16f)),
+                .size(42.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(tint),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
         }
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
@@ -209,7 +267,66 @@ fun SfEntryTile(
     }
 }
 
-/** 统计卡：数字 + 单位 + 说明。 */
+/** 正财/偏财专属福袋图形资产（解决原先仅有 10dp 小圆点的单薄感）。 */
+@Composable
+fun FortuneBagBadge(isZhengCai: Boolean, modifier: Modifier = Modifier) {
+    val bgBrush = if (isZhengCai) {
+        Brush.verticalGradient(listOf(Color(0xFFFF6666), Color(0xFFED3838)))
+    } else {
+        Brush.verticalGradient(listOf(Color(0xFFFFBA42), Color(0xFFF39818)))
+    }
+    val symbolColor = if (isZhengCai) Color(0xFFDC2828) else Color(0xFFD67F05)
+
+    Box(
+        modifier = modifier
+            .size(46.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(bgBrush)
+            .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(14.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(modifier = Modifier.size(26.dp)) {
+            val w = size.width
+            val h = size.height
+            val pouch = Path().apply {
+                // 顶部聚气褶皱花边
+                moveTo(w * 0.30f, h * 0.18f)
+                cubicTo(w * 0.20f, h * 0.04f, w * 0.38f, 0f, w * 0.50f, h * 0.08f)
+                cubicTo(w * 0.62f, 0f, w * 0.80f, h * 0.04f, w * 0.70f, h * 0.18f)
+                // 颈部金绳束口
+                lineTo(w * 0.62f, h * 0.30f)
+                // 饱满右侧福身
+                cubicTo(w * 0.94f, h * 0.44f, w * 0.94f, h * 0.88f, w * 0.68f, h * 0.97f)
+                // 袋底弧度
+                cubicTo(w * 0.58f, h * 1.01f, w * 0.42f, h * 1.01f, w * 0.32f, h * 0.97f)
+                // 饱满左侧福身
+                cubicTo(w * 0.06f, h * 0.88f, w * 0.06f, h * 0.44f, w * 0.38f, h * 0.30f)
+                close()
+            }
+            drawPath(pouch, color = Color.White)
+
+            // 金黄色束带结
+            val ribbon = Path().apply {
+                moveTo(w * 0.34f, h * 0.28f)
+                lineTo(w * 0.66f, h * 0.28f)
+                lineTo(w * 0.64f, h * 0.34f)
+                lineTo(w * 0.36f, h * 0.34f)
+                close()
+            }
+            drawPath(ribbon, color = Color(0xFFFFD56B))
+        }
+
+        Text(
+            text = "¥",
+            color = symbolColor,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Black,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+    }
+}
+
+/** 统计卡：集成福袋资产、大数排版法则与进阶微阴影。 */
 @Composable
 fun SfStatCard(
     label: String,
@@ -221,26 +338,122 @@ fun SfStatCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
 ) {
-    Column(
+    val isZheng = label.contains("正财")
+    Row(
         modifier = modifier
+            .shadow(1.5.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x080D2743), spotColor = Color(0x100D2743))
             .clip(RoundedCornerShape(18.dp))
             .background(background)
+            .border(0.8.dp, accent.copy(alpha = 0.22f), RoundedCornerShape(18.dp))
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(14.dp),
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(26.dp).clip(RoundedCornerShape(9.dp)).background(accent.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
-                Box(Modifier.size(10.dp).clip(CircleShape).background(accent))
+        FortuneBagBadge(isZhengCai = isZheng)
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(label, style = MaterialTheme.typography.titleSmall, color = SfColors.TextMain, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.weight(1f))
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = accent.copy(alpha = 0.7f),
+                    modifier = Modifier.size(16.dp),
+                )
             }
-            Spacer(Modifier.width(8.dp))
-            Text(label, style = MaterialTheme.typography.titleSmall, color = SfColors.TextMain)
+            Spacer(Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(value, color = accent, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.width(3.dp))
+                Text(unit, color = accent, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 2.dp))
+            }
+            if (hint.isNotBlank()) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    hint,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SfColors.TextSub,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
-        Spacer(Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(value, color = accent, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-            Text(unit, color = SfColors.TextSub, fontSize = 12.sp, modifier = Modifier.padding(start = 3.dp, bottom = 4.dp))
+    }
+}
+
+/** 榜单排名勋章（前 3 名显示金/银/铜皇冠，4 名及以后显示数字）。 */
+@Composable
+fun RankBadge(rank: Int, modifier: Modifier = Modifier) {
+    if (rank in 1..3) {
+        val crownColor = when (rank) {
+            1 -> SfColors.RankGold
+            2 -> SfColors.RankSilver
+            else -> SfColors.RankBronze
         }
-        Text(hint, style = MaterialTheme.typography.labelSmall, color = SfColors.TextSub)
+        Canvas(modifier = modifier.size(18.dp)) {
+            val w = size.width
+            val h = size.height
+            val path = Path().apply {
+                moveTo(w * 0.15f, h * 0.85f)
+                lineTo(w * 0.85f, h * 0.85f)
+                lineTo(w * 0.82f, h * 0.35f)
+                lineTo(w * 0.64f, h * 0.58f)
+                lineTo(w * 0.50f, h * 0.22f)
+                lineTo(w * 0.36f, h * 0.58f)
+                lineTo(w * 0.18f, h * 0.35f)
+                close()
+            }
+            drawPath(path, color = crownColor)
+            drawCircle(crownColor, radius = w * 0.06f, center = Offset(w * 0.18f, h * 0.30f))
+            drawCircle(crownColor, radius = w * 0.07f, center = Offset(w * 0.50f, h * 0.18f))
+            drawCircle(crownColor, radius = w * 0.06f, center = Offset(w * 0.82f, h * 0.30f))
+        }
+    } else {
+        Text(
+            text = "$rank",
+            style = MaterialTheme.typography.bodyMedium,
+            color = SfColors.TextSub,
+            textAlign = TextAlign.Center,
+            modifier = modifier,
+        )
+    }
+}
+
+/** 温暖琥珀色提示卡（对齐效果图中的各类温馨提示与要点卡）。 */
+@Composable
+fun SfAmberCallout(
+    text: String,
+    modifier: Modifier = Modifier,
+    title: String? = null,
+    icon: ImageVector = Icons.Filled.Lightbulb,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(SfColors.HintAmberBg)
+            .border(0.8.dp, SfColors.HintAmberBorder, RoundedCornerShape(16.dp))
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(CircleShape)
+                .background(Color(0x1AF6B545)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = SfColors.HintAmberText, modifier = Modifier.size(16.dp))
+        }
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            if (title != null) {
+                Text(title, style = MaterialTheme.typography.titleSmall, color = SfColors.HintAmberText, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(2.dp))
+            }
+            Text(text, style = MaterialTheme.typography.bodySmall, color = SfColors.HintAmberText, lineHeight = 18.sp)
+        }
     }
 }
 
