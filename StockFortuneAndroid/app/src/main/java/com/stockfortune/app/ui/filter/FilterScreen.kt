@@ -1,6 +1,7 @@
 package com.stockfortune.app.ui.filter
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,13 +25,12 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Today
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -294,9 +294,13 @@ private fun FilterGroup(
 
 @Composable
 private fun TenGodCheckGrid(selected: Set<TenGod>, onToggleGod: (TenGod) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         TenGod.ORDER.chunked(4).forEach { line ->
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 line.forEach { god ->
                     TenGodCheckItem(
                         god = god,
@@ -313,27 +317,40 @@ private fun TenGodCheckGrid(selected: Set<TenGod>, onToggleGod: (TenGod) -> Unit
 
 @Composable
 private fun TenGodCheckItem(god: TenGod, checked: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val bg = if (checked) SfColors.TileSelectedBg else SfColors.TileUnselectedBg
+    val border = if (checked) SfColors.DeepBlue.copy(alpha = 0.45f) else Color(0xFFE2EAF4)
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
-            .clickable(onClick = onClick),
+            .clip(RoundedCornerShape(9.dp))
+            .background(bg)
+            .border(0.8.dp, border, RoundedCornerShape(9.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Checkbox(
-            checked = checked,
-            onCheckedChange = { onClick() },
-            modifier = Modifier.size(26.dp),
-            colors = CheckboxDefaults.colors(
-                checkedColor = SfColors.DeepBlue,
-                uncheckedColor = SfColors.OtherTag,
-                checkmarkColor = Color.White,
-            ),
-        )
+        Box(
+            modifier = Modifier
+                .size(16.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(if (checked) SfColors.DeepBlue else Color.Transparent)
+                .border(1.2.dp, if (checked) SfColors.DeepBlue else Color(0xFFB0BFD0), RoundedCornerShape(4.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (checked) {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(11.dp),
+                )
+            }
+        }
+        Spacer(Modifier.width(5.dp))
         Text(
             text = god.cn,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelSmall,
             color = if (checked) SfColors.DeepBlue else SfColors.TextMain,
-            fontWeight = if (checked) FontWeight.SemiBold else FontWeight.Medium,
+            fontWeight = if (checked) FontWeight.Bold else FontWeight.Medium,
             maxLines = 1,
         )
     }

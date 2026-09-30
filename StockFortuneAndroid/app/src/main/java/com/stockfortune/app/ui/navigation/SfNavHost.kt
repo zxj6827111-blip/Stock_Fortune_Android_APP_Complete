@@ -5,8 +5,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -151,14 +153,23 @@ private fun SfBottomBar(current: String, nav: androidx.navigation.NavHostControl
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
                             item.icon, contentDescription = stringResource(item.labelRes),
-                            tint = if (active) SfColors.DeepBlue else SfColors.TextSub,
+                            tint = if (active) SfColors.Gold else SfColors.TextSub,
                             modifier = Modifier.size(21.dp),
                         )
+                        Spacer(Modifier.height(2.dp))
                         Text(
                             stringResource(item.labelRes),
-                            color = if (active) SfColors.DeepBlue else SfColors.TextSub,
+                            color = if (active) SfColors.Gold else SfColors.TextSub,
                             fontSize = 11.sp,
-                            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
+                            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                        )
+                        Spacer(Modifier.height(3.dp))
+                        Box(
+                            Modifier
+                                .width(16.dp)
+                                .height(2.5.dp)
+                                .clip(RoundedCornerShape(1.5.dp))
+                                .background(if (active) SfColors.Gold else Color.Transparent),
                         )
                     }
                 }

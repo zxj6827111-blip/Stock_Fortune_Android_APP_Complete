@@ -47,6 +47,7 @@ import com.stockfortune.app.domain.calculator.GanzhiCalculator
 import com.stockfortune.app.domain.model.ScanRow
 import com.stockfortune.app.ui.common.sfContainer
 import com.stockfortune.app.ui.common.sfViewModel
+import com.stockfortune.app.ui.components.RankBadge
 import com.stockfortune.app.ui.components.SfDatePickerDialog
 import com.stockfortune.app.ui.components.SfDisclaimer
 import com.stockfortune.app.ui.components.SfEmptyState
@@ -350,20 +351,7 @@ private fun ScanResultRow(index: Int, row: ScanRow, last: Boolean, onClick: () -
     Column(modifier = Modifier.fillMaxWidth()) {
         SfRowContainer(onClick = onClick) {
             Box(modifier = Modifier.weight(0.6f), contentAlignment = Alignment.CenterStart) {
-                if (index < 3) {
-                    Icon(
-                        Icons.Filled.WorkspacePremium,
-                        contentDescription = stringResource(R.string.rank_nth, index + 1),
-                        tint = SfColors.Gold,
-                        modifier = Modifier.size(16.dp),
-                    )
-                } else {
-                    Text(
-                        text = (index + 1).toString(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = SfColors.TextSub,
-                    )
-                }
+                RankBadge(rank = index + 1)
             }
             Text(
                 text = row.symbol,

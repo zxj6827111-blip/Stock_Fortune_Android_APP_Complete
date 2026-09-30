@@ -1,6 +1,7 @@
 package com.stockfortune.app.ui.detail
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,9 +29,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,6 +48,7 @@ import com.stockfortune.app.domain.model.MonthLabel
 import com.stockfortune.app.domain.model.TenGod
 import com.stockfortune.app.domain.model.WealthType
 import com.stockfortune.app.domain.model.YearAnalysis
+import com.stockfortune.app.ui.components.SfAmberCallout
 import com.stockfortune.app.ui.components.SfCard
 import com.stockfortune.app.ui.components.SfDisclaimer
 import com.stockfortune.app.ui.components.SfEmptyState
@@ -92,14 +96,18 @@ fun BasicTab(detail: StockDetail) {
             SfInfoRow(stringResource(R.string.field_nature), stock.stockNature)
         }
 
-        GoldHintBar(icon = Icons.Default.BarChart, text = detail.fateFeature)
+        SfAmberCallout(
+            text = detail.fateFeature,
+            title = "企业特征与命理概览",
+            icon = Icons.Default.BarChart,
+        )
 
         SfCard {
             SfSectionTitle(stringResource(R.string.bazi_info))
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                detail.pillars.forEachIndexed { i, p ->
-                    PillarColumn(label = p.label, ganzhi = p.ganzhi, elements = p.stemElement + p.branchElement, color = pillarColor(i), modifier = Modifier.weight(1f))
+                detail.pillars.forEach { p ->
+                    PillarColumn(label = p.label, ganzhi = p.ganzhi, elements = p.stemElement + p.branchElement, modifier = Modifier.weight(1f))
                 }
             }
         }
@@ -121,7 +129,8 @@ fun BasicTab(detail: StockDetail) {
 }
 
 @Composable
-private fun PillarColumn(label: String, ganzhi: String, elements: String, color: Color, modifier: Modifier = Modifier) {
+private fun PillarColumn(label: String, ganzhi: String, elements: String, modifier: Modifier = Modifier) {
+    val (fg, bg) = elementColorPair(elements.firstOrNull() ?: ' ')
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = SfColors.TextSub)
         Spacer(Modifier.height(6.dp))
@@ -129,23 +138,25 @@ private fun PillarColumn(label: String, ganzhi: String, elements: String, color:
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(color.copy(alpha = 0.10f))
+                .background(bg)
+                .border(0.8.dp, fg.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
                 .padding(vertical = 12.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text(ganzhi, color = color, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(ganzhi, color = fg, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         }
         Spacer(Modifier.height(6.dp))
         Text(elements, style = MaterialTheme.typography.labelSmall, color = SfColors.TextSub)
     }
 }
 
-/** 四柱配色：年=深蓝、月=偏财橙、日=正财红（日主强调）、时=主文字色。 */
-private fun pillarColor(index: Int): Color = when (index) {
-    0 -> SfColors.DeepBlue
-    1 -> SfColors.PianCai
-    2 -> SfColors.ZhengCai
-    else -> SfColors.TextMain
+private fun elementColorPair(elementChar: Char): Pair<Color, Color> = when (elementChar) {
+    '金' -> Color(0xFFC8942A) to Color(0xFFFFF9E6)
+    '木' -> Color(0xFF2E9E66) to Color(0xFFE8F8F0)
+    '水' -> Color(0xFF2570EB) to Color(0xFFEAF2FE)
+    '火' -> Color(0xFFE54848) to Color(0xFFFDECEC)
+    '土' -> Color(0xFFD97706) to Color(0xFFFFF4E5)
+    else -> SfColors.DeepBlue to SfColors.OtherTagBg
 }
 
 // ---------------------------------------------------------------- 年度运势
@@ -257,10 +268,16 @@ fun MonthTab(
                     Modifier
                         .size(64.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(SfColors.PianCaiBg),
+                        .background(Brush.verticalGradient(listOf(SfColors.DeepBlue, SfColors.NavyDark)))
+                        .border(1.2.dp, Brush.verticalGradient(listOf(Color(0xFFFFDF88), SfColors.Gold)), RoundedCornerShape(16.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(m.monthGanzhi.takeLast(1), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = SfColors.Gold)
+                    Text(
+                        text = m.monthGanzhi.takeLast(1),
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        style = TextStyle(brush = Brush.verticalGradient(SfColors.GoldGradient)),
+                    )
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
@@ -299,13 +316,10 @@ fun MonthTab(
             MonthCalendar(m, onDayClick)
         }
 
-        SfCard {
-            SfSectionTitle(stringResource(R.string.month_tip_title), trailing = {
-                Icon(Icons.Default.Lightbulb, contentDescription = null, tint = SfColors.Gold, modifier = Modifier.size(18.dp))
-            })
-            Spacer(Modifier.height(8.dp))
-            Text(m.tip, style = MaterialTheme.typography.bodyMedium, color = SfColors.TextSub)
-        }
+        SfAmberCallout(
+            title = stringResource(R.string.month_tip_title),
+            text = m.tip,
+        )
     }
 }
 
@@ -346,32 +360,48 @@ private fun MonthCalendar(m: MonthAnalysis, onDayClick: (DayAnalysis) -> Unit) {
 
 @Composable
 private fun DayCell(day: DayAnalysis, onDayClick: (DayAnalysis) -> Unit) {
+    val isZheng = day.wealth == WealthType.ZHENG_CAI && day.isTradeDay
+    val isPian = day.wealth == WealthType.PIAN_CAI && day.isTradeDay
+    val haloBg = when {
+        isZheng -> Color(0xFFFFECEE)
+        isPian -> Color(0xFFFFF2DC)
+        else -> Color.Transparent
+    }
     val digitColor = when {
-        !day.isTradeDay -> SfColors.OtherTag
-        day.wealth == WealthType.ZHENG_CAI -> SfColors.ZhengCai
-        day.wealth == WealthType.PIAN_CAI -> SfColors.PianCai
+        !day.isTradeDay -> Color(0xFFA0AEC0)
+        isZheng -> SfColors.ZhengCai
+        isPian -> SfColors.PianCai
         else -> SfColors.TextMain
     }
+    val dotColor = when {
+        isZheng -> SfColors.ZhengCai
+        isPian -> SfColors.PianCai
+        day.isTradeDay -> Color(0xFFCBD5E1)
+        else -> Color(0xFFE2E8F0)
+    }
+
     Column(
         Modifier
-            .size(40.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .size(38.dp)
+            .clip(CircleShape)
+            .background(haloBg)
             .clickable(enabled = day.isTradeDay) { onDayClick(day) },
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            GanzhiCalculator.parse(day.date)?.dayOfMonth?.toString() ?: "",
+            text = GanzhiCalculator.parse(day.date)?.dayOfMonth?.toString() ?: "",
             fontSize = 13.sp,
             color = digitColor,
-            fontWeight = if (day.wealth.isWealth && day.isTradeDay) FontWeight.Bold else FontWeight.Normal,
+            fontWeight = if (day.wealth.isWealth && day.isTradeDay) FontWeight.Bold else FontWeight.Medium,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(3.dp))
+        Spacer(Modifier.height(2.dp))
         Box(
             Modifier
-                .size(6.dp)
+                .size(4.dp)
                 .clip(CircleShape)
-                .background(if (day.isTradeDay) wealthColor(day.wealth) else SfColors.Divider),
+                .background(dotColor),
         )
     }
 }

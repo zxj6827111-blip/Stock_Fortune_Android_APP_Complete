@@ -1,6 +1,7 @@
 package com.stockfortune.app.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +40,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -82,11 +85,12 @@ fun HomeScreen(nav: NavHostController) {
                     modifier = Modifier
                         .size(38.dp)
                         .clip(CircleShape)
-                        .background(Color(0x33FFFFFF))
+                        .background(Color(0x24FFFFFF))
+                        .border(0.8.dp, Color(0x33FFFFFF), CircleShape)
                         .clickable { nav.navigate(Routes.ALGORITHM) },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.mine_algorithm), tint = Color.White, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.mine_algorithm), tint = Color.White, modifier = Modifier.size(19.dp))
                 }
             },
         )
@@ -105,47 +109,48 @@ fun HomeScreen(nav: NavHostController) {
 
 @Composable
 private fun HomeSearchField(keyword: String, onKeywordChange: (String) -> Unit, onSubmit: (String) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(2.dp, RoundedCornerShape(22.dp), ambientColor = Color(0x0A0D2743), spotColor = Color(0x140D2743))
+            .clip(RoundedCornerShape(22.dp))
+            .background(Color.White)
+            .border(0.8.dp, SfColors.CardBorder, RoundedCornerShape(22.dp))
+            .padding(start = 4.dp, end = 5.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TextField(
+            value = keyword,
+            onValueChange = onKeywordChange,
+            modifier = Modifier.weight(1f),
+            placeholder = { Text(stringResource(R.string.search_hint), style = MaterialTheme.typography.bodyMedium, color = SfColors.TextSub) },
+            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = SfColors.TextSub, modifier = Modifier.size(20.dp)) },
+            singleLine = true,
+            shape = RoundedCornerShape(18.dp),
+            textStyle = MaterialTheme.typography.bodyMedium,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { onSubmit(keyword) }),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                focusedTextColor = SfColors.TextMain,
+                unfocusedTextColor = SfColors.TextMain,
+                cursorColor = SfColors.DeepBlue,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedPlaceholderColor = SfColors.TextSub,
+                unfocusedPlaceholderColor = SfColors.TextSub,
+            ),
+        )
         Box(
             modifier = Modifier
-                .weight(1f)
-                .clip(RoundedCornerShape(18.dp))
-                .background(Color.White),
-        ) {
-            TextField(
-                value = keyword,
-                onValueChange = onKeywordChange,
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(stringResource(R.string.search_hint), style = MaterialTheme.typography.bodyMedium, color = SfColors.TextSub) },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = SfColors.TextSub, modifier = Modifier.size(20.dp)) },
-                singleLine = true,
-                shape = RoundedCornerShape(18.dp),
-                textStyle = MaterialTheme.typography.bodyMedium,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { onSubmit(keyword) }),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedTextColor = SfColors.TextMain,
-                    unfocusedTextColor = SfColors.TextMain,
-                    cursorColor = SfColors.DeepBlue,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    focusedPlaceholderColor = SfColors.TextSub,
-                    unfocusedPlaceholderColor = SfColors.TextSub,
-                ),
-            )
-        }
-        Spacer(Modifier.width(8.dp))
-        Box(
-            modifier = Modifier
-                .size(52.dp)
+                .size(44.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(SfColors.DeepBlue)
+                .background(Brush.verticalGradient(listOf(SfColors.DeepBlue, SfColors.NavyDark)))
                 .clickable { onSubmit(keyword) },
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Filled.Search, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+            Icon(Icons.Filled.Search, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
         }
     }
 }
