@@ -1,14 +1,17 @@
 package com.stockfortune.app.data.repository
 
+import android.util.Log
 import com.stockfortune.app.data.dao.BaziDao
 import com.stockfortune.app.data.dao.CalendarDao
 import com.stockfortune.app.data.dao.FilterDao
 import com.stockfortune.app.data.dao.ScanCacheDao
 import com.stockfortune.app.data.entity.GanzhiCalendarEntity
 import com.stockfortune.app.data.entity.ScanCacheEntity
+import com.stockfortune.app.domain.calculator.BaziTables
 import com.stockfortune.app.domain.calculator.FortuneText
 import com.stockfortune.app.domain.calculator.GanzhiCalculator
 import com.stockfortune.app.domain.calculator.TenGodCalculator
+import com.stockfortune.app.domain.model.DateSelectionRow
 import com.stockfortune.app.domain.model.DayAnalysis
 import com.stockfortune.app.domain.model.DayDetail
 import com.stockfortune.app.domain.model.FilterQuery
@@ -38,6 +41,11 @@ class AnalysisRepository(
     companion object {
         /** 扫描缓存保留的最近扫描日数，防止缓存表无界增长。 */
         const val CACHE_KEEP_DAYS = 30
+
+        /** 单次八字择日最多返回的命中日期；超出时截断并在区间提示里说明。 */
+        const val DATE_SELECT_LIMIT = 400
+
+        private const val TAG = "AnalysisRepository"
     }
 
     private suspend fun day(date: String): GanzhiCalendarEntity? = calendarDao.ganzhi(date)
@@ -178,7 +186,7 @@ class AnalysisRepository(
     private data class StemVerdict(val wealth: WealthType, val dayGod: TenGod)
 
     private fun verdicts(stem: String, branch: String): Map<String, StemVerdict> =
-        com.stockfortune.app.domain.calculator.BaziTables.STEMS.associateWith { ds ->
+        BaziTables.STEMS.associateWith { ds ->
             StemVerdict(TenGodCalculator.wealthType(ds, stem, branch), TenGodCalculator.tenGod(ds, stem))
         }
 
@@ -196,20 +204,29 @@ class AnalysisRepository(
     suspend fun scan(date: String, persist: Boolean = true): ScanSummary {
         val gz = day(date) ?: return ScanSummary(date, emptyList(), 0, 0)
         if (!isTrade(date)) return ScanSummary(date, emptyList(), 0, 0)
-        scanCacheDao.rowsWithStock(date).takeIf { it.isNotEmpty() }?.let { cached ->
-            val rows = cached.map { c ->
-                val god = TenGod.fromCn(c.dayTenGod) ?: TenGod.BI_JIAN
+        val cached = scanCacheDao.rowsWithStock(date)
+        if (cached.isNotEmpty()) {
+            val rows = cached.mapNotNull { c ->
+                val god = TenGod.fromCn(c.dayTenGod) ?: return@mapNotNull null
+                val w = WealthType.fromCnStrict(c.wealthType) ?: return@mapNotNull null
                 ScanRow(
                     stockId = c.stockId, code = c.code, symbol = c.symbol, name = c.name,
-                    industry = c.industry, wealth = WealthType.fromCn(c.wealthType),
-                    dayTenGod = god, fromHiddenStem = !god.isWealth,
+                    industry = c.industry, wealth = w, dayTenGod = god,
+                    fromHiddenStem = !god.isWealth,
                 )
             }
-            return ScanSummary(
-                date = date, rows = rows,
-                zhengCount = rows.count { it.wealth == WealthType.ZHENG_CAI },
-                pianCount = rows.count { it.wealth == WealthType.PIAN_CAI },
-            )
+            if (rows.size == cached.size) {
+                return ScanSummary(
+                    date = date, rows = rows,
+                    zhengCount = rows.count { it.wealth == WealthType.ZHENG_CAI },
+                    pianCount = rows.count { it.wealth == WealthType.PIAN_CAI },
+                )
+            }
+            // 出现认不出的标签 = 这批缓存不是按当前口径算出来的（例如预置库换版后的残留）。
+            // 整批作废重算，而不是把脏标签静默渲染成"比肩"掩盖它 —— 后者与本文件
+            // dayDetail 里已声明的口径相悖，且会让计数悄悄错掉。
+            Log.w(TAG, "扫描缓存有 ${cached.size - rows.size} 条标签无法识别，作废重算: $date")
+            scanCacheDao.clear()
         }
         val v = verdicts(gz.dayStem, gz.dayBranch)
         val wealthOf = v.mapValues { it.value.wealth }
@@ -251,19 +268,19 @@ class AnalysisRepository(
     suspend fun filter(query: FilterQuery): List<ScanRow> {
         val gz = day(query.date) ?: return emptyList()
         val trade = isTrade(query.date)
-        val hiddenIds: Set<Long>? = query.hiddenGods.takeIf { it.isNotEmpty() }
-            ?.let { filterDao.stockIdsByHiddenGods(it.map { g -> g.cn }).toSet() }
         // 时间三维的十神只由日主决定：先用 10 个日主筛掉不可能的日主，再取候选股票
-        val allowedStems = com.stockfortune.app.domain.calculator.BaziTables.STEMS.filter { ds ->
+        val allowedStems = BaziTables.STEMS.filter { ds ->
             temporalMatch(query.yearGods, ds, gz.yearStem, gz.yearBranch) &&
                 temporalMatch(query.monthGods, ds, gz.monthStem, gz.monthBranch) &&
                 temporalMatch(query.dayGods, ds, gz.dayStem, gz.dayBranch)
         }
         if (allowedStems.isEmpty()) return emptyList()
-        val hiddenGodOf = if (hiddenIds == null) emptyMap() else
-            dbHiddenGodsByStock(query.hiddenGods.toList())
+        // 藏干维度一次取回"哪些股票命中 + 各命中了哪些十神"。先前还额外跑了一遍
+        // stockIdsByHiddenGods，取的正是同一个集合的键，等于把 stock_hidden_ten_god 白扫两次。
+        val hiddenGodOf: Map<Long, List<TenGod>> =
+            if (query.hiddenGods.isEmpty()) emptyMap() else dbHiddenGodsByStock(query.hiddenGods.toList())
         val out = baziDao.byDayStems(allowedStems).mapNotNull { s ->
-            if (hiddenIds != null && s.stockId !in hiddenIds) return@mapNotNull null
+            if (hiddenGodOf.isNotEmpty() && s.stockId !in hiddenGodOf) return@mapNotNull null
             val hits = LinkedHashSet<TenGod>()
             if (query.hiddenGods.isNotEmpty()) hits += hiddenGodOf[s.stockId].orEmpty()
             temporalHits(query.yearGods, s.dayStem, gz.yearStem, gz.yearBranch)?.let { hits += it }
@@ -307,8 +324,20 @@ class AnalysisRepository(
         return map.mapValues { (_, v) -> v.distinct().sortedBy { TenGod.ORDER.indexOf(it) } }
     }
 
-    /** 八字择日：区间内命中财星的日期 */
-    suspend fun dateSelect(stockId: Long, start: String, end: String, onlyTradeDays: Boolean = false): List<com.stockfortune.app.domain.model.DateSelectionRow> {
+    /**
+     * 八字择日：区间内命中财星的日期。
+     *
+     * `limit` 是必需的：选择器放开 1990-12-01~2035-12-31 全域，木日主（土为财）在整区间
+     * 约有 7684 个命中日，不限量会把这一页的整页滚动列表撑爆。返回条数等于 limit 时
+     * 说明被截断，调用方须如实告知用户。
+     */
+    suspend fun dateSelect(
+        stockId: Long,
+        start: String,
+        end: String,
+        onlyTradeDays: Boolean = false,
+        limit: Int = DATE_SELECT_LIMIT,
+    ): List<DateSelectionRow> {
         val bazi = baziDao.findByStockId(stockId) ?: return emptyList()
         val s = maxOf(start, calendarDao.minDate() ?: start)
         val e = minOf(end, calendarDao.maxDate() ?: end)
@@ -320,11 +349,11 @@ class AnalysisRepository(
             if (onlyTradeDays && !trade) return@mapNotNull null
             val w = TenGodCalculator.wealthType(bazi.dayStem, gz.dayStem, gz.dayBranch)
             if (w == WealthType.OTHER) return@mapNotNull null
-            com.stockfortune.app.domain.model.DateSelectionRow(
+            DateSelectionRow(
                 date = gz.date, weekday = LocalDate.parse(gz.date).dayOfWeek.value, isTradeDay = trade,
                 dayGanzhi = gz.dayGanzhi, wealth = w, dayTenGod = TenGodCalculator.tenGod(bazi.dayStem, gz.dayStem),
             )
-        }
+        }.take(limit)
     }
 
     suspend fun clearCache() = scanCacheDao.clear()

@@ -9,7 +9,6 @@ import com.stockfortune.app.ui.detail.DailyTab
 import com.stockfortune.app.ui.detail.MonthTab
 import com.stockfortune.app.ui.detail.YearTab
 import com.stockfortune.app.ui.theme.StockFortuneTheme
-import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -34,16 +33,20 @@ class TabContentRenderTest {
         val month: com.stockfortune.app.domain.model.MonthAnalysis,
     )
 
+    /**
+     * 固定到 2026-09 而不是 LocalDate.now()：下面的断言写的是该月的内容
+     * （21 个交易日、9 月 1 日这一行），跟着系统日期走每月都会漂成红灯。
+     */
     private fun fixtures(): Fixtures {
         val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
         val container = AppContainer(ctx)
+        val (year, month) = 2026 to 9
         return runBlocking {
             val detail = container.stockRepository.detail("600519")
             assertNotNull("取不到 600519", detail)
-            val today = LocalDate.now()
             Fixtures(
-                year = container.analysisRepository.yearAnalysis(detail!!.stock.id, today.year)!!,
-                month = container.analysisRepository.monthDays(detail.stock.id, today.year, today.monthValue)!!,
+                year = container.analysisRepository.yearAnalysis(detail!!.stock.id, year)!!,
+                month = container.analysisRepository.monthDays(detail.stock.id, year, month)!!,
             )
         }
     }

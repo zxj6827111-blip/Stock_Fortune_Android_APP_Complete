@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "0f00a3a6ebe0367dc7c071be074f1091",
+    "identityHash": "aeb7339127b32582643fdf0f251d64c6",
     "entities": [
       {
         "tableName": "stock",
@@ -253,6 +253,15 @@
           ]
         },
         "indices": [
+          {
+            "name": "index_stock_bazi_day_stem",
+            "unique": false,
+            "columnNames": [
+              "day_stem"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_stock_bazi_day_stem` ON `${TABLE_NAME}` (`day_stem`)"
+          },
           {
             "name": "index_stock_bazi_day_pillar",
             "unique": false,
@@ -595,7 +604,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0f00a3a6ebe0367dc7c071be074f1091')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'aeb7339127b32582643fdf0f251d64c6')"
     ]
   }
 }

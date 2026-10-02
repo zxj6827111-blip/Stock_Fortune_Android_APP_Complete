@@ -23,6 +23,10 @@ enum class WealthType(val cn: String) {
 
     companion object {
         fun fromCn(s: String?): WealthType = entries.firstOrNull { it.cn == s } ?: OTHER
+
+        /** 严格版：认不出就返回 null。缓存/持久化数据用它判定"这批该作废"，
+         *  而不是把无法识别的标签洗白成 OTHER。 */
+        fun fromCnStrict(s: String?): WealthType? = entries.firstOrNull { it.cn == s }
     }
 }
 

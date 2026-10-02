@@ -1,0 +1,6 @@
+# 离线资产构建器（tools/）的第三方依赖，版本钉死。
+#
+# 干支与节气日历的 16467 行全部由 lunar-python 生成，换一个小版本就可能换一批日期，
+# 而产物是打进 APK 的数据事实。仓库自带 gradle wrapper 却没有 Python 侧的等价约束，
+# 这里补上；tools/build_all.sh 会在第 0 步断言它可用。
+lunar-python==1.4.8

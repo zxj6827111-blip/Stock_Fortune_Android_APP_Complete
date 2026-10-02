@@ -3,7 +3,6 @@ package com.stockfortune.app
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stockfortune.app.ui.vm.StockDetailViewModel
-import java.time.LocalDate
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
@@ -25,8 +24,11 @@ class DetailViewModelTest {
         val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
         AppRuntime.container = AppContainer(ctx)
         val vm = StockDetailViewModel(AppRuntime.container)
-        val today = LocalDate.now()
-        vm.load("600519", today.year, today.year to today.monthValue, today.year to today.monthValue)
+        // 固定到 2026-09：原先取 LocalDate.now()，但断言的是该月的交易日数，
+        // 跨月后（如 10 月 22 个交易日）输入与断言就不是同一个月了。
+        val year = 2026
+        val month = 9
+        vm.load("600519", year, year to month, year to month)
 
         val latch = CountDownLatch(1)
         var waited = 0
@@ -40,6 +42,8 @@ class DetailViewModelTest {
         assertNotNull("年度数据未装载: loading=${s.loading} yearValue=${s.yearValue}", s.year)
         assertNotNull("月度数据未装载", s.month)
         assertNotNull("每日数据未装载", s.daily)
+        assertEquals(year, s.yearValue)
+        assertEquals(month, s.monthValue)
         assertEquals(12, s.year!!.months.size)
         assertEquals(21, s.month!!.tradeDayCount)
     }

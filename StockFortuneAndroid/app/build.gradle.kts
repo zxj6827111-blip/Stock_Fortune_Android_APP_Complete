@@ -13,25 +13,32 @@ android {
         applicationId = "com.stockfortune.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
         resourceConfigurations += listOf("zh", "zh-rCN")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    signingConfigs {
-        create("localRelease") {
-            // 签名材料不随交付树分发：keystore 与口令存放在用户目录
-            // ~/.stockfortune-keystore/（口令仅经环境变量注入，见 tools/build_all.sh）。
-            // 可用 -PsfKeystoreDir=... 覆盖目录。
-            val ksDir = providers.gradleProperty("sfKeystoreDir").orNull
-                ?: File(System.getProperty("user.home"), ".stockfortune-keystore").absolutePath
-            storeFile = File(ksDir, "sf-release.jks")
-            storePassword = System.getenv("SF_STORE_PASSWORD")
-                ?: error("缺少 SF_STORE_PASSWORD：source ~/.stockfortune-keystore/secrets.env 后重试")
-            keyAlias = System.getenv("SF_KEY_ALIAS") ?: "sfrelease"
-            keyPassword = System.getenv("SF_KEY_PASSWORD")
-                ?: error("缺少 SF_KEY_PASSWORD：source ~/.stockfortune-keystore/secrets.env 后重试")
+    // 签名材料不随交付树分发：keystore 与口令存放在用户目录
+    // ~/.stockfortune-keystore/（口令仅经环境变量注入，见 tools/build_all.sh）。
+    // 可用 -PsfKeystoreDir=... 覆盖目录。
+    //
+    // 口令缺失时不建这个 config：create(name) { } 会立即执行配置块，若在配置期 error()
+    // 则 test/lint/help 在任何无口令环境（CI、clone 后首次）全都跑不起来。release
+    // 缺口令时改为产出 app-release-unsigned.apk，由 build_all.sh 第 [7]/[8] 步的 cp 与
+    // apksigner verify 明确失败，不会静默产出"已签名的正式包"。
+    val sfStorePassword = System.getenv("SF_STORE_PASSWORD")
+    val sfKeyPassword = System.getenv("SF_KEY_PASSWORD")
+    if (sfStorePassword != null && sfKeyPassword != null) {
+        signingConfigs {
+            create("localRelease") {
+                val ksDir = providers.gradleProperty("sfKeystoreDir").orNull
+                    ?: File(System.getProperty("user.home"), ".stockfortune-keystore").absolutePath
+                storeFile = File(ksDir, "sf-release.jks")
+                storePassword = sfStorePassword
+                keyAlias = System.getenv("SF_KEY_ALIAS") ?: "sfrelease"
+                keyPassword = sfKeyPassword
+            }
         }
     }
 
@@ -45,7 +52,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("localRelease")
+            signingConfigs.findByName("localRelease")?.let { signingConfig = it }
         }
     }
 

@@ -18,7 +18,7 @@
     "stock": 5395,
     "ganzhi_calendar": 16467,
     "trade_calendar": 16467,
-    "trade_days": 11188,
+    "trade_days": 11207,
     "stock_bazi": 5395,
     "stock_hidden_ten_god": 53347,
     "app_meta": 10
@@ -27,17 +27,12 @@
     "start": "1990-12-01",
     "end": "2035-12-31",
     "version": "2026-09-29",
-    "observed_corrections": 7,
+    "observed_corrections": 2,
     "correction_samples": [
-      "1996-09-27:中秋节",
       "1996-10-03:国庆节",
-      "1997-06-09:端午节",
-      "1999-05-07:劳动节",
-      "1999-06-18:端午节",
-      "2004-06-22:端午节",
-      "2007-09-25:中秋节"
+      "1999-05-07:劳动节"
     ]
   },
-  "db_bytes": 8503296,
-  "sql_lines": 97102
+  "db_bytes": 8568832,
+  "sql_lines": 97103
 }
