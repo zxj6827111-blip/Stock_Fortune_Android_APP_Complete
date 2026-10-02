@@ -73,13 +73,14 @@ import com.stockfortune.app.ui.components.WealthTag
 import com.stockfortune.app.ui.navigation.Routes
 import com.stockfortune.app.ui.theme.SfColors
 import com.stockfortune.app.ui.theme.SfDimens
+import com.stockfortune.app.ui.vm.AppClock
 import com.stockfortune.app.ui.vm.DateSelectViewModel
 import java.time.LocalDate
 
 private val HintBlueBg = Color(0xFFEAF2FE)
 private val ErrorRed = Color(0xFFE5484D)
-private const val MIN_YEAR = 1990
-private const val MAX_YEAR = 2035
+/** 本屏是 verticalScroll 的非懒加载容器，结果区必须限量渲染。 */
+private const val SHOW_LIMIT = 80
 
 /** 八字择日：股票代码 + 日期区间 → 吉日列表（对齐效果图 08）。 */
 @Composable
@@ -249,8 +250,10 @@ fun DateSelectScreen(nav: NavHostController, initialCode: String) {
                     },
                 )
                 state.resolvedName?.let {
+                    // 用"实际算过的区间"，不能用当前表单值：改完日期还没重跑时，
+                    // 旧写法会让标题显示新区间、列表还是旧结果，展示的是假信息。
                     Text(
-                        "$it · ${state.start} 至 ${state.end}",
+                        "$it · ${state.ranStart} 至 ${state.ranEnd}",
                         style = MaterialTheme.typography.labelSmall,
                         color = SfColors.TextSub,
                         modifier = Modifier.padding(horizontal = 12.dp),
@@ -268,7 +271,24 @@ fun DateSelectScreen(nav: NavHostController, initialCode: String) {
                         ),
                     )
                     Box(Modifier.padding(horizontal = 12.dp).fillMaxWidth().height(0.5.dp).background(SfColors.Divider))
-                    rows.forEach { DateResultRow(it) }
+                    // 本屏整体是 verticalScroll 的非懒加载容器，行数不设上限时选择器放开
+                    // 45 年、木日主可命中约 7684 天，会一次性同步组合七千多行而卡死主线程。
+                    rows.take(SHOW_LIMIT).forEach { DateResultRow(it) }
+                    if (state.truncated) {
+                        Text(
+                            stringResource(R.string.date_select_capped, SHOW_LIMIT),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SfColors.DeepBlue,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                    } else if (rows.size > SHOW_LIMIT) {
+                        Text(
+                            stringResource(R.string.date_select_more, rows.size - SHOW_LIMIT),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SfColors.DeepBlue,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                    }
                 }
             }
         }
@@ -286,7 +306,7 @@ fun DateSelectScreen(nav: NavHostController, initialCode: String) {
         val current = if (picking == 1) state.start else state.end
         SfDatePickerDialog(
             title = if (picking == 1) stringResource(R.string.date_select_start) else stringResource(R.string.date_select_end),
-            initial = GanzhiCalculator.parse(current) ?: LocalDate.now(),
+            initial = GanzhiCalculator.parse(current) ?: AppClock.today(),
             onDismiss = { picking = 0 },
             onPick = { picked ->
                 val iso = GanzhiCalculator.iso(picked)
@@ -405,57 +425,4 @@ private fun TradeFlag(trade: Boolean, modifier: Modifier = Modifier) {
             color = if (trade) SfColors.TradeGreen else SfColors.TextSub,
         )
     }
-}
-
-
-@Composable
-private fun StepperRow(label: String, value: String, onDec: () -> Unit, onInc: () -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(vertical = 5.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = SfColors.TextSub, modifier = Modifier.width(34.dp))
-        Spacer(Modifier.weight(1f))
-        StepButton("−", onDec)
-        Box(
-            Modifier
-                .padding(horizontal = 10.dp)
-                .width(72.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(SfColors.OtherTagBg)
-                .padding(vertical = 8.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(value, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = SfColors.TextMain)
-        }
-        StepButton("＋", onInc)
-    }
-}
-
-@Composable
-private fun StepButton(glyph: String, onClick: () -> Unit) {
-    Box(
-        Modifier
-            .size(34.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(SfColors.DeepBlue.copy(alpha = 0.10f))
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(glyph, fontSize = 18.sp, color = SfColors.DeepBlue, fontWeight = FontWeight.Bold)
-    }
-}
-
-private fun clampDate(year: Int, month: Int, day: Int): LocalDate {
-    val y = year.coerceIn(MIN_YEAR, MAX_YEAR)
-    val m = month.coerceIn(1, 12)
-    val last = LocalDate.of(y, m, 1).lengthOfMonth()
-    return LocalDate.of(y, m, day.coerceIn(1, last))
-}
-
-private fun shiftMonth(date: LocalDate, delta: Int): LocalDate {
-    val idx = date.year * 12 + (date.monthValue - 1) + delta
-    return clampDate(Math.floorDiv(idx, 12), Math.floorMod(idx, 12) + 1, date.dayOfMonth)
 }

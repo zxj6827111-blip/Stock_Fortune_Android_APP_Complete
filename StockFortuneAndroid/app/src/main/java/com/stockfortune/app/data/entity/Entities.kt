@@ -27,6 +27,9 @@ data class StockEntity(
 )
 
 @Entity(tableName = "stock_bazi", indices = [
+    // day_stem 是扫描/筛选的热谓词（`WHERE b.day_stem IN (:stems)`）；缺它时 SQLite 只能
+    // 全表扫 stock 再按 rowid 回查，Daos 注释里那次"3.3s→0.3s"的优化实际没有生效。
+    Index("day_stem"),
     Index("day_pillar"), Index("year_pillar"), Index("month_pillar"),
 ])
 data class StockBaziEntity(

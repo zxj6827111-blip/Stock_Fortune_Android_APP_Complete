@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stockfortune.app.data.db.AppDatabase
 import com.stockfortune.app.data.repository.AnalysisRepository
 import com.stockfortune.app.data.repository.CalendarRepository
+import com.stockfortune.app.data.repository.ClassicQuoteRepository
 import com.stockfortune.app.data.repository.StockRepository
 import com.stockfortune.app.domain.model.FilterQuery
 import com.stockfortune.app.domain.model.TenGod
@@ -40,7 +41,10 @@ class RuntimeSmokeTest {
     fun setUp() {
         val ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.app.Application>()
         db = AppDatabase.get(ctx)
-        stocks = StockRepository(db.stockDao(), db.baziDao(), db.filterDao(), db.favoriteDao(), db.metaDao())
+        stocks = StockRepository(
+            db.stockDao(), db.baziDao(), db.filterDao(), db.favoriteDao(), db.metaDao(),
+            ClassicQuoteRepository(ctx),
+        )
         calendar = CalendarRepository(db.calendarDao())
         analysis = AnalysisRepository(db.calendarDao(), db.baziDao(), db.filterDao(), db.scanCacheDao())
     }
@@ -128,15 +132,11 @@ class RuntimeSmokeTest {
 
     @Test
     fun `全市场扫描与十神筛选与 Python 口径一致`() = runBlocking {
-        // Robolectric 每个用例都会新建 data 目录并复制 8MB 预置库，首查含复制开销；
-        // 这里量的是真机上的稳态耗时（库已就位）。
-        analysis.scan("2026-09-29", persist = false)
-        val start = System.currentTimeMillis()
         val scan = analysis.scan("2026-09-29", persist = false)
-        val cost = System.currentTimeMillis() - start
         assertEquals(465, scan.zhengCount)
         assertEquals(511, scan.pianCount)
-        assertTrue("单日全市场扫描稳态耗时 ${cost}ms 超阈值", cost < 800)
+        // 不断言耗时：Robolectric 用例共享 JVM、机器负载抖动几十倍，`cost < 800` 这种
+        // 断言只会制造偶发红灯。性能基线该放到 instrumentation 或专门的基准里测。
         assertTrue(scan.rows.first().wealth == WealthType.ZHENG_CAI)
 
         val filtered = analysis.filter(FilterQuery(setOf(TenGod.ZHENG_CAI), emptySet(), emptySet(), emptySet(), "2026-09-29"))
@@ -212,10 +212,13 @@ class RuntimeSmokeTest {
         assertEquals(3, tradeRows.count { it.wealth == WealthType.ZHENG_CAI })
         assertEquals(5, tradeRows.count { it.wealth == WealthType.PIAN_CAI })
         assertTrue(rows.all { it.wealth.isWealth })
-        assertTrue(rows.any { !it.isTradeDay } || rows.all { it.isTradeDay })
+        // 旧断言 `rows.any { !it.isTradeDay } || rows.all { it.isTradeDay }` 是恒真式，
+        // 任何数据都满足、等于没测。这里改成实指：不限制时能看到非交易日的财日，
+        // 而"仅交易日"开关去掉的恰好就是这些行。
+        assertTrue("2026-09 区间应含非交易日的财日", rows.any { !it.isTradeDay })
         val onlyTrade = analysis.dateSelect(id, "2026-09-01", "2026-09-30", onlyTradeDays = true)
         assertTrue(onlyTrade.all { it.isTradeDay })
-        assertTrue(onlyTrade.size <= rows.size)
+        assertEquals(rows.count { !it.isTradeDay }, rows.size - onlyTrade.size)
     }
 
     @Test

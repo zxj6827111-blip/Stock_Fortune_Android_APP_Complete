@@ -41,6 +41,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stockfortune.app.R
@@ -335,10 +336,12 @@ fun SfStatCard(
     hint: String,
     accent: Color,
     background: Color,
+    /** 福袋样式属于业务判定，必须由调用方显式给出。旧实现用 label.contains("正财") 推断，
+     *  改文案（"正财日"/"正财股"）或接 i18n 就会让偏财卡静默渲染成正财样式。 */
+    zhengCai: Boolean,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
 ) {
-    val isZheng = label.contains("正财")
     Row(
         modifier = modifier
             .shadow(1.5.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x080D2743), spotColor = Color(0x100D2743))
@@ -349,7 +352,7 @@ fun SfStatCard(
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        FortuneBagBadge(isZhengCai = isZheng)
+        FortuneBagBadge(isZhengCai = zhengCai)
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -578,11 +581,17 @@ fun SfRowContainer(
 typealias RowScopeAlias = androidx.compose.foundation.layout.RowScope
 
 @Composable
-fun SfTableHeader(columns: List<Pair<String, Float>>, modifier: Modifier = Modifier) {
+fun SfTableHeader(
+    columns: List<Pair<String, Float>>,
+    modifier: Modifier = Modifier,
+    /** 数据行尾部若有固定宽度的箭头/图标，表头必须按同宽留位，否则加权列分到的宽度不同，列会逐列错位 */
+    trailingWidth: Dp = 0.dp,
+) {
     Row(modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
         columns.forEach { (label, weight) ->
             Text(label, style = MaterialTheme.typography.labelSmall, color = SfColors.TextSub, modifier = Modifier.weight(weight))
         }
+        if (trailingWidth > 0.dp) Spacer(Modifier.width(trailingWidth))
     }
 }
 

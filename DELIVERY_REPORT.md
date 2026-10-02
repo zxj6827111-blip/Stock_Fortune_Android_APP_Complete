@@ -1,7 +1,7 @@
-# 交付报告 · 股运通（Stock Fortune Android APP）v1.0.0
+# 交付报告 · 股运通（Stock Fortune Android APP）v1.1.0
 
-交付日期：2026-09-29 ｜ 目标：完全离线的 A 股股票八字 / 十神 / 择日研究 APP（Kotlin + Room/SQLite）
-结论：**功能全部实现，可安装 APK 已产出并通过签名与离线校验**。视觉细节仍需真机确认（见 §6）。
+交付日期：2026-09-29（v1.0.0）｜ 封版：2026-10-02（v1.1.0，versionCode 2）｜ 目标：完全离线的 A 股股票八字 / 十神 / 择日研究 APP（Kotlin + Room/SQLite）
+结论：**v1.1.0 可封版**。v1.0.0 之后做了一次全仓代码审计，修掉 3 个 CRITICAL（其中一个是出厂交易日历数据错判）、9 个 HIGH，并在模拟器上按用户路径逐项复验通过（见 §11）。
 
 ---
 
@@ -9,13 +9,15 @@
 
 | 类别 | 路径 | 说明 |
 |---|---|---|
-| 可安装包 | `StockFortuneAndroid/release/stock-fortune-release.apk` | 12 MB，R8 混淆 + 本地自签名（v2 方案），**推荐安装** |
-| 调试包 | `StockFortuneAndroid/release/stock-fortune-debug.apk` | 约 29 MB，含 Compose 调试工具 |
+| 可安装包 | `StockFortuneAndroid/release/stock-fortune-release.apk` | 11 MB，`versionName=1.1.0` / `versionCode=2`，R8 混淆 + 本地自签名（v2 方案），**推荐安装** |
+| 调试包 | `StockFortuneAndroid/release/stock-fortune-debug.apk` | 约 27 MB，含 Compose 调试工具 |
+| 崩溃反解映射 | `StockFortuneAndroid/release/verification/mapping-release.txt` | R8 `mapping.txt` 归档（v1.0.0 未归档，线上栈无法反解） |
 | 安装/签名/数据更新 | `StockFortuneAndroid/release/README.md` | 含 adb 与手动两种安装路径、证书信息、数据更新流程 |
 | 使用说明 | `StockFortuneAndroid/release/USAGE_GUIDE.md` | 8 个页面逐页操作说明 + FAQ |
 | 设计审查 | `PHASE0_DESIGN_REVIEW.md` | Phase 0 审查报告（数据源实测、效果图解析、库表/工程/路由/任务拆解） |
-| 源码工程 | `StockFortuneAndroid/` | 29 个 Kotlin 文件、5700+ 行；含 `app/schemas` Room 导出 |
-| 数据工具链 | `StockFortuneAndroid/tools/` | 主表+行业表→SQLite、节气/交易日历生成、31 项数据门禁、parity 夹具、Robolectric 运行时冒烟、一键构建 |
+| 源码工程 | `StockFortuneAndroid/` | 42 个 Kotlin 文件、约 8.9k 行；含 `app/schemas` Room 导出 |
+| 数据工具链 | `StockFortuneAndroid/tools/` | 主表+行业表→SQLite、节气/交易日历生成、35 项数据门禁、parity 夹具、Robolectric 运行时冒烟、一键构建（含依赖与数据源前置断言） |
+| 引文语料链 | `tools/extract_classics.py`、`verify_classics.py`、`classics_selection.py`、`tools/tests/` | 《滴天髓輯要》精校底本→随包 JSON，28/31 项语料门禁 + 59 项行为测试 |
 | 预置库产物 | `StockFortuneAndroid/database/init_stock_fortune.sql`、`import_report.json` | 9.7 万行可审阅 SQL + 构建报告 |
 | 补出素材 | `Stock_Fortune_Android_APP_AI_Start_Kit/design_assets/generated/hero_night_mountain.png` | 效果图主视觉背景（资料包未提供，按 UI 规范生成待审） |
 
@@ -28,10 +30,11 @@
 | 年度运势（12 干支月 正财/偏财/无） | ✅ | `Tabs.YearTab` + `AnalysisRepository.yearAnalysis` | TabContentRenderTest 断言 12 个月份行 |
 | 月度运势（日历视图 + 财日分布） | ✅ | `Tabs.MonthTab` | TabContentRenderTest；21 交易日 / 正财3 / 偏财5 |
 | 每日分析（仅交易日列表） | ✅ | `Tabs.DailyTab` | TabContentRenderTest；含 正官/食神/伤官/偏印 等非财星标签 |
-| 每日全市场扫描（正财/偏财列表） | ✅ | `ui/scanner` + `AnalysisRepository.scan` | 2026-09-29 实测 正财465 / 偏财511，稳态 < 800 ms |
-| 十神筛选（藏干/流年/流月/流日四维） | ✅ | `ui/filter` + `AnalysisRepository.filter` | RuntimeSmokeTest（组内 OR、组间 AND） |
-| 八字择日（区间 + 交易日标记） | ✅ | `ui/dateselect` | ScreenRenderTest 端到端点击出「共找到 N 个吉日」 |
-| 交易日历（全局） | ✅ | `ui/calendar` | 16467 天 / 10833 交易日，含休市原因与可信度标注 |
+| 每日全市场扫描（正财/偏财列表） | ✅ | `ui/scanner` + `AnalysisRepository.scan` | 2026-09-29 实测 正财465 / 偏财511；非交易日（如 2024-04-04 清明）正确拒绝出列表并给出提示 |
+| 十神筛选（藏干/流年/流月/流日四维） | ✅ | `ui/filter` + `AnalysisRepository.filter` | RuntimeSmokeTest（组内 OR、组间 AND）；真机验前 50 条截断提示 |
+| 八字择日（区间 + 交易日标记） | ✅ | `ui/dateselect` | 真机 27 年区间不卡死；仓储 400 / 界面 80 两级限量并如实提示 |
+| 交易日历（全局） | ✅ | `ui/calendar` | 16467 天 / **11207 交易日**，含休市原因与可信度标注（"已公布休市安排" / "规则推算"） |
+| 典籍依据（古籍引文卡） | ✅ | `data/repository/ClassicQuoteRepository` + `Tabs.ClassicsCard` | 20 条《滴天髓輯要》原注节选，随包 JSON；`ClassicsCorpusTest` 含 6 类负路径、`ClassicsRenderTest` 验 Found/NoMatch/LoadFailed 三态 |
 | 我的 / 设置 / 算法口径说明 | ✅ | `ui/profile` | 底部导航渲染测试通过 |
 | 不接服务器 / 不接行情 | ✅ | 清单未声明 `INTERNET` | `aapt2 dump badging` 结果 0 次出现 |
 | 不做涨跌预测 / 收益回测 / AI 解释 | ✅ | 无相关代码；文案为静态映射 | 测试断言文案不含「买入/卖出/涨幅/收益率/必涨/稳赚」 |
@@ -39,16 +42,21 @@
 ## 3. 测试与质量结果
 
 ```
-tools/verify_database.py  →  31 通过 / 0 失败     （数据层门禁，含行业覆盖 3 项）
-gradle testDebugUnitTest  →  34 通过 / 0 失败     （15 规则 + 11 运行时 + 1 ViewModel + 7 渲染）
-apksigner verify          →  通过（v2 签名，1 个签名者）
+tools/build_all.sh（9 步一键）    →  BUILD_ALL_OK，真实退出码 0
+tools/verify_database.py  →  35 通过 / 0 失败   （数据层门禁，含 2026-10-02 新增 4 项休市覆盖与溯源校验）
+tools/verify_classics.py  →  CLASSICS_OK        （引文语料门禁；--against-source 另加 3 项）
+tools/tests/              →  74 通过            （34 抽取 + 25 语料门禁反例 + 15 交易日历）
+gradle testDebugUnitTest  →  62 通过 / 0 失败   （含 Robolectric 实渲染与运行时冒烟）
+apksigner verify          →  通过（v2 签名，1 个签名者）；zipalign -c 4 通过
 ```
 
-数据层 28 项门禁包含：5395 行四柱逐字复算、日柱 60 甲子算式独立校验、时柱五鼠遁校验、
+数据层 35 项门禁包含：5395 行四柱逐字复算、日柱 60 甲子算式独立校验、时柱五鼠遁校验、
 与"时刻粒度"实现的差异必须全部落在交节当日、兄弟项目 golden 用例、日历无缺日、
-日柱无跳变、年柱仅在 1-2 月切换、**5395 个真实上市日全部为交易日**、周末休市、
+日柱无跳变、年柱仅在 1-2 月切换且**每年至多一次**、**5395 个真实上市日全部为交易日**、周末休市、
+**每个完整年度的法定假日族都产生休市判定**、**2008 年前不得把清明/端午/中秋判为休市**、
+**已公布年份的节假日族必须以 curated 判定**、**已公布年份交易日数落在 241~247**、
 预置库 DDL 与 Room schema 逐字一致、`room_master_table` 身份哈希一致、
-33 条 DAO 语句全部可预编译、`PRAGMA integrity_check`、库体积 7.9 MB。
+DAO 语句全部可预编译、`PRAGMA integrity_check`、库体积约 8.6 MB。
 
 ## 4. 开发过程中发现并修掉的问题
 
@@ -215,3 +223,55 @@ bash tools/fetch_robolectric.sh http://127.0.0.1:7897   # 仅首次跑 UI 测试
 另记录一次我自己的验证脚本错误（`Solar.fromYmd` 默认 00:00 子时，须用 `fromYmdHms(...,9,30,0)`），修正后才是上表的 0 不一致——写在此处以免日后照抄错判。
 
 复跑：31/31 数据门禁、37/37 单测、lint 0 Error、双 APK 重出、覆盖安装零崩溃。
+
+---
+
+## 11. 全仓代码审计与 v1.1.0 封版（2026-10-02）
+
+对 42 个 Kotlin 文件 + 20 个 Python/Shell 构建脚本 + 随包资产做了逐文件审计，并按优先级修复。
+以下每条都有 `file:line` 依据与验证手段；**一条初判 CRITICAL 经复核被否掉**（见 11.4）。
+
+### 11.1 CRITICAL（3 项，全部修掉并重出预置库）
+
+| # | 问题 | 影响 | 处置与验证 |
+|---|---|---|---|
+| 1 | **出厂交易日历错判**：`closures_for` 写成「表里有该年就完全不走规则」的互斥分支，2024 的 curated 表只登记元旦/春节/国庆 | 2024 年清明/劳动/端午/中秋共 **8 个真实休市周中**被标成交易日（2024 交易日数 250，邻年 243）。真机复算：旧库会让扫描页在 2024-04-04（清明节）**列出 1057 只股票**（正财 480 / 偏财 577） | 改为「curated ∪ 特殊休市 ∪ 规则补位」，同族以公告为准；按沪深北公告补录 2024 四个节日、按上交所公告修正 2026 春节至 2/23。新增 4 项门禁（C25/C26/C27/C28）+ 15 项单元测试。**旧库上门禁确实报红、新库转绿** |
+| 2 | **早年节假日被过度套用**：清明/端午/中秋自 2008 年才法定，规则推算无条件套用 | 1991–2007 间 **33 个周中**被误判休市。直接反证：1996-09-27（中秋）、1997-06-09 / 1999-06-18 / 2004-06-22（端午）、2007-09-25（中秋）**当天都有新股上市** | 加 `STATUTORY_LUNAR_HOLIDAY_START = 2008` 边界；C28 双向断言（2008 前不得有、2008 起必须有） |
+| 3 | **择日页非懒加载全量组合**：整页 `verticalScroll` 里 `rows.forEach`，选择器放开 45 年 | 木日主全区间命中 **7684** 天，一次分析即同步组合七千余行 → 主线程卡死量级 | 仓储层 `DATE_SELECT_LIMIT=400` + 界面渲染上限 80 + 两级如实提示。真机 27 年区间实测不卡死；两年区间实测「共找到 243 / 另有 163 个未列出」 |
+
+### 11.2 HIGH（9 项）
+
+1. `AppDatabase.get` 双检锁缺内层二次判空（此前仅被 `AppContainer` 的 `by lazy` 偶然保护）→ 已补。
+2. 资产守卫只比 `identityHash + DATA_VERSION`，`SCHEMA_VERSION` **全工程零读取** → 守卫串纳入版本，并让 `@Database(version = AssetManifest.SCHEMA_VERSION)` 成为单一来源（否则单独递增 Room 版本会让老用户升级即崩）。
+3. 9 个 ViewModel 的每个协程**都没有异常出口** → 统一 `launchLoad` 外壳：忙碌位必落回、取消异常原样上抛、失败写日志。此前任一跳异常即永久转圈。
+4. Scanner 首启即越界时只写提示、不复位 loading → 修复（提示与转圈同时出现的死局）。
+5. `AnalysisRepository` 扫描缓存用 `?: TenGod.BI_JIAN` 静默兜底，**与同文件已声明的口径自相矛盾** → 改为整批作废重算并记日志。
+6. **合规门禁是白名单式的**：只扫一份手工维护的 R.string id 列表，新加文案与 Composable 字面量全不受检；且禁词含裸词「收益」，导致「不做收益回测」这类边界声明**无法迁入资源**（会被误杀），反而被迫留在不受保护的地方 → 改为反射扫**全部**字符串资源 + 扫 `ui/**` 源码字面量 + 否定式豁免。**注入 `"短线机会，稳健获利"` 做变异测试，新门禁确实 FAIL**，随后还原。
+7. `stock_bazi.day_stem` 无索引，而它是扫描/筛选的热谓词 → 加索引；`EXPLAIN QUERY PLAN` 从 `SCAN s` 变 `SEARCH b USING COVERING INDEX`（原 `Daos.kt` 注释宣称的优化此前并未生效）。
+8. `signingConfigs.create{}` 在 configuration 期 `error()`，缺口令时连 `gradle test` / `lint` / `help` 都跑不起来（公开仓库不可复现）→ 无口令时不建该 config，release 转为未签名并由 `build_all.sh` 的 `cp` + `apksigner verify` 明确失败。
+9. **提交态测试套件已被系统日期打红**（`LocalDate.now()` 断言交易日数，`expected:<21> but was:<17>`）→ 引入可注入的 `AppClock`；封版前在 **2026-10-02（与写测试时不同日）** 重跑 62 用例全绿。
+
+### 11.3 MEDIUM / 低危（择要）
+
+流月序数被渲染成「1月 (寅月)」→ 改为「寅月 · 约2月」；`first_day_flag` 内部哨兵「数据缺失」泄漏到界面 → 降级为「—」（真机用 000004 验证）；表头与数据行权重/尾宽错配 → `SfTableHeader` 增 `trailingWidth` 并统一权重；福袋配色不再由 `label.contains("正财")` 决定；4 屏 `collectAsState` → `collectAsStateWithLifecycle`；筛选页两次重复查询合一；日历 `jumpTo` 加请求号；择日页校验日期格式、副标题改用**实际计算区间**、改表单即失效旧结果；引文资产加载期校验 `schema_version` / `page_basis`；删死代码（`StepperRow` 等、`stockIdsByHiddenGods`、`rank_nth`、未用 import）；`build_all.sh` 重写（默认走 wrapper、`SF_PY` 可覆盖、JDK/依赖/数据源前置断言、门禁失败保留完整明细、断言 APK 内含 assets/classics、归档 R8 mapping）；新增 `tools/requirements.txt` 钉 `lunar-python==1.4.8`；`.gitignore` 补 `__pycache__/`。
+
+### 11.4 审计中否掉的一条初判
+
+初判 `reinsertFavorites` 缺 `endTransaction`（会静默丢收藏）—— 重读 `AppDatabase.kt:122-124` 确认 `finally { endTransaction() }` 存在，**代码正确，已撤回该结论**。
+
+### 11.5 真机复验（sf_avd / Android 15 / 1080×2400）
+
+覆盖安装（9-30 旧包 → 1.1.0）：守卫身份由 `0f00a3a6…/2025-02-06+c5b68f7ae98c` 升为新格式，**收藏 1 条未丢**、scan_cache 正确作废、库内 `day_stem` 索引存在、2024 交易日数 242。逐页复验：日历 2024-04-04 显示「休市：清明节 / 已公布休市安排」；扫描页同日给出非交易日提示且无转圈；详情页 4 tab、月标签、表头对齐、典籍卡（含扫描页码 8 与「原注为节选」）、阴阳取值均正常；择日页限量提示与实际区间副标题一致；改表单不重跑时旧结果如实失效。全程 **0 FATAL / 0 ANR**，被吞异常日志为空。
+
+### 11.6 封版时的已知遗留（不挡本版，需记录）
+
+| 项 | 说明 | 性质 |
+|---|---|---|
+| 7 只股票上市日与哀悼日冲突 | 2008-05-20（汶川）、2010-04-21（玉树）落在官方休市日，被 `observed_open` 静默改判开市且不计入 `corrected` | **v1.0.0 既有行为，本版未引入回归**；修它需改源 xlsx，会连带改这 7 只的四柱 |
+| 详情页三态未分 | 永久转圈已修，但界面上「取数失败」与「无数据」仍同形 | 待做（M） |
+| `DatePicker` 边界仍硬编码 1990/2035 | 与库实际范围目前恰好一致 | 待做（S） |
+| `WealthType` OTHER/NONE 双语义 | 同一字段在不同页面分别表示「非交易日」与「无财星」 | 待做（M） |
+| `dateSelect` 未下推 SQL | 仍先取整个区间再筛 | 待做（M） |
+| 无 CI、lint 20 条 warning 挂账、Robolectric 固定 sdk 34 而 targetSdk 35 | 门禁只在本机执行 | 待做（M） |
+| `generated_at` 进 `app_meta` 且 DATA_VERSION 取整库 md5 | 输入不变、重跑一次 DATA_VERSION 也会变（本次实测 `956e96c610c9 → 7e3e2a0f9421`），导致每次重打包都让所有已装设备删库重抄 | 待做（M） |
+| 引文抽取器只锚段首的【存疑】、审计文档「85 切片全部一致」未经代码验证 | 语料侧 | 待做（S） |

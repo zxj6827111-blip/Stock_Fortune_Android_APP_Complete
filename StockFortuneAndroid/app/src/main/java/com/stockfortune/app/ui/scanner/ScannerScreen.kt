@@ -27,7 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -81,7 +81,7 @@ private val SCAN_COLUMNS = listOf(
 @Composable
 fun ScannerScreen(nav: NavHostController, wealth: String) {
     val vm: ScannerViewModel = sfViewModel { ScannerViewModel.Factory(sfContainer()) }
-    val st by vm.state.collectAsState()
+    val st by vm.state.collectAsStateWithLifecycle()
     var picking by remember { mutableStateOf(false) }
 
     LaunchedEffect(wealth) {
@@ -143,6 +143,7 @@ fun ScannerScreen(nav: NavHostController, wealth: String) {
                     SfStatCard(
                         label = stringResource(R.string.wealth_zheng),
                         value = zheng.toString(),
+                        zhengCai = true,
                         unit = stringResource(R.string.unit_only),
                         hint = FortuneText.SCAN_ZHENG_NOTE,
                         accent = SfColors.ZhengCai,
@@ -153,6 +154,7 @@ fun ScannerScreen(nav: NavHostController, wealth: String) {
                     SfStatCard(
                         label = stringResource(R.string.wealth_pian),
                         value = pian.toString(),
+                        zhengCai = false,
                         unit = stringResource(R.string.unit_only),
                         hint = FortuneText.SCAN_PIAN_NOTE,
                         accent = SfColors.PianCai,
@@ -211,7 +213,8 @@ fun ScannerScreen(nav: NavHostController, wealth: String) {
                             .background(SfColors.CardBg),
                     ) {
                         Spacer(Modifier.height(4.dp))
-                        SfTableHeader(SCAN_COLUMNS)
+                        // 数据行末尾有个不参与加权的 14dp 箭头，表头必须留同宽，否则最后一列漂偏
+                        SfTableHeader(SCAN_COLUMNS, trailingWidth = 14.dp)
                     }
                 }
                 itemsIndexed(rows, key = { _, row -> row.stockId }) { index, row ->

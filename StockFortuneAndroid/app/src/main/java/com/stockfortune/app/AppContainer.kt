@@ -7,6 +7,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.stockfortune.app.data.db.AppDatabase
 import com.stockfortune.app.data.repository.AnalysisRepository
 import com.stockfortune.app.data.repository.CalendarRepository
+import com.stockfortune.app.data.repository.ClassicQuoteRepository
 import com.stockfortune.app.data.repository.SettingsRepository
 import com.stockfortune.app.data.repository.StockRepository
 
@@ -16,8 +17,12 @@ private val Context.filterStore: DataStore<Preferences> by preferencesDataStore(
 class AppContainer(private val context: Context) {
     private val db by lazy { AppDatabase.get(context) }
     val calendarRepository by lazy { CalendarRepository(db.calendarDao()) }
+    val classicQuoteRepository by lazy { ClassicQuoteRepository(context) }
     val stockRepository by lazy {
-        StockRepository(db.stockDao(), db.baziDao(), db.filterDao(), db.favoriteDao(), db.metaDao())
+        StockRepository(
+            db.stockDao(), db.baziDao(), db.filterDao(), db.favoriteDao(), db.metaDao(),
+            classicQuoteRepository,
+        )
     }
     val analysisRepository by lazy {
         AnalysisRepository(db.calendarDao(), db.baziDao(), db.filterDao(), db.scanCacheDao())

@@ -8,6 +8,7 @@ CREATE INDEX IF NOT EXISTS `index_stock_name` ON `stock` (`name`);
 CREATE INDEX IF NOT EXISTS `index_stock_symbol` ON `stock` (`symbol`);
 CREATE INDEX IF NOT EXISTS `index_stock_listing_date` ON `stock` (`listing_date`);
 CREATE TABLE IF NOT EXISTS `stock_bazi` (`stock_id` INTEGER NOT NULL, `full_bazi` TEXT NOT NULL, `year_pillar` TEXT NOT NULL, `month_pillar` TEXT NOT NULL, `day_pillar` TEXT NOT NULL, `hour_pillar` TEXT NOT NULL, `year_stem` TEXT NOT NULL, `year_branch` TEXT NOT NULL, `month_stem` TEXT NOT NULL, `month_branch` TEXT NOT NULL, `day_stem` TEXT NOT NULL, `day_branch` TEXT NOT NULL, `hour_stem` TEXT NOT NULL, `hour_branch` TEXT NOT NULL, `day_master_element` TEXT NOT NULL, `month_season_element` TEXT NOT NULL, `na_yin` TEXT NOT NULL, PRIMARY KEY(`stock_id`));
+CREATE INDEX IF NOT EXISTS `index_stock_bazi_day_stem` ON `stock_bazi` (`day_stem`);
 CREATE INDEX IF NOT EXISTS `index_stock_bazi_day_pillar` ON `stock_bazi` (`day_pillar`);
 CREATE INDEX IF NOT EXISTS `index_stock_bazi_year_pillar` ON `stock_bazi` (`year_pillar`);
 CREATE INDEX IF NOT EXISTS `index_stock_bazi_month_pillar` ON `stock_bazi` (`month_pillar`);
@@ -80747,7 +80748,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-04-02',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-04-03',1,3,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-04-04',1,4,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-04-05',0,5,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-04-05',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-04-06',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-04-07',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-04-08',1,1,NULL,'rule');
@@ -80819,7 +80820,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-06-13',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-06-14',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-06-15',0,6,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-06-16',0,7,'端午节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-06-16',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-06-17',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-06-18',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-06-19',1,3,NULL,'rule');
@@ -80917,7 +80918,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-09-19',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-09-20',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-09-21',0,6,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-09-22',0,7,'中秋节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-09-22',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-09-23',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-09-24',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1991-09-25',1,3,NULL,'rule');
@@ -81112,7 +81113,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-04-01',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-04-02',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-04-03',1,5,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-04-04',0,6,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-04-04',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-04-05',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-04-06',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-04-07',1,2,NULL,'rule');
@@ -81174,7 +81175,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-06-02',1,2,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-06-03',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-06-04',1,4,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-06-05',0,5,'端午节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-06-05',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-06-06',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-06-07',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-06-08',1,1,NULL,'rule');
@@ -81272,7 +81273,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-09-08',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-09-09',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-09-10',1,4,'实测开市（真实上市日反查）','observed');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-09-11',0,5,'中秋节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-09-11',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-09-12',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-09-13',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1992-09-14',1,1,NULL,'rule');
@@ -81478,7 +81479,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-04-02',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-04-03',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-04-04',0,7,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-04-05',0,1,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-04-05',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-04-06',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-04-07',1,3,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-04-08',1,4,NULL,'rule');
@@ -81558,7 +81559,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-06-21',1,1,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-06-22',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-06-23',1,3,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-06-24',0,4,'端午节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-06-24',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-06-25',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-06-26',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-06-27',0,7,'周末','curated');
@@ -81656,7 +81657,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-09-27',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-09-28',1,2,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-09-29',1,3,'实测开市（真实上市日反查）','observed');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-09-30',0,4,'中秋节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-09-30',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-10-01',0,5,'国庆节','rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-10-02',0,6,'国庆节','rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1993-10-03',0,7,'国庆节','rule');
@@ -81843,7 +81844,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-04-02',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-04-03',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-04-04',1,1,'实测开市（真实上市日反查）','observed');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-04-05',0,2,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-04-05',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-04-06',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-04-07',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-04-08',1,5,'实测开市（真实上市日反查）','observed');
@@ -81912,7 +81913,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-06-10',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-06-11',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-06-12',0,7,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-06-13',0,1,'端午节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-06-13',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-06-14',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-06-15',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-06-16',1,4,NULL,'rule');
@@ -82011,7 +82012,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-09-17',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-09-18',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-09-19',1,1,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-09-20',0,2,'中秋节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-09-20',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-09-21',1,3,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-09-22',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1994-09-23',1,5,NULL,'rule');
@@ -82208,7 +82209,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-04-02',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-04-03',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-04-04',1,2,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-04-05',0,3,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-04-05',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-04-06',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-04-07',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-04-08',0,6,'周末','curated');
@@ -82266,7 +82267,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-05-30',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-05-31',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-06-01',1,4,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-06-02',0,5,'端午节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-06-02',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-06-03',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-06-04',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-06-05',1,1,NULL,'rule');
@@ -82365,7 +82366,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-09-06',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-09-07',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-09-08',1,5,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-09-09',0,6,'中秋节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-09-09',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-09-10',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-09-11',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1995-09-12',1,2,NULL,'rule');
@@ -82573,7 +82574,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-04-01',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-04-02',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-04-03',1,3,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-04-04',0,4,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-04-04',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-04-05',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-04-06',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-04-07',0,7,'周末','curated');
@@ -82650,7 +82651,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-06-17',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-06-18',1,2,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-06-19',1,3,'实测开市（真实上市日反查）','observed');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-06-20',0,4,'端午节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-06-20',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-06-21',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-06-22',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1996-06-23',0,7,'周末','curated');
@@ -82939,7 +82940,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-04-02',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-04-03',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-04-04',1,5,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-04-05',0,6,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-04-05',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-04-06',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-04-07',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-04-08',1,2,'实测开市（真实上市日反查）','observed');
@@ -83103,7 +83104,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-09-13',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-09-14',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-09-15',1,1,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-09-16',0,2,'中秋节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-09-16',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-09-17',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-09-18',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1997-09-19',1,5,NULL,'rule');
@@ -83304,7 +83305,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-04-02',1,4,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-04-03',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-04-04',0,6,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-04-05',0,7,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-04-05',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-04-06',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-04-07',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-04-08',1,3,'实测开市（真实上市日反查）','observed');
@@ -83359,7 +83360,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-05-27',1,3,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-05-28',1,4,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-05-29',1,5,'实测开市（真实上市日反查）','observed');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-05-30',0,6,'端午节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-05-30',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-05-31',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-06-01',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-06-02',1,2,'实测开市（真实上市日反查）','observed');
@@ -83487,7 +83488,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-10-02',0,5,'国庆节','rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-10-03',0,6,'国庆节','rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-10-04',0,7,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-10-05',0,1,'中秋节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-10-05',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-10-06',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-10-07',1,3,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1998-10-08',1,4,NULL,'rule');
@@ -83669,7 +83670,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-04-02',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-04-03',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-04-04',0,7,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-04-05',0,1,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-04-05',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-04-06',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-04-07',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-04-08',1,4,'实测开市（真实上市日反查）','observed');
@@ -83841,7 +83842,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-09-21',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-09-22',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-09-23',1,4,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-09-24',0,5,'中秋节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-09-24',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-09-25',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-09-26',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('1999-09-27',1,1,NULL,'rule');
@@ -84034,7 +84035,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-04-01',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-04-02',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-04-03',1,1,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-04-04',0,2,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-04-04',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-04-05',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-04-06',1,4,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-04-07',1,5,NULL,'rule');
@@ -84097,7 +84098,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-06-03',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-06-04',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-06-05',1,1,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-06-06',0,2,'端午节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-06-06',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-06-07',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-06-08',1,4,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-06-09',1,5,'实测开市（真实上市日反查）','observed');
@@ -84195,7 +84196,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-09-09',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-09-10',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-09-11',1,1,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-09-12',0,2,'中秋节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-09-12',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-09-13',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-09-14',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2000-09-15',1,5,NULL,'rule');
@@ -84400,7 +84401,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-04-02',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-04-03',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-04-04',1,3,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-04-05',0,4,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-04-05',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-04-06',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-04-07',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-04-08',0,7,'周末','curated');
@@ -84481,7 +84482,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-06-22',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-06-23',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-06-24',0,7,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-06-25',0,1,'端午节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-06-25',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-06-26',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-06-27',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-06-28',1,4,'实测开市（真实上市日反查）','observed');
@@ -84579,7 +84580,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-09-28',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-09-29',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-09-30',0,7,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-10-01',0,1,'中秋节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-10-01',0,1,'国庆节','rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-10-02',0,2,'国庆节','rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-10-03',0,3,'国庆节','rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2001-10-04',0,4,'国庆节','rule');
@@ -84765,7 +84766,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-04-02',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-04-03',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-04-04',1,4,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-04-05',0,5,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-04-05',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-04-06',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-04-07',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-04-08',1,1,NULL,'rule');
@@ -84836,7 +84837,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-06-12',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-06-13',1,4,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-06-14',1,5,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-06-15',0,6,'端午节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-06-15',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-06-16',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-06-17',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-06-18',1,2,'实测开市（真实上市日反查）','observed');
@@ -84934,7 +84935,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-09-18',1,3,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-09-19',1,4,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-09-20',1,5,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-09-21',0,6,'中秋节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-09-21',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-09-22',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-09-23',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2002-09-24',1,2,NULL,'rule');
@@ -85130,7 +85131,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-04-02',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-04-03',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-04-04',1,5,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-04-05',0,6,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-04-05',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-04-06',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-04-07',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-04-08',1,2,'实测开市（真实上市日反查）','observed');
@@ -85190,7 +85191,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-06-01',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-06-02',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-06-03',1,2,'实测开市（真实上市日反查）','observed');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-06-04',0,3,'端午节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-06-04',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-06-05',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-06-06',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-06-07',0,6,'周末','curated');
@@ -85289,7 +85290,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-09-08',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-09-09',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-09-10',1,3,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-09-11',0,4,'中秋节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-09-11',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-09-12',1,5,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-09-13',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2003-09-14',0,7,'周末','curated');
@@ -85495,7 +85496,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-04-01',1,4,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-04-02',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-04-03',0,6,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-04-04',0,7,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-04-04',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-04-05',1,1,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-04-06',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-04-07',1,3,'实测开市（真实上市日反查）','observed');
@@ -85672,7 +85673,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-09-25',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-09-26',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-09-27',1,1,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-09-28',0,2,'中秋节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-09-28',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-09-29',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-09-30',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2004-10-01',0,5,'国庆节','rule');
@@ -85861,7 +85862,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-04-02',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-04-03',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-04-04',1,1,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-04-05',0,2,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-04-05',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-04-06',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-04-07',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-04-08',1,5,NULL,'rule');
@@ -85928,7 +85929,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-06-08',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-06-09',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-06-10',1,5,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-06-11',0,6,'端午节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-06-11',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-06-12',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-06-13',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-06-14',1,2,NULL,'rule');
@@ -86027,7 +86028,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-09-15',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-09-16',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-09-17',0,6,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-09-18',0,7,'中秋节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-09-18',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-09-19',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-09-20',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2005-09-21',1,3,NULL,'rule');
@@ -86226,7 +86227,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-04-02',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-04-03',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-04-04',1,2,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-04-05',0,3,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-04-05',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-04-06',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-04-07',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-04-08',0,6,'周末','curated');
@@ -86282,7 +86283,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-05-28',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-05-29',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-05-30',1,2,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-05-31',0,3,'端午节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-05-31',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-06-01',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-06-02',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-06-03',0,6,'周末','curated');
@@ -86410,7 +86411,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-10-03',0,2,'国庆节','rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-10-04',0,3,'国庆节','rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-10-05',0,4,'国庆节','rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-10-06',0,5,'中秋节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-10-06',0,5,'国庆节','rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-10-07',0,6,'国庆节','rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-10-08',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2006-10-09',1,1,NULL,'rule');
@@ -86591,7 +86592,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-04-02',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-04-03',1,2,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-04-04',1,3,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-04-05',0,4,'清明节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-04-05',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-04-06',1,5,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-04-07',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-04-08',0,7,'周末','curated');
@@ -86666,7 +86667,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-06-16',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-06-17',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-06-18',1,1,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-06-19',0,2,'端午节','rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-06-19',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-06-20',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-06-21',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2007-06-22',1,5,NULL,'rule');
@@ -92800,9 +92801,9 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-04-01',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-04-02',1,2,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-04-03',1,3,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-04-04',1,4,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-04-05',1,5,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-04-06',0,6,'周末','curated');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-04-04',0,4,'清明节','curated');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-04-05',0,5,'清明节','curated');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-04-06',0,6,'清明节','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-04-07',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-04-08',1,1,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-04-09',1,2,NULL,'rule');
@@ -92827,11 +92828,11 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-04-28',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-04-29',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-04-30',1,2,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-05-01',1,3,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-05-02',1,4,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-05-03',1,5,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-05-04',0,6,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-05-05',0,7,'周末','curated');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-05-01',0,3,'劳动节','curated');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-05-02',0,4,'劳动节','curated');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-05-03',0,5,'劳动节','curated');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-05-04',0,6,'劳动节','curated');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-05-05',0,7,'劳动节','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-05-06',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-05-07',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-05-08',1,3,NULL,'rule');
@@ -92867,7 +92868,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-06-07',1,5,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-06-08',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-06-09',0,7,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-06-10',1,1,NULL,'rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-06-10',0,1,'端午节','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-06-11',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-06-12',1,3,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-06-13',1,4,NULL,'rule');
@@ -92964,9 +92965,9 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-09-12',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-09-13',1,5,'实测开市（真实上市日反查）','observed');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-09-14',0,6,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-09-15',0,7,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-09-16',1,1,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-09-17',1,2,NULL,'rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-09-15',0,7,'中秋节','curated');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-09-16',0,1,'中秋节','curated');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-09-17',0,2,'中秋节','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-09-18',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-09-19',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2024-09-20',1,5,'实测开市（真实上市日反查）','observed');
@@ -93489,8 +93490,8 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2026-02-19',0,4,'春节','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2026-02-20',0,5,'春节','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2026-02-21',0,6,'春节','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2026-02-22',0,7,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2026-02-23',1,1,NULL,'rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2026-02-22',0,7,'春节','curated');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2026-02-23',0,1,'春节','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2026-02-24',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2026-02-25',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2026-02-26',1,4,NULL,'rule');
@@ -93896,7 +93897,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-04-02',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-04-03',0,6,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-04-04',0,7,'周末','curated');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-04-05',1,1,NULL,'rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-04-05',0,1,'清明节','rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-04-06',1,2,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-04-07',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-04-08',1,4,NULL,'rule');
@@ -93922,7 +93923,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-04-28',1,3,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-04-29',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-04-30',1,5,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-05-01',0,6,'周末','curated');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-05-01',0,6,'劳动节','rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-05-02',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-05-03',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-05-04',1,2,NULL,'rule');
@@ -93961,7 +93962,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-06-06',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-06-07',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-06-08',1,2,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-06-09',1,3,NULL,'rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-06-09',0,3,'端午节','rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-06-10',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-06-11',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-06-12',0,6,'周末','curated');
@@ -94059,7 +94060,7 @@ INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) V
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-09-12',0,7,'周末','curated');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-09-13',1,1,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-09-14',1,2,NULL,'rule');
-INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-09-15',1,3,NULL,'rule');
+INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-09-15',0,3,'中秋节','rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-09-16',1,4,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-09-17',1,5,NULL,'rule');
 INSERT INTO trade_calendar(date,is_trade_day,weekday,closed_reason,confidence) VALUES ('2027-09-18',0,6,'周末','curated');
@@ -97095,8 +97096,8 @@ INSERT INTO app_meta(key,value) VALUES ('calendar_version','2026-09-29');
 INSERT INTO app_meta(key,value) VALUES ('calendar_start','1990-12-01');
 INSERT INTO app_meta(key,value) VALUES ('calendar_end','2035-12-31');
 INSERT INTO app_meta(key,value) VALUES ('stock_count','5395');
-INSERT INTO app_meta(key,value) VALUES ('trade_day_count','11188');
+INSERT INTO app_meta(key,value) VALUES ('trade_day_count','11207');
 INSERT INTO app_meta(key,value) VALUES ('source_sha256','57a26df309b769d723cc8da8afb4fb6f6a90561b0857c8bae07c5e1289d49eb9');
 INSERT INTO app_meta(key,value) VALUES ('rule_version','bazi-rule-v1.1');
-INSERT INTO app_meta(key,value) VALUES ('generated_at','2026-09-30T01:33:23');
+INSERT INTO app_meta(key,value) VALUES ('generated_at','2026-10-02T09:55:26');
 PRAGMA user_version = 1;

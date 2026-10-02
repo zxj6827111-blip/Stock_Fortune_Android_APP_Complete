@@ -31,7 +31,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,7 +58,7 @@ import com.stockfortune.app.ui.vm.SearchViewModel
 @Composable
 fun SearchScreen(nav: NavHostController, initialQuery: String) {
     val vm: SearchViewModel = sfViewModel { SearchViewModel.Factory(sfContainer()) }
-    val st by vm.state.collectAsState()
+    val st by vm.state.collectAsStateWithLifecycle()
     var query by remember { mutableStateOf(initialQuery) }
 
     LaunchedEffect(initialQuery) {

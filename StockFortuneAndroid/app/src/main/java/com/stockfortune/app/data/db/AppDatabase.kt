@@ -30,7 +30,8 @@ import com.stockfortune.app.data.entity.TradeCalendarEntity
         GanzhiCalendarEntity::class, TradeCalendarEntity::class, ScanCacheEntity::class,
         FavoriteEntity::class, AppMetaEntity::class,
     ],
-    version = 1,
+    // 版本取自随包生成的清单，避免"清单说 1、实体已经 2"这种只有运行期才发现的脱钩
+    version = AssetManifest.SCHEMA_VERSION,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -53,15 +54,18 @@ abstract class AppDatabase : RoomDatabase() {
         private const val GUARD_KEY = "identity_hash"
 
         fun get(context: Context): AppDatabase = instance ?: synchronized(this) {
-            val app = context.applicationContext
+            // 进锁后必须再读一次：否则两个首启线程各建一个库，前一个连接被永久泄漏
+            instance ?: build(context.applicationContext).also { instance = it }
+        }
+
+        private fun build(app: Context): AppDatabase {
             val restoredFavorites = ensureAssetUpToDate(app)
             val db = Room.databaseBuilder(app, AppDatabase::class.java, DB_NAME)
                 .createFromAsset(ASSET_PATH)
                 .setJournalMode(JournalMode.TRUNCATE)
                 .build()
-            instance = db
             reinsertFavorites(db, restoredFavorites)
-            db
+            return db
         }
 
         /**
@@ -75,7 +79,11 @@ abstract class AppDatabase : RoomDatabase() {
          */
         private fun ensureAssetUpToDate(context: Context): List<FavoriteBackup> {
             val prefs = context.getSharedPreferences(GUARD_PREFS, Context.MODE_PRIVATE)
-            val identity = AssetManifest.IDENTITY_HASH + "/" + AssetManifest.DATA_VERSION
+            // 必须含 SCHEMA_VERSION：只比 identityHash 时，单独递增 Room version（实体未变
+            // 但强制重复制库、或改 DAO 视图）不会触发删库，Room 随即抛
+            // "A migration from 1 to 2 was not provided" —— 老用户升级即闪退。
+            val identity = "${AssetManifest.SCHEMA_VERSION}/${AssetManifest.IDENTITY_HASH}/" +
+                AssetManifest.DATA_VERSION
             if (prefs.getString(GUARD_KEY, null) == identity) return emptyList()
             val dbFile = context.getDatabasePath(DB_NAME)
             if (!dbFile.exists()) {

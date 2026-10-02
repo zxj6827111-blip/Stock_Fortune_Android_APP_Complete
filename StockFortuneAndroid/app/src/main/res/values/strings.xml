@@ -47,7 +47,7 @@
     <string name="field_first_day_flag">首日涨跌</string>
     <string name="field_wuxing">五行属性</string>
     <string name="field_nayin">纳音五行</string>
-    <string name="field_fate_feature">命理特征</string>
+    <string name="overview_title">企业特征与命理概览（本项目概述）</string>
 
     <string name="year_overview">%1$d年运势概览</string>
     <string name="year_flow">流年干支</string>
@@ -101,6 +101,8 @@
     <string name="date_select_hint">基于八字、节气、五行生克，筛选适合该股票的交易吉日</string>
     <string name="date_select_result_title">择日结果</string>
     <string name="date_select_found">共找到 %1$d 个吉日</string>
+    <string name="date_select_more">另有 %1$d 个命中日未列出，请缩小区间后重试</string>
+    <string name="date_select_capped">命中日超过 %1$d 个，仅列出前一部分，请缩小区间后重试</string>
     <string name="col_is_trade_day">是否交易日</string>
     <string name="col_wealth_type">财星判定</string>
     <string name="trade_day_yes">交易日</string>
@@ -109,6 +111,28 @@
 
     <string name="disclaimer">以上为基于传统八字命理模型与时间规则的推演结果，仅供参考，不构成任何投资建议。请结合基本面、技术面等综合判断。</string>
     <string name="disclaimer_short">仅供参考 · 不构成投资建议</string>
+
+    <string name="classics_title">典籍依据</string>
+    <string name="classics_subtitle">按日主归类的原文参考 · 日主 %1$s</string>
+    <string name="classics_kind_verse">歌诀</string>
+    <string name="classics_kind_annotation">原注节选</string>
+    <string name="classics_source_line">《%1$s》· %2$s</string>
+    <string name="classics_meta_line">篇名 %1$s · 小节 %2$s · 扫描页码 %3$d</string>
+    <string name="classics_disclaimer">以下为传统文献原文，非本系统推断，不构成任何投资建议。</string>
+    <string name="classics_empty">暂无对应引文</string>
+    <string name="classics_empty_hint">该日主暂未收录引文条目</string>
+    <string name="classics_unavailable">引文暂不可用</string>
+    <string name="classics_unavailable_hint">离线引文读取失败，其余信息不受影响</string>
+    <string name="classics_excerpt_note">原注为节选，非全段</string>
+    <string name="field_fate_feature_note">命理特征（本项目概述）</string>
+
+    <string name="doc_classics_title">三·六、典籍引文口径</string>
+    <string name="doc_classics_source">股票详情「典籍依据」的引文取自《滴天髓輯要》1936 年刊本（國家圖書館藏掃描件）的全文精校版，语料版本 dtjy-v1，共 20 条：十个日主各 1 条歌诀 + 1 条原注节选。</string>
+    <string name="doc_classics_page">「典籍依据」卡上的页码是扫描页码，即底本扫描件的页序号（首批十条落在第 8—14 页），不是该刊本的印刷叶码；两者对照与逐段核校结论见仓库内 docs/CLASSICS_AUDIT_ditiansui_v1.md。</string>
+    <string name="doc_classics_script">引文保持繁体原貌与原书夹注，不作简化、不改写、不删节；异体字沿用整理本字形，与刊本的差异逐条记录在审计报告。</string>
+    <string name="doc_classics_match">引文只按日主天干归类。歌诀中的月令、坐支、合化等条件（如「春不容金」「抱乙而孝」「合戊化火」）本系统并未计算，能匹配到某个日主不代表这些条件在该股命局中成立。</string>
+    <string name="doc_classics_excerpt">原注只取该段开头若干句并标注「原注节选」，不是全段，更不是全篇。</string>
+    <string name="doc_classics_overview">「企业特征与命理概览」与「命理特征」两行的文字是本项目据上述原注写的概述，已标「本项目概述」，不挂书名，不属于古籍原文。</string>
 
     <string name="mine_data_version">数据版本</string>
     <string name="mine_calendar_version">交易日历版本</string>
@@ -132,7 +156,6 @@
     <string name="scan_date_prefix">扫描日期 </string>
     <string name="scan_trade_only">· 仅统计交易日</string>
     <string name="scan_empty_note">%1$s 非交易日或当日无财星命中，扫描仅统计交易日。</string>
-    <string name="rank_nth">第 %1$d 名</string>
     <string name="filter_none_hint">未勾选任何十神时，开始筛选将返回当日全部股票。</string>
     <string name="filter_result_title">筛选结果</string>
     <string name="filter_result_total">共 %1$d 只</string>

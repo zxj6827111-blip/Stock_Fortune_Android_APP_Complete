@@ -92,6 +92,17 @@ fun AlgorithmDocScreen(onBack: () -> Unit) {
             ),
         )
         DocCard(
+            title = stringResource(R.string.doc_classics_title),
+            lines = listOf(
+                stringResource(R.string.doc_classics_source),
+                stringResource(R.string.doc_classics_page),
+                stringResource(R.string.doc_classics_script),
+                stringResource(R.string.doc_classics_match),
+                stringResource(R.string.doc_classics_excerpt),
+                stringResource(R.string.doc_classics_overview),
+            ),
+        )
+        DocCard(
             title = "四、交易日历",
             lines = listOf(
                 "周末一律休市。",

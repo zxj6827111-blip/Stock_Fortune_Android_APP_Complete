@@ -5,7 +5,6 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Transaction
 import com.stockfortune.app.data.entity.AppMetaEntity
 import com.stockfortune.app.data.entity.FavoriteEntity
 import com.stockfortune.app.data.entity.GanzhiCalendarEntity
@@ -146,9 +145,6 @@ data class ScanCacheJoin(
 
 @Dao
 interface FilterDao {
-    @Query("SELECT DISTINCT stock_id FROM stock_hidden_ten_god WHERE ten_god IN (:gods)")
-    suspend fun stockIdsByHiddenGods(gods: List<String>): List<Long>
-
     @Query("SELECT stock_id, ten_god FROM stock_hidden_ten_god WHERE ten_god IN (:gods)")
     suspend fun hiddenGodPairs(gods: List<String>): List<StockHiddenHit>
 

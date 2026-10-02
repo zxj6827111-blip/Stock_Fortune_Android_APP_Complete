@@ -1,8 +1,10 @@
 package com.stockfortune.app.ui.vm
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.stockfortune.app.AppContainer
+import com.stockfortune.app.data.repository.AnalysisRepository
 import com.stockfortune.app.data.repository.StockDetail
 import com.stockfortune.app.domain.calculator.GanzhiCalculator
 import com.stockfortune.app.domain.model.DateSelectionRow
@@ -19,6 +21,8 @@ import com.stockfortune.app.domain.model.YearAnalysis
 import com.stockfortune.app.ui.common.vmFactory
 import java.time.LocalDate
 import java.time.YearMonth
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +30,46 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-private fun todayIso(): String = LocalDate.now().toString()
+/**
+ * 全站「今天」的唯一来源。
+ *
+ * 可注入有两个原因：预置日历有截止日（当前 2035-12-31），跟随系统钟的断言会在换月、
+ * 换数据快照时静默漂红 —— 提交态的 DetailViewModelTest 就是这样红了一次的
+ * （`expected:<21> but was:<17>`）。测试固定日期应当走这里，而不是各自绕过默认值。
+ */
+internal object AppClock {
+    @Volatile
+    var fixedToday: LocalDate? = null
+
+    fun today(): LocalDate = fixedToday ?: LocalDate.now()
+}
+
+private fun todayIso(): String = AppClock.today().toString()
+
+private const val TAG = "SfViewModel"
+
+/**
+ * 后台取数外壳：成功、失败、抛错三条路径都必须把忙碌位写回 false。
+ *
+ * 此前每个 ViewModel 的协程都没有出口，任何一次跳异常（Room 读失败、日历越界、
+ * 预置库与代码身份不符）都表现为永久转圈 —— 用户无法区分"在算"和"已经失败"。
+ * 取消异常原样上抛，交给结构化并发处理，不当成失败吞掉。
+ */
+private fun <S> MutableStateFlow<S>.launchLoad(
+    scope: CoroutineScope,
+    markIdle: (S) -> S,
+    block: suspend () -> Unit,
+) = scope.launch(Dispatchers.Default) {
+    try {
+        block()
+    } catch (ce: CancellationException) {
+        throw ce
+    } catch (e: Exception) {
+        Log.e(TAG, "后台取数失败，已落回空闲态", e)
+    } finally {
+        update { markIdle(it) }
+    }
+}
 
 /** 首页：今日概览（最近交易日的正/偏财数量）。 */
 class HomeViewModel(private val container: AppContainer) : ViewModel() {
@@ -41,10 +84,10 @@ class HomeViewModel(private val container: AppContainer) : ViewModel() {
     val state: StateFlow<State> = _state.asStateFlow()
 
     init {
-        viewModelScope.launch(Dispatchers.Default) {
+        _state.launchLoad(viewModelScope, { it.copy(loading = false) }) {
             val date = container.calendarRepository.nearestTradeDayOnOrBefore(todayIso())
             val (zheng, pian) = container.analysisRepository.scanCounts(date)
-            _state.update { it.copy(date = date, zhengCount = zheng, pianCount = pian, loading = false) }
+            _state.update { it.copy(date = date, zhengCount = zheng, pianCount = pian) }
         }
     }
 
@@ -59,16 +102,20 @@ class SearchViewModel(private val container: AppContainer) : ViewModel() {
 
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()
+    private var searchJob: kotlinx.coroutines.Job? = null
 
     fun search(q: String) {
         _state.update { it.copy(query = q, loading = true) }
-        viewModelScope.launch(Dispatchers.Default) {
+        // 每个按键都会发一条"前导通配 LIKE"的全表查询，且结果只会被最新输入覆盖：
+        // 先取消上一个，别让它们并行排队打 SQLite（旧实现既不取消也不复位忙碌位）。
+        searchJob?.cancel()
+        searchJob = _state.launchLoad(viewModelScope, { cur ->
+            if (cur.query != q) cur else cur.copy(loading = false)
+        }) {
             val hits = container.stockRepository.search(q).map {
                 SearchHit(it.stockId, it.code, it.symbol, it.name, it.listingDate, it.board)
             }
-            _state.update { cur ->
-                if (cur.query != q) cur else cur.copy(hits = hits, loading = false)
-            }
+            _state.update { cur -> if (cur.query != q) cur else cur.copy(hits = hits) }
         }
     }
 
@@ -83,13 +130,13 @@ class StockDetailViewModel(private val container: AppContainer) : ViewModel() {
         val code: String = "",
         val detail: StockDetail? = null,
         val year: YearAnalysis? = null,
-        val yearValue: Int = LocalDate.now().year,
+        val yearValue: Int = AppClock.today().year,
         val month: MonthAnalysis? = null,
-        val monthYear: Int = LocalDate.now().year,
-        val monthValue: Int = LocalDate.now().monthValue,
+        val monthYear: Int = AppClock.today().year,
+        val monthValue: Int = AppClock.today().monthValue,
         val daily: MonthAnalysis? = null,
-        val dailyYear: Int = LocalDate.now().year,
-        val dailyMonth: Int = LocalDate.now().monthValue,
+        val dailyYear: Int = AppClock.today().year,
+        val dailyMonth: Int = AppClock.today().monthValue,
         val loading: Boolean = true,
         val notFound: Boolean = false,
     )
@@ -100,17 +147,22 @@ class StockDetailViewModel(private val container: AppContainer) : ViewModel() {
     private var yearRange: Pair<Int, Int> = 1991 to 2035
 
     fun load(code: String, year: Int, monthYm: Pair<Int, Int>, dailyYm: Pair<Int, Int>) {
-        viewModelScope.launch(Dispatchers.Default) {
+        // 同一只股已经装载过就不再重置年 / 月 / 每日三个锚点：从单日详情返回时本屏组合会被
+        // 销毁重建，旧实现在这里把锚点打回"今天"，用户翻到的 2018 年随之丢失，还白跑三遍全量推算
+        // —— 与本文件开头"切 Tab 不重复取数"的意图相反。
+        val cur = _state.value
+        if (cur.code == code && cur.detail != null) return
+        _state.launchLoad(viewModelScope, { it.copy(loading = false) }) {
             yearRange = container.calendarRepository.yearBounds()
             val detail = container.stockRepository.detail(code)
             if (detail == null) {
-                _state.update { it.copy(loading = false, notFound = true, code = code) }
-                return@launch
+                _state.update { it.copy(notFound = true, code = code) }
+                return@launchLoad
             }
             val y = year.coerceIn(yearRange.first, yearRange.second)
             _state.update {
                 it.copy(
-                    code = detail.stock.code, detail = detail, loading = false, notFound = false,
+                    code = detail.stock.code, detail = detail, notFound = false,
                     yearValue = y, monthYear = monthYm.first, monthValue = monthYm.second,
                     dailyYear = dailyYm.first, dailyMonth = dailyYm.second,
                 )
@@ -126,8 +178,8 @@ class StockDetailViewModel(private val container: AppContainer) : ViewModel() {
      * 快速连点 ‹ › 时后发先至的旧结果会被丢弃，避免页面年份回退。
      */
     private fun loadYear(y: Int) {
-        viewModelScope.launch(Dispatchers.Default) {
-            val id = _state.value.detail?.stock?.id ?: return@launch
+        _state.launchLoad(viewModelScope, { it }) {
+            val id = _state.value.detail?.stock?.id ?: return@launchLoad
             val data = container.analysisRepository.yearAnalysis(id, y)
             _state.update { cur -> if (cur.yearValue == y) cur.copy(year = data) else cur }
         }
@@ -140,8 +192,8 @@ class StockDetailViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private fun loadMonth(year: Int, month: Int) {
-        viewModelScope.launch(Dispatchers.Default) {
-            val id = _state.value.detail?.stock?.id ?: return@launch
+        _state.launchLoad(viewModelScope, { it }) {
+            val id = _state.value.detail?.stock?.id ?: return@launchLoad
             val data = container.analysisRepository.monthDays(id, year, month)
             _state.update { cur ->
                 if (cur.monthYear == year && cur.monthValue == month) cur.copy(month = data) else cur
@@ -157,8 +209,8 @@ class StockDetailViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private fun loadDaily(year: Int, month: Int) {
-        viewModelScope.launch(Dispatchers.Default) {
-            val id = _state.value.detail?.stock?.id ?: return@launch
+        _state.launchLoad(viewModelScope, { it }) {
+            val id = _state.value.detail?.stock?.id ?: return@launchLoad
             val data = container.analysisRepository.monthDays(id, year, month)
             _state.update { cur ->
                 if (cur.dailyYear == year && cur.dailyMonth == month) cur.copy(daily = data) else cur
@@ -175,7 +227,7 @@ class StockDetailViewModel(private val container: AppContainer) : ViewModel() {
 
     fun toggleFavorite() {
         val id = _state.value.detail?.stock?.id ?: return
-        viewModelScope.launch(Dispatchers.Default) {
+        _state.launchLoad(viewModelScope, { it }) {
             val nowFav = container.stockRepository.toggleFavorite(id)
             _state.update { it.copy(detail = it.detail?.copy(isFavorite = nowFav)) }
         }
@@ -208,16 +260,18 @@ class ScannerViewModel(private val container: AppContainer) : ViewModel() {
 
     fun init(date: String?) {
         if (_state.value.date.isNotEmpty() && date == null) return
-        viewModelScope.launch(Dispatchers.Default) {
+        _state.launchLoad(viewModelScope, { it.copy(loading = false) }) {
             val d = date?.takeIf { it.isNotBlank() }
                 ?: container.calendarRepository.nearestTradeDayOnOrBefore(todayIso())
             if (container.calendarRepository.ganzhi(d) == null) {
+                // 旧实现在这里只写 notice 就返回，loading 仍是 true —— 首启即越界时页面会同时
+                // 显示"已超出预置日历范围"和永久转圈，用户没有任何出口。
                 _state.update { it.copy(notice = outOfRangeNotice(container)) }
-                return@launch
+                return@launchLoad
             }
             _state.update { it.copy(date = d, loading = true, notice = null) }
             val s = container.analysisRepository.scan(d)
-            _state.update { cur -> if (cur.date != d) cur else cur.copy(summary = s, loading = false) }
+            _state.update { cur -> if (cur.date != d) cur else cur.copy(summary = s) }
         }
     }
 
@@ -273,7 +327,10 @@ class FilterViewModel(private val container: AppContainer) : ViewModel() {
     private val filterReq = java.util.concurrent.atomic.AtomicInteger(0)
 
     fun start() {
-        viewModelScope.launch(Dispatchers.Default) {
+        // 幂等：从结果行进入个股详情再返回时本屏组合重建，旧实现无条件把基准日打回最近
+        // 交易日、并用已落库的旧勾选覆盖尚未筛选的那一组勾选，用户两处改动都静默丢失。
+        if (_state.value.date.isNotEmpty()) return
+        _state.launchLoad(viewModelScope, { it }) {
             val d = container.calendarRepository.nearestTradeDayOnOrBefore(todayIso())
             val sel = container.settingsRepository.restoreFilter()
             val gz = container.calendarRepository.ganzhi(d)
@@ -295,11 +352,11 @@ class FilterViewModel(private val container: AppContainer) : ViewModel() {
     /** 流年 / 流月 / 流日三个维度都相对基准日成立，因此必须能换日期 */
     fun setDate(iso: String) {
         val hadResult = _state.value.result != null
-        viewModelScope.launch(Dispatchers.Default) {
+        _state.launchLoad(viewModelScope, { it.copy(searching = false) }) {
             val gz = container.calendarRepository.ganzhi(iso)
             if (gz == null) {
                 _state.update { it.copy(notice = outOfRangeNotice(container)) }
-                return@launch
+                return@launchLoad
             }
             _state.update {
                 it.copy(date = iso, yearGanzhi = gz.yearGanzhi, monthGanzhi = gz.monthGanzhi, dayGanzhi = gz.dayGanzhi, notice = null)
@@ -346,17 +403,17 @@ class FilterViewModel(private val container: AppContainer) : ViewModel() {
 
     fun reset() {
         _state.update { it.copy(hidden = emptySet(), year = emptySet(), month = emptySet(), day = emptySet(), result = null) }
-        viewModelScope.launch(Dispatchers.Default) { container.settingsRepository.clearFilter() }
+        _state.launchLoad(viewModelScope, { it }) { container.settingsRepository.clearFilter() }
     }
 
     fun runFilter() {
         val s = _state.value
         val req = filterReq.incrementAndGet()
-        viewModelScope.launch(Dispatchers.Default) {
+        _state.launchLoad(viewModelScope, { it.copy(searching = false) }) {
             _state.update { it.copy(searching = true) }
             val rows = container.analysisRepository.filter(FilterQuery(s.hidden, s.year, s.month, s.day, s.date))
             container.settingsRepository.saveFilter(s.hidden, s.year, s.month, s.day)
-            _state.update { cur -> if (filterReq.get() != req) cur else cur.copy(result = rows, searching = false) }
+            _state.update { cur -> if (filterReq.get() != req) cur else cur.copy(result = rows) }
         }
     }
 
@@ -369,13 +426,17 @@ class FilterViewModel(private val container: AppContainer) : ViewModel() {
 class DateSelectViewModel(private val container: AppContainer) : ViewModel() {
     data class State(
         val code: String = "",
-        val start: String = LocalDate.now().withDayOfMonth(1).toString(),
-        val end: String = LocalDate.now().toString(),
+        val start: String = AppClock.today().withDayOfMonth(1).toString(),
+        val end: String = AppClock.today().toString(),
         val onlyTradeDays: Boolean = false,
         val rows: List<DateSelectionRow>? = null,
         val resolvedName: String? = null,
         val error: String? = null,
         val running: Boolean = false,
+        /** 副标题要说"实际算过的区间"，不能说当前表单值 —— 后者会在用户改完还没重跑时展示假信息 */
+        val ranStart: String = "",
+        val ranEnd: String = "",
+        val truncated: Boolean = false,
     )
 
     private val _state = MutableStateFlow(State())
@@ -385,35 +446,55 @@ class DateSelectViewModel(private val container: AppContainer) : ViewModel() {
         if (code.isNotBlank()) _state.update { it.copy(code = code) }
     }
 
-    fun setCode(v: String) { _state.update { it.copy(code = v, error = null) } }
-    fun setStart(v: String) { _state.update { it.copy(start = v, error = null) } }
-    fun setEnd(v: String) { _state.update { it.copy(end = v, error = null) } }
-    fun setOnlyTradeDays(v: Boolean) { _state.update { it.copy(onlyTradeDays = v) } }
+    // 表单一变，上次结果就不再成立：清掉 rows，避免"标题是新区间、列表是旧结果"
+    fun setCode(v: String) { _state.update { it.copy(code = v, error = null, rows = null) } }
+    fun setStart(v: String) { _state.update { it.copy(start = v, error = null, rows = null) } }
+    fun setEnd(v: String) { _state.update { it.copy(end = v, error = null, rows = null) } }
+    fun setOnlyTradeDays(v: Boolean) { _state.update { it.copy(onlyTradeDays = v, error = null, rows = null) } }
 
     private val runReq = java.util.concurrent.atomic.AtomicInteger(0)
 
     fun run() {
         val s = _state.value
         val req = runReq.incrementAndGet()
-        viewModelScope.launch(Dispatchers.Default) {
+        _state.launchLoad(viewModelScope, { it.copy(running = false) }) {
             _state.update { it.copy(running = true, error = null) }
-            val detail = container.stockRepository.detail(s.code)
-            if (detail == null) {
-                _state.update { cur -> if (runReq.get() != req) cur else cur.copy(running = false, error = "未找到该股票，请检查股票代码") }
-                return@launch
+            // 日期是用户可编辑的文本；字符串比较与 SQL 的 BETWEEN 都按字典序走，
+            // 格式不对时不报错、只会给出一个看起来"无吉日"的空结果。
+            val malformed = listOf("开始日期" to s.start, "结束日期" to s.end)
+                .firstOrNull { GanzhiCalculator.parse(it.second) == null }
+            if (malformed != null) {
+                fail(req, "${malformed.first}不是合法日期，应为 YYYY-MM-DD")
+                return@launchLoad
             }
             if (s.start > s.end) {
-                _state.update { cur -> if (runReq.get() != req) cur else cur.copy(running = false, error = "开始日期不能晚于结束日期") }
-                return@launch
+                fail(req, "开始日期不能晚于结束日期")
+                return@launchLoad
             }
-            val rows = container.analysisRepository.dateSelect(detail.stock.id, s.start, s.end, s.onlyTradeDays)
+            val detail = container.stockRepository.detail(s.code)
+            if (detail == null) {
+                fail(req, "未找到该股票，请检查股票代码")
+                return@launchLoad
+            }
+            val rows = container.analysisRepository.dateSelect(
+                detail.stock.id, s.start, s.end, s.onlyTradeDays, DATE_LIMIT,
+            )
             _state.update { cur ->
-                if (runReq.get() != req) cur else cur.copy(running = false, rows = rows, resolvedName = detail.stock.name)
+                if (runReq.get() != req) cur else cur.copy(
+                    rows = rows, resolvedName = detail.stock.name,
+                    ranStart = s.start, ranEnd = s.end, truncated = rows.size >= DATE_LIMIT,
+                )
             }
         }
     }
 
+    private fun fail(req: Int, message: String) {
+        _state.update { cur -> if (runReq.get() != req) cur else cur.copy(error = message) }
+    }
+
     companion object {
+        private const val DATE_LIMIT = AnalysisRepository.DATE_SELECT_LIMIT
+
         fun Factory(c: AppContainer) = vmFactory { DateSelectViewModel(c) }
     }
 }
@@ -430,8 +511,8 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
     )
 
     data class State(
-        val year: Int = LocalDate.now().year,
-        val month: Int = LocalDate.now().monthValue,
+        val year: Int = AppClock.today().year,
+        val month: Int = AppClock.today().monthValue,
         val cells: List<DayCell> = emptyList(),
         val leadingBlanks: Int = 0,
         val tradeDayCount: Int = 0,
@@ -448,14 +529,17 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
      * 因此调用方必须先经 [jumpTo] 把年月写回状态，否则守卫会把当月以外的结果全部丢掉。
      */
     fun refresh(year: Int = _state.value.year, month: Int = _state.value.month, selectDate: String? = null) {
-        viewModelScope.launch(Dispatchers.Default) {
+        _state.launchLoad(
+            viewModelScope,
+            { cur -> if (cur.year != year || cur.month != month) cur else cur.copy(loading = false) },
+        ) {
             val (first, last) = GanzhiCalculator.monthRange(year, month)
             val days = container.calendarRepository.monthDays(first.toString(), last.toString())
             val cells = days.map { DayCell(it.date, it.isTradeDay, it.weekday, it.reason, it.dayGanzhi, it.confidence) }
             _state.update { cur ->
                 if (cur.year != year || cur.month != month) cur else cur.copy(
                     cells = cells, leadingBlanks = first.dayOfWeek.value - 1,
-                    tradeDayCount = cells.count { c -> c.isTradeDay }, loading = false,
+                    tradeDayCount = cells.count { c -> c.isTradeDay },
                     selected = cells.firstOrNull { c -> c.date == selectDate }
                         ?: cells.firstOrNull { c -> c.date == todayIso() }
                         ?: cells.lastOrNull { c -> c.isTradeDay },
@@ -465,17 +549,23 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     /** 切到指定年月：按预置日历边界夹取，越界时给出提示而不是让按钮失去响应。 */
+    private val jumpReq = java.util.concurrent.atomic.AtomicInteger(0)
+
     fun jumpTo(year: Int, month: Int, selectDate: String? = null) {
-        viewModelScope.launch(Dispatchers.Default) {
+        val req = jumpReq.incrementAndGet()
+        _state.launchLoad(viewModelScope, { it.copy(loading = false) }) {
             val (loStr, hiStr) = container.calendarRepository.bounds()
             val lo = YearMonth.from(GanzhiCalculator.parse(loStr) ?: LocalDate.of(1990, 12, 1))
-            val hi = YearMonth.from(GanzhiCalculator.parse(hiStr) ?: LocalDate.now())
+            val hi = YearMonth.from(GanzhiCalculator.parse(hiStr) ?: AppClock.today())
             val asked = YearMonth.of(year, month)
             val target = when {
                 asked.isBefore(lo) -> lo
                 asked.isAfter(hi) -> hi
                 else -> asked
             }
+            // 连点 ‹ › 时会有多个 jumpTo 并行等 bounds()：没有请求号的话，后回来的旧请求
+            // 会把年月写歪，refresh 的守卫随即把正确月份的数据整批丢掉。
+            if (jumpReq.get() != req) return@launchLoad
             _state.update {
                 it.copy(
                     year = target.year, month = target.monthValue,
@@ -494,7 +584,7 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun backToThisMonth() {
-        val now = LocalDate.now()
+        val now = AppClock.today()
         jumpTo(now.year, now.monthValue, todayIso())
     }
 
@@ -517,12 +607,10 @@ class DayDetailViewModel(private val container: AppContainer) : ViewModel() {
     val state: StateFlow<State> = _state.asStateFlow()
 
     fun load(code: String, date: String) {
-        viewModelScope.launch(Dispatchers.Default) {
+        _state.launchLoad(viewModelScope, { it.copy(loading = false) }) {
             val info = container.stockRepository.detail(code)
             val detail = info?.let { container.analysisRepository.dayDetail(it.stock.id, date) }
-            _state.update {
-                it.copy(stock = info?.stock, detail = detail, loading = false)
-            }
+            _state.update { it.copy(stock = info?.stock, detail = detail) }
         }
     }
 
@@ -544,17 +632,17 @@ class ProfileViewModel(private val container: AppContainer) : ViewModel() {
     val state: StateFlow<State> = _state.asStateFlow()
 
     fun refresh() {
-        viewModelScope.launch(Dispatchers.Default) {
+        _state.launchLoad(viewModelScope, { it }) {
             val meta = container.stockRepository.meta()
             val stockCount = container.stockRepository.stockCount()
             val cacheCount = container.analysisRepository.cacheSize()
             val favorites = container.stockRepository.favoriteStocks()
-            _state.update { State(meta = meta, stockCount = stockCount, cacheCount = cacheCount, favorites = favorites) }
+            _state.update { it.copy(meta = meta, stockCount = stockCount, cacheCount = cacheCount, favorites = favorites) }
         }
     }
 
     fun clearCache() {
-        viewModelScope.launch(Dispatchers.Default) {
+        _state.launchLoad(viewModelScope, { it }) {
             container.analysisRepository.clearCache()
             _state.update { it.copy(cacheCount = 0) }
         }

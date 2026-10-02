@@ -32,7 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,7 +67,7 @@ import com.stockfortune.app.ui.vm.HomeViewModel
 @Composable
 fun HomeScreen(nav: NavHostController) {
     val vm: HomeViewModel = sfViewModel { HomeViewModel.Factory(sfContainer()) }
-    val st by vm.state.collectAsState()
+    val st by vm.state.collectAsStateWithLifecycle()
     var keyword by remember { mutableStateOf("") }
 
     val onSubmit: (String) -> Unit = { q ->
@@ -216,6 +216,7 @@ private fun TodayOverview(st: HomeViewModel.State, nav: NavHostController) {
                 SfStatCard(
                     label = stringResource(R.string.wealth_zheng),
                     value = st.zhengCount.toString(),
+                    zhengCai = true,
                     unit = stringResource(R.string.unit_only),
                     hint = FortuneText.SCAN_ZHENG_NOTE,
                     accent = SfColors.ZhengCai,
@@ -226,6 +227,7 @@ private fun TodayOverview(st: HomeViewModel.State, nav: NavHostController) {
                 SfStatCard(
                     label = stringResource(R.string.wealth_pian),
                     value = st.pianCount.toString(),
+                    zhengCai = false,
                     unit = stringResource(R.string.unit_only),
                     hint = FortuneText.SCAN_PIAN_NOTE,
                     accent = SfColors.PianCai,

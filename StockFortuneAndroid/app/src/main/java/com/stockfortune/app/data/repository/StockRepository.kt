@@ -20,6 +20,8 @@ data class StockDetail(
     val seasonSummary: String,
     val fateFeature: String,
     val isFavorite: Boolean,
+    /** 按日主天干归类的古籍引文；与四柱其余干支无关，取不到就是无匹配 */
+    val classics: ClassicQuoteResult,
 )
 
 class StockRepository(
@@ -28,6 +30,7 @@ class StockRepository(
     private val filterDao: FilterDao,
     private val favoriteDao: FavoriteDao,
     private val metaDao: MetaDao,
+    private val classicQuotes: ClassicQuoteRepository,
 ) {
     suspend fun search(query: String): List<StockSearchHit> {
         val q = query.trim()
@@ -64,6 +67,7 @@ class StockRepository(
             seasonSummary = com.stockfortune.app.domain.calculator.TenGodCalculator.seasonSummary(bazi.monthBranch),
             fateFeature = com.stockfortune.app.domain.calculator.FortuneText.fateFeature(bazi.dayStem),
             isFavorite = favoriteDao.isFavorite(stock.id),
+            classics = classicQuotes.forDayStem(bazi.dayStem),
         )
     }
 

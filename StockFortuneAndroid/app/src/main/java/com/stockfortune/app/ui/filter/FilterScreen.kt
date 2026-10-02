@@ -36,7 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -82,7 +82,7 @@ private const val RESULT_LIMIT = 50
 @Composable
 fun FilterScreen(nav: NavHostController) {
     val vm: FilterViewModel = sfViewModel { FilterViewModel.Factory(sfContainer()) }
-    val st by vm.state.collectAsState()
+    val st by vm.state.collectAsStateWithLifecycle()
     var picking by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { vm.start() }

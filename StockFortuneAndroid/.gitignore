@@ -6,6 +6,10 @@ app/build/
 local.properties
 .DS_Store
 
+# Python 构建器的字节码缓存：不入库，且极易被 git add -A 顺手带进公开仓库
+__pycache__/
+*.pyc
+
 # 签名材料与口令：只允许存在于用户目录 ~/.stockfortune-keystore/
 keystore/
 *.jks

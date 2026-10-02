@@ -48,8 +48,8 @@ import com.stockfortune.app.ui.components.SfLoading
 import com.stockfortune.app.ui.navigation.Routes
 import com.stockfortune.app.ui.theme.SfColors
 import com.stockfortune.app.ui.theme.SfDimens
+import com.stockfortune.app.ui.vm.AppClock
 import com.stockfortune.app.ui.vm.StockDetailViewModel
-import java.time.LocalDate
 
 /**
  * 股票详情容器页：紧凑 Hero + 4 个 Tab（基本信息 / 年度运势 / 月度运势 / 每日分析）。
@@ -61,9 +61,10 @@ fun StockDetailScreen(nav: NavHostController, code: String, initialTab: String) 
     val state by vm.state.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableIntStateOf(tabIndex(initialTab)) }
 
-    // 进入页面时以"当前日期"初始化一次年 / 月 / 每日锚点
+    // 进入页面时以"当前日期"初始化一次年 / 月 / 每日锚点。返回本屏时组合会重建、这里会重算，
+    // 但 StockDetailViewModel.load 已对同一 code 幂等，锚点不会再被打回今天。
     val initial = remember(code) {
-        val today = LocalDate.now()
+        val today = AppClock.today()
         Triple(today.year, today.year to today.monthValue, today.year to today.monthValue)
     }
     LaunchedEffect(code) {

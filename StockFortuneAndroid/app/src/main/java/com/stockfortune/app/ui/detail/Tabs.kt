@@ -39,6 +39,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stockfortune.app.R
+import com.stockfortune.app.data.repository.ClassicQuote
+import com.stockfortune.app.data.repository.ClassicQuoteKind
+import com.stockfortune.app.data.repository.ClassicQuoteResult
 import com.stockfortune.app.data.repository.StockDetail
 import com.stockfortune.app.domain.calculator.GanzhiCalculator
 import com.stockfortune.app.domain.calculator.TenGodCalculator
@@ -98,9 +101,11 @@ fun BasicTab(detail: StockDetail) {
 
         SfAmberCallout(
             text = detail.fateFeature,
-            title = "企业特征与命理概览",
+            title = stringResource(R.string.overview_title),
             icon = Icons.Default.BarChart,
         )
+
+        ClassicsCard(detail)
 
         SfCard {
             SfSectionTitle(stringResource(R.string.bazi_info))
@@ -115,16 +120,118 @@ fun BasicTab(detail: StockDetail) {
         SfCard {
             SfSectionTitle("☯ " + stringResource(R.string.yinyang_info))
             Spacer(Modifier.height(10.dp))
-            SfInfoRow(stringResource(R.string.field_yinyang), stock.firstDayFlag + "（" + stringResource(R.string.field_first_day_flag) + "）")
+            // 实测库内 first_day_flag 只有 阴 / 阳 / 数据缺失 三种取值。直接渲染会把内部
+            // 哨兵暴露成"阴阳类型：数据缺失（首日涨跌）"，既泄漏实现细节又误导语义。
+            val flag = stock.firstDayFlag
+            val yinyangText = if (flag == "阴" || flag == "阳") {
+                "$flag（${stringResource(R.string.field_first_day_flag)}）"
+            } else {
+                "—"
+            }
+            SfInfoRow(stringResource(R.string.field_yinyang), yinyangText)
             DividerLine()
             SfInfoRow(stringResource(R.string.field_wuxing), detail.seasonSummary)
             DividerLine()
             SfInfoRow(stringResource(R.string.field_nayin), detail.bazi.naYin)
             DividerLine()
-            SfInfoRow(stringResource(R.string.field_fate_feature), detail.fateFeature)
+            SfInfoRow(stringResource(R.string.field_fate_feature_note), detail.fateFeature)
         }
 
         SfDisclaimer(stringResource(R.string.disclaimer_short))
+    }
+}
+
+/**
+ * 典籍依据：按日主天干归类的原文参考。原文不设省略行数，
+ * 由详情页已有的 verticalScroll 承载，这里不再套第二层滚动容器。
+ */
+@Composable
+fun ClassicsCard(detail: StockDetail) {
+    SfCard {
+        SfSectionTitle(stringResource(R.string.classics_title))
+        Spacer(Modifier.height(6.dp))
+        Text(
+            stringResource(R.string.classics_subtitle, detail.bazi.dayMaster),
+            style = MaterialTheme.typography.labelSmall,
+            color = SfColors.TextSub,
+        )
+        Spacer(Modifier.height(10.dp))
+        when (val result = detail.classics) {
+            is ClassicQuoteResult.Found -> {
+                result.quotes.forEachIndexed { i, quote ->
+                    if (i > 0) {
+                        Spacer(Modifier.height(12.dp))
+                        DividerLine()
+                    }
+                    QuoteBlock(quote)
+                }
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    stringResource(R.string.classics_disclaimer),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SfColors.TextSub,
+                )
+            }
+            ClassicQuoteResult.NoMatch -> StateLine(
+                stringResource(R.string.classics_empty),
+                stringResource(R.string.classics_empty_hint),
+            )
+            ClassicQuoteResult.LoadFailed -> StateLine(
+                stringResource(R.string.classics_unavailable),
+                stringResource(R.string.classics_unavailable_hint),
+            )
+        }
+    }
+}
+
+@Composable
+private fun StateLine(title: String, hint: String) {
+    Column {
+        Text(title, style = MaterialTheme.typography.bodyMedium, color = SfColors.TextMain)
+        Text(hint, style = MaterialTheme.typography.labelSmall, color = SfColors.TextSub)
+    }
+}
+
+@Composable
+private fun QuoteBlock(quote: ClassicQuote) {
+    val kindLabel = when (quote.kind) {
+        ClassicQuoteKind.VERSE -> stringResource(R.string.classics_kind_verse)
+        ClassicQuoteKind.ANNOTATION_EXCERPT -> stringResource(R.string.classics_kind_annotation)
+    }
+    Row(verticalAlignment = Alignment.Top) {
+        SfTag(
+            kindLabel,
+            SfColors.DeepBlue,
+            SfColors.OtherTagBg,
+            fontSize = 10,
+            bold = false,
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            quote.originalText,
+            style = MaterialTheme.typography.bodyMedium,
+            color = SfColors.TextMain,
+            lineHeight = 22.sp,
+            modifier = Modifier.weight(1f),
+        )
+    }
+    Spacer(Modifier.height(4.dp))
+    Text(
+        stringResource(R.string.classics_source_line, quote.bookTitle, quote.edition),
+        style = MaterialTheme.typography.labelSmall,
+        color = SfColors.TextSub,
+    )
+    Text(
+        stringResource(R.string.classics_meta_line, quote.chapter, quote.section, quote.scanPage),
+        style = MaterialTheme.typography.labelSmall,
+        color = SfColors.TextSub,
+    )
+    if (quote.kind == ClassicQuoteKind.ANNOTATION_EXCERPT) {
+        Text(
+            stringResource(R.string.classics_excerpt_note),
+            style = MaterialTheme.typography.labelSmall,
+            color = SfColors.OtherTag,
+        )
     }
 }
 
@@ -218,7 +325,13 @@ fun YearTab(
                         .padding(vertical = 9.dp, horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("${label.month}月 (${label.branchLabel})", style = MaterialTheme.typography.bodyMedium, color = SfColors.TextMain)
+                    // label.month 是流月序数（1 = 寅月），旧写法渲染成"1月 (寅月)"会被读成
+                    // 公历 1 月：点进去却是公历 2 月的月度页，同一事物两套编号。
+                    // 干支月序与公历月的对应是固定的：寅月起算，第 n 流月 ≈ 公历 n%12+1 月。
+                    Text(
+                        "${label.branchLabel} · 约${label.month % 12 + 1}月",
+                        style = MaterialTheme.typography.bodyMedium, color = SfColors.TextMain,
+                    )
                     Spacer(Modifier.weight(1f))
                     if (label.wealth == WealthType.NONE) {
                         SfTag(stringResource(R.string.legend_none), SfColors.TextSub, SfColors.OtherTagBg)
@@ -426,14 +539,17 @@ fun DailyTab(
         GoldHintBar(icon = Icons.Default.Info, text = stringResource(R.string.only_trade_days_hint, m.tradeDayCount))
 
         SfCard(padding = PaddingValues(vertical = 6.dp)) {
+            // 权重与 DailyRow 必须成对修改：表头原先是 1.9/0.8/1.0/1.3/1.2，数据行是
+            // 2.2/0.9/1.1/1.3/1.2 再加一个不参与加权的 18dp 箭头，两套宽度让列逐列右偏。
             SfTableHeader(
                 listOf(
-                    stringResource(R.string.daily_col_date) to 1.9f,
-                    stringResource(R.string.daily_col_week) to 0.8f,
-                    stringResource(R.string.daily_col_ganzhi) to 1.0f,
+                    stringResource(R.string.daily_col_date) to 2.2f,
+                    stringResource(R.string.daily_col_week) to 0.9f,
+                    stringResource(R.string.daily_col_ganzhi) to 1.1f,
                     stringResource(R.string.daily_col_ten_god) to 1.3f,
                     stringResource(R.string.daily_col_wealth) to 1.2f,
                 ),
+                trailingWidth = 18.dp,
             )
             Text(
                 text = stringResource(R.string.daily_col_hint),

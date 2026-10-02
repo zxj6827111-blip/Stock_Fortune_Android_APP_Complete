@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 import bazi_core as bc
+import trade_calendar as tc
 from stock_xlsx import read_workbook
 from build_database import DEFAULT_XLSX, ASSETS_DB
 
@@ -124,17 +125,25 @@ def main() -> int:
         prev = day
     check("C3 日柱逐日推进 60 甲子（无跳变）", breaks == 0, f"跳变 {breaks} 处")
 
-    # 年柱只在立春前后切换：统计每年切换次数应 <=1
+    # 年柱只在立春前后切换：每年至多一次，且只能落在 1-2 月
     flips = 0
+    bad_month: list[str] = []
+    per_year_flips: dict[str, int] = {}
     prev = None
     for date, yp in con.execute("SELECT date, year_ganzhi FROM ganzhi_calendar ORDER BY date"):
         if prev and yp != prev[1]:
             flips += 1
-            mm = int(date[5:7])
-            if mm not in (1, 2):
-                FAILS.append(f"年柱在非立春月份切换: {date}")
+            per_year_flips[date[:4]] = per_year_flips.get(date[:4], 0) + 1
+            if int(date[5:7]) not in (1, 2):
+                bad_month.append(date)
         prev = (date, yp)
-    check("C4 年柱每年至多切换一次且仅在 1-2 月（立春分界）", flips <= 46, f"共 {flips} 次切换")
+    over = {y: n for y, n in per_year_flips.items() if n > 1}
+    # 旧断言是 flips <= 46（跨 45 年约等于不约束"每年至多一次"），且月份违规直接
+    # append 到 FAILS、绕过 check() 既不打印也不计数 —— 一个自身有缺陷的校验器会给出虚假安全感。
+    check("C4 年柱每年至多切换一次且仅在 1-2 月（立春分界）",
+          not bad_month and not over and flips >= 44,
+          f"{flips} 次切换 / {len(per_year_flips)} 年有切换，"
+          f"非立春月切换 {bad_month[:3]}，一年多切 {list(over.items())[:3]}")
 
     # ---- C 交易日历：所有上市日必须是交易日
     trade = {r["date"]: r["is_trade_day"] for r in con.execute("SELECT date, is_trade_day FROM trade_calendar")}
@@ -153,6 +162,60 @@ def main() -> int:
           str(con.execute("SELECT * FROM trade_calendar WHERE date='2026-09-29'").fetchone()))
     n_trade = sum(trade.values())
     check("C8 交易日历覆盖 1990-12-01~2035-12-31", len(trade) == n_gz, f"{len(trade)} 天 / {n_trade} 个交易日")
+
+    # ---- C25/C26/C27/C28 休市覆盖族与 curated 溯源
+    # 背景一：closures_for 曾写成"表里有该年就完全不走规则"的互斥分支，2024 的表只登记了
+    # 元旦/春节/国庆，于是清明/劳动/端午/中秋一个都不产生，出厂库把 8 个真实休市周中标成
+    # 交易日（2024 因此 250 天，邻年 243）。
+    # 背景二：清明/端午/中秋 自 2008 年才法定，旧实现无条件套用规则，1991-2007 多判 33 个
+    # 周中休市日。下面四条把这两类都钉死。
+    fam_conf: dict[str, dict[str, set[str]]] = {}
+    year_trade: dict[str, int] = {}
+    year_days: dict[str, int] = {}
+    for date, t_day, reason, conf in con.execute(
+        "SELECT date, is_trade_day, closed_reason, confidence FROM trade_calendar ORDER BY date"
+    ):
+        year = date[:4]
+        year_days[year] = year_days.get(year, 0) + 1
+        year_trade[year] = year_trade.get(year, 0) + (1 if t_day == 1 else 0)
+        if t_day == 0 and reason and reason != "周末":
+            for fam in tc.families_of(reason):
+                fam_conf.setdefault(year, {}).setdefault(fam, set()).add(conf)
+    full_years = sorted(y for y, n in year_days.items() if n >= 300)
+
+    def required_fams(y: str) -> tuple[str, ...]:
+        base = ("元旦", "春节", "劳动节", "国庆节")
+        if int(y) >= tc.STATUTORY_LUNAR_HOLIDAY_START:
+            return base + ("清明节", "端午节", "中秋节")
+        return base
+
+    missing_fam = {y: sorted(f for f in required_fams(y) if f not in fam_conf.get(y, {}))
+                   for y in full_years}
+    missing_fam = {y: v for y, v in missing_fam.items() if v}
+    check("C25 每个完整年度的法定假日族都产生休市判定（按 2008 法定起点分年要求）",
+          not missing_fam, f"缺族年份 {list(missing_fam.items())[:4]}")
+
+    premature = {y: sorted(f for f in ("清明节", "端午节", "中秋节")
+                           if f in fam_conf.get(y, {}))
+                 for y in full_years if int(y) < tc.STATUTORY_LUNAR_HOLIDAY_START}
+    premature = {y: v for y, v in premature.items() if v}
+    check("C28 2008 年前不得把清明/端午/中秋判为休市（当年非法定假日）",
+          not premature, f"多判休市 {sum(len(v) for v in premature.values())} 年次 {list(premature.items())[:4]}")
+
+    # 表内条目全部标 curated 的年份 = 已公布安排已到位的年份
+    published = sorted(y for y, es in tc.CURATED_RANGES.items()
+                       if es and all(c == "curated" for _s, _e, _r, c in es))
+    degraded = {str(y): sorted(f for f in required_fams(str(y))
+                               if "curated" not in fam_conf.get(str(y), {}).get(f, set()))
+                for y in published}
+    degraded = {y: v for y, v in degraded.items() if v}
+    check("C26 已公布年份的节假日族必须以 curated 判定（不得静默退化为规则推算）",
+          not degraded, f"退化年份 {list(degraded.items())[:4]}；已公布年份 {published[0]}~{published[-1]}")
+
+    off_band = {y: n for y, n in year_trade.items()
+                if y in {str(p) for p in published} and not 241 <= n <= 247}
+    check("C27 已公布年份交易日数落在 241~247（漏节日会冲到 250）",
+          not off_band, f"异常年份 {sorted(off_band.items())[:6]}")
 
     # ---- C 藏干十神一致性
     db_hidden = {}
