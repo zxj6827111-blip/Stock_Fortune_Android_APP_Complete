@@ -15,10 +15,12 @@ import os
 from pathlib import Path
 
 # 底本与交叉核对源（外部书籍目录，只在重新抽取时需要；日常构建读已提交的 JSON）。
-# clone 后拿不到这个目录也没关系：verify_classics.py 不带 --against-source 即可全绿。
-# 换机器时用环境变量覆盖：SF_CLASSICS_BOOK_DIR=/path/to/滴天髓辑要
+# clone 后拿不到这个目录也没关系：verify_classics.py 不带 --against-source 即可全绿，
+# 两个消费方都会先做 exists() 检查并明确报错。
+# 这里**不写死任何人的本机路径**（仓库是公开的）；重新抽取时显式给出：
+#   SF_CLASSICS_BOOK_DIR=/path/to/滴天髓辑要 python3 extract_classics.py
 BOOK_DIR = Path(os.environ.get(
-    "SF_CLASSICS_BOOK_DIR", "/Volumes/workSSD/风水书籍/古籍_入库/滴天髓辑要"
+    "SF_CLASSICS_BOOK_DIR", str(Path.home() / ".stockfortune-classics" / "滴天髓辑要")
 ))
 SOURCE_MD = BOOK_DIR / "滴天髓辑要_全文_V2_精校版.md"
 SOURCE_JSONL = BOOK_DIR / "滴天髓辑要_全文_V2_精校版.chunk.jsonl"
