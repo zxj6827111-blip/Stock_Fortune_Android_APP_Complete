@@ -4,5 +4,5 @@ package com.stockfortune.app.data.db
 object AssetManifest {
     const val IDENTITY_HASH = "a9f01a28a8ba17058a049e9d43ef006b"
     const val SCHEMA_VERSION = 1
-    const val DATA_VERSION = "2025-02-06+a2c3d433ee27"
+    const val DATA_VERSION = "2025-02-06+aaf86250c1f8"
 }

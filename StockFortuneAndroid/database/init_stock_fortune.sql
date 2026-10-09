@@ -97099,5 +97099,5 @@ INSERT INTO app_meta(key,value) VALUES ('stock_count','5395');
 INSERT INTO app_meta(key,value) VALUES ('trade_day_count','11207');
 INSERT INTO app_meta(key,value) VALUES ('source_sha256','57a26df309b769d723cc8da8afb4fb6f6a90561b0857c8bae07c5e1289d49eb9');
 INSERT INTO app_meta(key,value) VALUES ('rule_version','bazi-rule-v1.2');
-INSERT INTO app_meta(key,value) VALUES ('generated_at','2026-10-08T17:03:04');
+INSERT INTO app_meta(key,value) VALUES ('generated_at','2026-10-09T12:20:18');
 PRAGMA user_version = 1;
