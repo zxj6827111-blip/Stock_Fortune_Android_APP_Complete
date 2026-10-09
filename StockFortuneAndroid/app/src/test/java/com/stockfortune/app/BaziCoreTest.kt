@@ -3,6 +3,7 @@ package com.stockfortune.app
 import com.stockfortune.app.domain.calculator.FortuneText
 import com.stockfortune.app.domain.calculator.GanzhiCalculator
 import com.stockfortune.app.domain.calculator.TenGodCalculator
+import com.stockfortune.app.domain.model.Strength
 import com.stockfortune.app.domain.model.TenGod
 import com.stockfortune.app.domain.model.WealthType
 import java.io.BufferedReader
@@ -108,6 +109,41 @@ class BaziCoreTest {
         }
     }
 
+    /**
+     * 白话层 30 格必须写全、互不重复。少一格在运行期会 error()，但那时已经上线了；
+     * 多写两格一样的，等于拆 30 格的意义（同一十神在身强身弱下读法相反）被抹平。
+     */
+    @Test
+    fun `白话层十神乘强弱三十格齐全且互不重复`() {
+        val seen = mutableMapOf<String, String>()
+        TenGod.entries.forEach { g ->
+            Strength.entries.forEach { st ->
+                val text = FortuneText.monthSummary("甲子", g, WealthType.OTHER, "子", st)
+                val plain = text.substringAfter("；").substringBeforeLast("；月令")
+                assertTrue("$g×$st 白话为空：$text", plain.isNotBlank() && plain != text)
+                assertTrue("白话重复：$g×$st 与 ${seen[plain]} 同文", !seen.containsKey(plain))
+                seen[plain] = "$g×$st"
+            }
+        }
+        assertEquals("白话格子数应为 10 十神 × 3 强弱", 30, seen.size)
+    }
+
+    /**
+     * 日主强弱双端一致（Rule v1.2，年月日六字）。夹具里刻意塞了 score 正好 ±2.0 的压线盘：
+     * 阈值比较双端一个写 `>=` 一个写 `>`，只有这些样本才测得出来，随机盘几乎全在安全区。
+     */
+    @Test
+    fun `日主强弱与 Python 参考实现一致`() {
+        var boundary = 0
+        load("strength.csv").forEach { (y, m, d, score, expect) ->
+            val s = TenGodCalculator.strengthScore(y, m, d)
+            assertEquals("$y $m $d 分值", score.toDouble(), s, 0.004)
+            assertEquals("$y $m $d 三态", Strength.fromCn(expect), TenGodCalculator.dayMasterStrength(y, m, d))
+            if (kotlin.math.abs(kotlin.math.abs(s) - 2.0) < 0.004) boundary++
+        }
+        assertTrue("夹具未覆盖 ±2.0 压线盘，阈值比较符没被锁住（命中 $boundary 条）", boundary >= 4)
+    }
+
     @Test
     fun `财星判定透干优先`() {
         // 壬日主遇丙午：透丙为偏财（午藏丁才是正财），必须判为偏财
@@ -147,11 +183,11 @@ class BaziCoreTest {
         val texts = mutableListOf<String>()
         com.stockfortune.app.domain.calculator.BaziTables.STEMS.forEach { s ->
             TenGod.entries.forEach { g ->
-                texts += FortuneText.monthSummary("丙申", g, WealthType.OTHER, "申")
+                texts += FortuneText.monthSummary("丙申", g, WealthType.OTHER, "申", Strength.BALANCED)
                 texts += FortuneText.yearIndustryNote(s, "午")
             }
             WealthType.entries.forEach { w ->
-                texts += FortuneText.yearWealthSummary(w, "丙午")
+                TenGod.entries.forEach { g -> texts += FortuneText.yearWealthSummary(w, "丙午", g, Strength.BALANCED) }
                 texts += FortuneText.wealthBasis(s, "戊寅", "戊", "寅", w, true)
             }
         }
@@ -198,13 +234,35 @@ class BaziCoreTest {
             com.stockfortune.app.domain.calculator.BaziTables.STEMS.flatMap { s ->
                 listOf(
                     FortuneText.fateFeature(s),
-                    FortuneText.yearWealthSummary(WealthType.ZHENG_CAI, "丙午"),
+                    FortuneText.yearWealthSummary(WealthType.ZHENG_CAI, "丙午", TenGod.ZHENG_CAI, Strength.STRONG),
+                    FortuneText.yearWealthSummary(WealthType.ZHENG_CAI, "丙午", TenGod.BI_JIAN, Strength.WEAK),
                     FortuneText.yearIndustryNote(s, "午"),
                     FortuneText.yearAdvice(WealthType.PIAN_CAI),
                     FortuneText.monthTip(3, 5),
+                    FortuneText.monthSummary("己亥", TenGod.BI_JIAN, WealthType.ZHENG_CAI, "亥", Strength.WEAK),
                 )
             }
         }
         texts.forEach { t -> banned.forEach { b -> assertTrue("文案含敏感词 $b: $t", !t.contains(b)) } }
+    }
+
+    /**
+     * 「透干」只在天干本身为财时成立。己土日主遇己亥月：月干己是比肩，
+     * 财在亥的本气壬上，Rule v1.1 判正财但属藏支 —— 旧文案不分情况一律写「透正财」。
+     * 用例取自 603002（壬辰 乙巳 己卯 己巳）2026 年的真实月份。
+     */
+    @Test
+    fun `财在地支本气时文案记藏支而非透干`() {
+        val monthHidden = FortuneText.monthSummary("己亥", TenGod.BI_JIAN, WealthType.ZHENG_CAI, "亥", Strength.WEAK)
+        assertTrue("藏支月不得写「透」：$monthHidden", !monthHidden.contains("透"))
+        assertTrue("藏支月须点明藏支：$monthHidden", monthHidden.contains("正财藏支"))
+
+        val monthShown = FortuneText.monthSummary("壬辰", TenGod.ZHENG_CAI, WealthType.ZHENG_CAI, "辰", Strength.STRONG)
+        assertTrue("透干月应写「透正财」：$monthShown", monthShown.contains("透正财"))
+
+        val yearHidden = FortuneText.yearWealthSummary(WealthType.PIAN_CAI, "丙午", TenGod.PIAN_YIN, Strength.WEAK)
+        assertTrue("流年同理：$yearHidden", yearHidden.contains("财星藏支") && !yearHidden.contains("透干"))
+        assertTrue("流年透干：", FortuneText.yearWealthSummary(WealthType.PIAN_CAI, "丙午", TenGod.PIAN_CAI, Strength.STRONG)
+            .contains("财星透干"))
     }
 }

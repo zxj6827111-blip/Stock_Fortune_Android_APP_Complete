@@ -57,7 +57,7 @@ class RuntimeSmokeTest {
         val meta = stocks.meta()
         assertEquals("5395", meta["stock_count"])
         assertNotNull("data_version 缺失", meta["data_version"])
-        assertEquals("bazi-rule-v1.1", meta["rule_version"])
+        assertEquals("bazi-rule-v1.2", meta["rule_version"])
     }
 
     @Test

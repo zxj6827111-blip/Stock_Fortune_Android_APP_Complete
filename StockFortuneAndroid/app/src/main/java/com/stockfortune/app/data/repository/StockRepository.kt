@@ -96,4 +96,5 @@ private fun com.stockfortune.app.data.entity.StockEntity.toInfo() = StockInfo(
 private fun com.stockfortune.app.data.entity.StockBaziEntity.toChart() = BaziChart(
     stockId = stockId, fullBazi = fullBazi, yearPillar = yearPillar, monthPillar = monthPillar,
     dayPillar = dayPillar, hourPillar = hourPillar, dayMaster = dayStem, naYin = naYin,
+    strength = dayMasterStrength,
 )

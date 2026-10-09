@@ -13,3 +13,9 @@ StockFortuneAndroid/release/verification/
 
 # 需求方交付的原始输入包（28MB 上市日期表与设计素材），体积大且非源码
 Stock_Fortune_Android_APP_AI_Start_Kit/
+
+# 审阅核对表从外部规则库重新生成，含第三方待审文案，不入库
+StockFortuneAndroid/release/*.xlsx
+
+# 本机的信号统计产物，非工程内容，且命名易被公开仓库误读为收益声明
+/2026-10-01_正财偏财信号当日涨跌统计.html

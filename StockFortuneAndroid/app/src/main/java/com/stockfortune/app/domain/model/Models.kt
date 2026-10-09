@@ -32,6 +32,18 @@ enum class WealthType(val cn: String) {
 
 enum class Element(val cn: String) { WOOD("木"), FIRE("火"), EARTH("土"), METAL("金"), WATER("水") }
 
+/**
+ * 日主强弱三态（Rule v1.2，年月日六字口径）。
+ * 三态而非两态：边界盘硬判强弱是假精确，「中和」承接本项目一贯的口径声明风格。
+ */
+enum class Strength(val cn: String) {
+    STRONG("身强"), BALANCED("中和"), WEAK("身弱");
+
+    companion object {
+        fun fromCn(s: String?): Strength? = entries.firstOrNull { it.cn == s }
+    }
+}
+
 /** 股票基础信息 + 八字（预置库直读）。 */
 data class StockInfo(
     val id: Long,
@@ -61,6 +73,8 @@ data class BaziChart(
     val hourPillar: String,
     val dayMaster: String,
     val naYin: String,
+    /** Rule v1.2 日主强弱三态（本项目概述，非古籍口径）。 */
+    val strength: String,
 ) {
     val dayStem get() = dayPillar.takeIf { it.length == 2 }?.get(0)?.toString() ?: ""
     val dayBranch get() = dayPillar.takeIf { it.length == 2 }?.get(1)?.toString() ?: ""
@@ -142,8 +156,14 @@ data class MonthLabel(
     val month: Int,
     val monthGanzhi: String,
     val branchLabel: String,
+    val monthBranch: String,
     val wealth: WealthType,
     val tenGod: TenGod,
+    /** 该干支月起止日（ISO），由交节决定，与公历月不重合。 */
+    val startDate: String,
+    val endDate: String,
+    /** 该月判词，与月度页「月运简述」同一函数产出。 */
+    val summary: String,
 )
 
 data class YearAnalysis(

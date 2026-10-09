@@ -69,6 +69,49 @@ class TabContentRenderTest {
         }
     }
 
+    /**
+     * 年度页的逐月行从「月支 + 财星色块」扩到「月干支 + 区间 + 十神 + 财星 + 判词」。
+     * 只断言渲染不抛异常的话，字段加了却不显示也照样绿 —— 这里逐项断言"屏上有这段文字"。
+     * 2026 为丙午年，五虎遁丙辛起庚寅，故首个干支月必为庚寅；立春 2/4、惊蛰 3/5，
+     * 月支在交节当日翻转，所以庚寅月区间右端是 3.4 而非 3.5。
+     */
+    @Test
+    fun `年度 Tab 逐月行渲染月干支 交节区间与判词`() {
+        val f = fixtures()
+        val yin = f.year.months.first()
+        assertEquals("庚寅", yin.monthGanzhi)
+        assertEquals("2026-02-04", yin.startDate)
+        assertEquals("2026-03-04", yin.endDate)
+        org.junit.Assert.assertTrue("判词不得为空", yin.summary.isNotBlank())
+
+        compose.setContent {
+            StockFortuneTheme {
+                YearTab(year = f.year, yearValue = 2026, onPrev = {}, onNext = {}, onMonthClick = {})
+            }
+        }
+        compose.waitUntil(10_000) { compose.onAllNodes(hasText("各月十神出现情况")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("庚寅").assertExists()
+        compose.onNodeWithText("2.4–3.4", substring = true).assertExists()
+        compose.onNodeWithText(yin.summary, substring = true).assertExists()
+    }
+
+    /**
+     * P0-1 回归锁：年度页曾把 WealthType.OTHER 塌缩成 NONE，于是"七杀当值的月"
+     * 和"压根没数据的月"共用一个「无」标签。干支月永远有判定结果，NONE 只属于非交易日。
+     */
+    @Test
+    fun `年度页非财月记为其他而非无`() {
+        val f = fixtures()
+        org.junit.Assert.assertTrue(
+            "年度页不应出现 NONE（该值只用于非交易日）：${f.year.months.map { it.wealth }}",
+            f.year.months.none { it.wealth == com.stockfortune.app.domain.model.WealthType.NONE },
+        )
+        org.junit.Assert.assertTrue(
+            "12 个干支月应含至少一个非财月，否则这条锁形同虚设：${f.year.months.map { it.wealth }}",
+            f.year.months.any { it.wealth == com.stockfortune.app.domain.model.WealthType.OTHER },
+        )
+    }
+
     @Test
     fun `月度 Tab 渲染月历与财日统计`() {
         val f = fixtures()

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "aeb7339127b32582643fdf0f251d64c6",
+    "identityHash": "a9f01a28a8ba17058a049e9d43ef006b",
     "entities": [
       {
         "tableName": "stock",
@@ -141,7 +141,7 @@
       },
       {
         "tableName": "stock_bazi",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`stock_id` INTEGER NOT NULL, `full_bazi` TEXT NOT NULL, `year_pillar` TEXT NOT NULL, `month_pillar` TEXT NOT NULL, `day_pillar` TEXT NOT NULL, `hour_pillar` TEXT NOT NULL, `year_stem` TEXT NOT NULL, `year_branch` TEXT NOT NULL, `month_stem` TEXT NOT NULL, `month_branch` TEXT NOT NULL, `day_stem` TEXT NOT NULL, `day_branch` TEXT NOT NULL, `hour_stem` TEXT NOT NULL, `hour_branch` TEXT NOT NULL, `day_master_element` TEXT NOT NULL, `month_season_element` TEXT NOT NULL, `na_yin` TEXT NOT NULL, PRIMARY KEY(`stock_id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`stock_id` INTEGER NOT NULL, `full_bazi` TEXT NOT NULL, `year_pillar` TEXT NOT NULL, `month_pillar` TEXT NOT NULL, `day_pillar` TEXT NOT NULL, `hour_pillar` TEXT NOT NULL, `year_stem` TEXT NOT NULL, `year_branch` TEXT NOT NULL, `month_stem` TEXT NOT NULL, `month_branch` TEXT NOT NULL, `day_stem` TEXT NOT NULL, `day_branch` TEXT NOT NULL, `hour_stem` TEXT NOT NULL, `hour_branch` TEXT NOT NULL, `day_master_element` TEXT NOT NULL, `month_season_element` TEXT NOT NULL, `na_yin` TEXT NOT NULL, `day_master_strength` TEXT NOT NULL, PRIMARY KEY(`stock_id`))",
         "fields": [
           {
             "fieldPath": "stockId",
@@ -242,6 +242,12 @@
           {
             "fieldPath": "naYin",
             "columnName": "na_yin",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dayMasterStrength",
+            "columnName": "day_master_strength",
             "affinity": "TEXT",
             "notNull": true
           }
@@ -604,7 +610,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'aeb7339127b32582643fdf0f251d64c6')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a9f01a28a8ba17058a049e9d43ef006b')"
     ]
   }
 }

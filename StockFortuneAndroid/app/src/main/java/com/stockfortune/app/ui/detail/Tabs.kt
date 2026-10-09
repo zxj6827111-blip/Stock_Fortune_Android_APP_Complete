@@ -134,6 +134,8 @@ fun BasicTab(detail: StockDetail) {
             DividerLine()
             SfInfoRow(stringResource(R.string.field_nayin), detail.bazi.naYin)
             DividerLine()
+            SfInfoRow(stringResource(R.string.field_strength_note), detail.bazi.strength)
+            DividerLine()
             SfInfoRow(stringResource(R.string.field_fate_feature_note), detail.fateFeature)
         }
 
@@ -311,37 +313,58 @@ fun YearTab(
                     hint = stringResource(R.string.legend_pian_hint), modifier = Modifier.weight(1f),
                 )
                 WealthLegend(
-                    color = SfColors.OtherTag, name = stringResource(R.string.legend_none),
-                    hint = stringResource(R.string.legend_none_hint), modifier = Modifier.weight(1f),
+                    color = SfColors.OtherTag, name = stringResource(R.string.legend_other),
+                    hint = stringResource(R.string.legend_other_hint), modifier = Modifier.weight(1f),
                 )
             }
             Spacer(Modifier.height(6.dp))
             year.months.forEach { label ->
-                Row(
+                Column(
                     Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
                         .clickable { onMonthClick(label) }
                         .padding(vertical = 9.dp, horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    // label.month 是流月序数（1 = 寅月），旧写法渲染成"1月 (寅月)"会被读成
-                    // 公历 1 月：点进去却是公历 2 月的月度页，同一事物两套编号。
-                    // 干支月序与公历月的对应是固定的：寅月起算，第 n 流月 ≈ 公历 n%12+1 月。
-                    Text(
-                        "${label.branchLabel} · 约${label.month % 12 + 1}月",
-                        style = MaterialTheme.typography.bodyMedium, color = SfColors.TextMain,
-                    )
-                    Spacer(Modifier.weight(1f))
-                    if (label.wealth == WealthType.NONE) {
-                        SfTag(stringResource(R.string.legend_none), SfColors.TextSub, SfColors.OtherTagBg)
-                    } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            label.monthGanzhi,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = SfColors.TextMain,
+                        )
+                        Spacer(Modifier.width(7.dp))
+                        // label.month 是流月序数（1 = 寅月），旧写法渲染成"1月 (寅月)"会被读成
+                        // 公历 1 月：点进去却是公历 2 月的月度页，同一事物两套编号。
+                        // 干支月序与公历月的对应是固定的：寅月起算，第 n 流月 ≈ 公历 n%12+1 月。
+                        Text(
+                            "${label.branchLabel} · 约${label.month % 12 + 1}月 · ${ganzhiMonthSpan(label.startDate, label.endDate)}",
+                            style = MaterialTheme.typography.bodySmall, color = SfColors.TextSub,
+                        )
+                        Spacer(Modifier.weight(1f))
+                        TenGodTag(label.tenGod)
+                        Spacer(Modifier.width(5.dp))
                         WealthTag(label.wealth)
                     }
+                    Text(
+                        label.summary,
+                        style = MaterialTheme.typography.bodySmall, color = SfColors.TextSub,
+                    )
                 }
             }
         }
     }
+}
+
+/** 干支月起止日（交节决定）压成「2.4–3.5」；跨年时省略起点年份。 */
+private fun ganzhiMonthSpan(startIso: String, endIso: String): String {
+    fun md(iso: String): String? = iso.split('-').getOrNull(1)?.let { m ->
+        iso.split('-').getOrNull(2)?.let { d -> "${m.toInt()}.${d.toInt()}" }
+    }
+    val s = md(startIso) ?: return ""
+    val e = md(endIso) ?: return s
+    return if (s == e) s else "$s–$e"
 }
 
 @Composable

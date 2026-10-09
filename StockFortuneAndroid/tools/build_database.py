@@ -67,7 +67,8 @@ CREATE TABLE stock_bazi(
   hour_stem TEXT NOT NULL, hour_branch TEXT NOT NULL,
   day_master_element TEXT NOT NULL,
   month_season_element TEXT NOT NULL,
-  na_yin TEXT NOT NULL
+  na_yin TEXT NOT NULL,
+  day_master_strength TEXT NOT NULL
 );
 CREATE INDEX idx_bazi_day_pillar ON stock_bazi(day_pillar);
 CREATE INDEX idx_bazi_year_pillar ON stock_bazi(year_pillar);
@@ -222,7 +223,8 @@ def build(start: dt.date, end: dt.date, xlsx: Path) -> dict:
                   "industry", "industry_full", "stock_nature"]
     bazi_cols = ["stock_id", "full_bazi", "year_pillar", "month_pillar", "day_pillar", "hour_pillar",
                  "year_stem", "year_branch", "month_stem", "month_branch", "day_stem", "day_branch",
-                 "hour_stem", "hour_branch", "day_master_element", "month_season_element", "na_yin"]
+                 "hour_stem", "hour_branch", "day_master_element", "month_season_element", "na_yin",
+                 "day_master_strength"]
     hidden_cols = ["stock_id", "pillar", "branch", "hidden_stem", "ten_god", "rank"]
 
     stock_batch, bazi_batch, hidden_batch = [], [], []
@@ -237,7 +239,8 @@ def build(start: dt.date, end: dt.date, xlsx: Path) -> dict:
         bazi_batch.append((sid, r.full_bazi, r.year_pillar, r.month_pillar, r.day_pillar, r.hour_pillar,
                            r.year_pillar[0], r.year_pillar[1], r.month_pillar[0], r.month_pillar[1],
                            r.day_pillar[0], r.day_pillar[1], r.hour_pillar[0], r.hour_pillar[1],
-                           bc.STEM_ELEMENT[r.day_pillar[0]], season, bc.na_yin(r.day_pillar)))
+                           bc.STEM_ELEMENT[r.day_pillar[0]], season, bc.na_yin(r.day_pillar),
+                           bc.day_master_strength(r.year_pillar, r.month_pillar, r.day_pillar)))
         for pillar, val in (("year", r.year_pillar), ("month", r.month_pillar),
                             ("day", r.day_pillar), ("hour", r.hour_pillar)):
             branch = val[1]
@@ -281,7 +284,7 @@ def build(start: dt.date, end: dt.date, xlsx: Path) -> dict:
         ("stock_count", str(n_stock)),
         ("trade_day_count", str(n_td)),
         ("source_sha256", meta["sha256"]),
-        ("rule_version", "bazi-rule-v1.1"),
+        ("rule_version", "bazi-rule-v1.2"),
         ("generated_at", dt.datetime.now().isoformat(timespec="seconds")),
     ]
     emit("app_meta", ["key", "value"], meta_rows)

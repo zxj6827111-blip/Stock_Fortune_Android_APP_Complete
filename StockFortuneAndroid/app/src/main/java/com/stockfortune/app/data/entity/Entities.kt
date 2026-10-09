@@ -50,6 +50,8 @@ data class StockBaziEntity(
     @ColumnInfo(name = "day_master_element") val dayMasterElement: String,
     @ColumnInfo(name = "month_season_element") val monthSeasonElement: String,
     @ColumnInfo(name = "na_yin") val naYin: String,
+    /** Rule v1.2 日主强弱三态；按年月日六字计，时柱不计（理由见 TenGodCalculator）。 */
+    @ColumnInfo(name = "day_master_strength") val dayMasterStrength: String,
 )
 
 @Entity(tableName = "stock_hidden_ten_god", primaryKeys = ["stock_id", "pillar", "hidden_stem"], indices = [
