@@ -176,3 +176,25 @@ interface MetaDao {
     @Query("SELECT value FROM app_meta WHERE key = :key LIMIT 1")
     suspend fun value(key: String): String?
 }
+
+@Dao
+interface LuckCycleDao {
+    @Query("SELECT * FROM stock_luck_cycle WHERE stock_id = :stockId LIMIT 1")
+    suspend fun findByStockId(stockId: Long): com.stockfortune.app.data.entity.StockLuckCycleEntity?
+
+    @Query("SELECT * FROM luck_cycle_period WHERE stock_id = :stockId ORDER BY cycle_index")
+    suspend fun periodsByStockId(stockId: Long): List<com.stockfortune.app.data.entity.LuckCyclePeriodEntity>
+
+    @Query(
+        """SELECT * FROM luck_cycle_period
+           WHERE stock_id = :stockId AND :year BETWEEN start_year AND end_year
+           LIMIT 1"""
+    )
+    suspend fun currentPeriodForYear(stockId: Long, year: Int): com.stockfortune.app.data.entity.LuckCyclePeriodEntity?
+
+    @Query("SELECT COUNT(*) FROM stock_luck_cycle")
+    suspend fun countCycles(): Int
+
+    @Query("SELECT COUNT(*) FROM luck_cycle_period")
+    suspend fun countPeriods(): Int
+}

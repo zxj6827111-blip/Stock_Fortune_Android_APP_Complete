@@ -21,7 +21,9 @@
     "trade_days": 11207,
     "stock_bazi": 5395,
     "stock_hidden_ten_god": 53347,
-    "app_meta": 10
+    "stock_luck_cycle": 5395,
+    "luck_cycle_period": 60948,
+    "app_meta": 13
   },
   "calendar": {
     "start": "1990-12-01",
@@ -33,6 +35,6 @@
       "1999-05-07:劳动节"
     ]
   },
-  "db_bytes": 8626176,
-  "sql_lines": 97103
+  "db_bytes": 15822848,
+  "sql_lines": 163453
 }

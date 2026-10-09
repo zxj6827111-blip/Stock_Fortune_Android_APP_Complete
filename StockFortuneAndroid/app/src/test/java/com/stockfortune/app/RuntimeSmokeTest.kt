@@ -65,7 +65,7 @@ class RuntimeSmokeTest {
         val opened = db.openHelper.readableDatabase
         opened.query("PRAGMA user_version").use { c ->
             assertTrue(c.moveToFirst())
-            assertEquals(1, c.getInt(0))
+            assertEquals(com.stockfortune.app.data.db.AssetManifest.SCHEMA_VERSION, c.getInt(0))
         }
         opened.query("SELECT identity_hash FROM room_master_table WHERE id=42").use { c ->
             assertTrue("room_master_table 缺行 → Room 会拒绝打开", c.moveToFirst())

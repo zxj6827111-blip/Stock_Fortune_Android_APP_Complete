@@ -324,6 +324,21 @@ def main() -> int:
             bad_sql.append((q[:70], str(exc)[:80]))
     check("C21 DAO 全部 @Query 可在预置库预编译", not bad_sql, f"{len(sqls)} 条语句，失败 {bad_sql[:2]}")
 
+    # ---- C30-C32 V1.3 Phase 1 大运与起运门禁 (Gate G1)
+    luck_rows = con.execute("SELECT stock_id, direction, status, start_date, start_age, first_day_polarity FROM stock_luck_cycle").fetchall()
+    check("C30 stock_luck_cycle 覆盖 5395/5395", len(luck_rows) == 5395, f"实际 {len(luck_rows)}")
+    flat_count = sum(1 for r in luck_rows if r["status"] == "unavailable_flat" and r["direction"] == "unavailable")
+    missing_count = sum(1 for r in luck_rows if r["status"] == "unavailable_missing" and r["direction"] == "unavailable")
+    avail_count = sum(1 for r in luck_rows if r["status"] == "available" and r["direction"] in ("forward", "reverse"))
+    check("C31 平盘(315)与缺失(1)标记为 unavailable 且有效股(5079)方向合规",
+          flat_count == 315 and missing_count == 1 and avail_count == 5079,
+          f"平盘 {flat_count}, 缺失 {missing_count}, 有效 {avail_count}")
+
+    period_rows = con.execute("SELECT stock_id, cycle_index, ganzhi, stem, branch, start_year, end_year FROM luck_cycle_period").fetchall()
+    check("C32 luck_cycle_period 60948 行且每只可用股票恰有 12 步周期",
+          len(period_rows) == 5079 * 12,
+          f"实际 {len(period_rows)} 行 vs 期望 {5079 * 12}")
+
     con.close()
     print(f"\n==== 校验结果: {len(PASSES)} 通过 / {len(FAILS)} 失败 ====")
     for f in FAILS:

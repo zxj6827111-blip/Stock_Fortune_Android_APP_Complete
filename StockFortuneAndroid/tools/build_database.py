@@ -18,6 +18,7 @@ import sqlite3
 from pathlib import Path
 
 import bazi_core as bc
+import dayun_core as dc
 import solar_terms as st
 import trade_calendar as tc
 from stock_xlsx import read_industry, read_workbook
@@ -26,12 +27,16 @@ from lunar_python import Solar
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_XLSX = ROOT.parent / "Stock_Fortune_Android_APP_AI_Start_Kit" / "input_data" / "生辰八字.xlsx"
+if not DEFAULT_XLSX.exists() and len(ROOT.parents) > 2:
+    alt = ROOT.parents[2] / "Stock_Fortune_Android_APP_AI_Start_Kit" / "input_data" / "生辰八字.xlsx"
+    if alt.exists():
+        DEFAULT_XLSX = alt
 INDUSTRY_XLSX = DEFAULT_XLSX.parent / "行业分类.xlsx"
 ASSETS_DB = ROOT / "app" / "src" / "main" / "assets" / "databases" / "stock_fortune.db"
 SQL_OUT = ROOT / "database" / "init_stock_fortune.sql"
 REPORT_OUT = ROOT / "database" / "import_report.json"
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 CALENDAR_VERSION = "2026-09-29"
 
 DDL = """
@@ -114,6 +119,37 @@ CREATE TABLE favorite(
   added_at INTEGER NOT NULL
 );
 CREATE TABLE app_meta(key TEXT PRIMARY KEY, value TEXT NOT NULL);
+
+CREATE TABLE stock_luck_cycle(
+  stock_id INTEGER PRIMARY KEY REFERENCES stock(id) ON DELETE CASCADE,
+  stock_code TEXT NOT NULL,
+  direction TEXT NOT NULL,
+  status TEXT NOT NULL,
+  status_reason TEXT NOT NULL,
+  start_date TEXT,
+  start_age INTEGER,
+  first_day_polarity TEXT NOT NULL,
+  rule_version TEXT NOT NULL,
+  boundary_flag TEXT
+);
+
+CREATE TABLE luck_cycle_period(
+  id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  stock_id INTEGER NOT NULL REFERENCES stock(id) ON DELETE CASCADE,
+  cycle_index INTEGER NOT NULL,
+  ganzhi TEXT NOT NULL,
+  stem TEXT NOT NULL,
+  branch TEXT NOT NULL,
+  start_date TEXT NOT NULL,
+  end_date TEXT NOT NULL,
+  start_year INTEGER NOT NULL,
+  end_year INTEGER NOT NULL,
+  start_age INTEGER NOT NULL,
+  end_age INTEGER NOT NULL,
+  rule_version TEXT NOT NULL
+);
+CREATE INDEX index_luck_cycle_period_stock_id ON luck_cycle_period(stock_id);
+CREATE INDEX index_luck_cycle_period_stock_id_start_year_end_year ON luck_cycle_period(stock_id, start_year, end_year);
 """
 
 BOARD_BY_PREFIX = {
@@ -255,6 +291,35 @@ def build(start: dt.date, end: dt.date, xlsx: Path) -> dict:
     emit("stock_bazi", bazi_cols, bazi_batch)
     emit("stock_hidden_ten_god", hidden_cols, hidden_batch)
 
+    # 大运元数据与周期数据（Phase 1 P2-B）
+    luck_cols = ["stock_id", "stock_code", "direction", "status", "status_reason",
+                 "start_date", "start_age", "first_day_polarity", "rule_version", "boundary_flag"]
+    period_cols = ["stock_id", "cycle_index", "ganzhi", "stem", "branch",
+                   "start_date", "end_date", "start_year", "end_year", "start_age", "end_age", "rule_version"]
+    luck_batch, period_batch = [], []
+    for sid, r in enumerate(rows, start=1):
+        res = dc.calculate_stock_luck_cycle(
+            r.listing_date, r.year_pillar, r.month_pillar, r.day_pillar, r.hour_pillar,
+            r.first_change, r.first_day_flag,
+        )
+        luck_batch.append((
+            sid, r.code, res["direction"], res["status"], res["status_reason"],
+            res["start_date"], res["start_age"], res["first_day_polarity"],
+            res["rule_version"], res["boundary_flag"],
+        ))
+        for p in res["periods"]:
+            period_batch.append((
+                sid, p["cycle_index"], p["ganzhi"], p["stem"], p["branch"],
+                p["start_date"], p["end_date"], p["start_year"], p["end_year"],
+                p["start_age"], p["end_age"], p["rule_version"],
+            ))
+        if len(luck_batch) >= 1000:
+            emit("stock_luck_cycle", luck_cols, luck_batch)
+            emit("luck_cycle_period", period_cols, period_batch)
+            luck_batch, period_batch = [], []
+    emit("stock_luck_cycle", luck_cols, luck_batch)
+    emit("luck_cycle_period", period_cols, period_batch)
+
     # 日历
     gz_cols = ["date", "year_ganzhi", "month_ganzhi", "day_ganzhi", "year_stem", "year_branch",
                "month_stem", "month_branch", "day_stem", "day_branch", "month_branch_label", "solar_term"]
@@ -275,6 +340,8 @@ def build(start: dt.date, end: dt.date, xlsx: Path) -> dict:
     n_stock = cur.execute("SELECT COUNT(*) FROM stock").fetchone()[0]
     n_gz = cur.execute("SELECT COUNT(*) FROM ganzhi_calendar").fetchone()[0]
     n_td = cur.execute("SELECT COUNT(*) FROM trade_calendar WHERE is_trade_day=1").fetchone()[0]
+    n_luck = cur.execute("SELECT COUNT(*) FROM stock_luck_cycle").fetchone()[0]
+    n_period = cur.execute("SELECT COUNT(*) FROM luck_cycle_period").fetchone()[0]
     meta_rows = [
         ("schema_version", str(SCHEMA_VERSION)),
         ("data_version", meta["snapshot_max_listing_date"]),
@@ -283,8 +350,11 @@ def build(start: dt.date, end: dt.date, xlsx: Path) -> dict:
         ("calendar_end", end.isoformat()),
         ("stock_count", str(n_stock)),
         ("trade_day_count", str(n_td)),
+        ("luck_cycle_count", str(n_luck)),
+        ("luck_period_count", str(n_period)),
         ("source_sha256", meta["sha256"]),
         ("rule_version", "bazi-rule-v1.2"),
+        ("dayun_rule_version", "stock-luck-cycle-v1.3"),
         ("generated_at", dt.datetime.now().isoformat(timespec="seconds")),
     ]
     emit("app_meta", ["key", "value"], meta_rows)
@@ -309,7 +379,7 @@ def build(start: dt.date, end: dt.date, xlsx: Path) -> dict:
                      "correction_samples": [f"{d}:{r}" for d, r in corrected[:20]]},
     }
     con2 = sqlite3.connect(db_path)
-    for t in ("stock_bazi", "stock_hidden_ten_god", "app_meta"):
+    for t in ("stock_bazi", "stock_hidden_ten_god", "stock_luck_cycle", "luck_cycle_period", "app_meta"):
         report["counts"][t] = con2.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
     report["db_bytes"] = db_path.stat().st_size
     report["sql_lines"] = len(sql_lines)

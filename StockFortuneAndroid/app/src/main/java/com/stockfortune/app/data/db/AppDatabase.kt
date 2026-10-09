@@ -8,16 +8,19 @@ import com.stockfortune.app.data.dao.BaziDao
 import com.stockfortune.app.data.dao.CalendarDao
 import com.stockfortune.app.data.dao.FavoriteDao
 import com.stockfortune.app.data.dao.FilterDao
+import com.stockfortune.app.data.dao.LuckCycleDao
 import com.stockfortune.app.data.dao.MetaDao
 import com.stockfortune.app.data.dao.ScanCacheDao
 import com.stockfortune.app.data.dao.StockDao
 import com.stockfortune.app.data.entity.AppMetaEntity
 import com.stockfortune.app.data.entity.FavoriteEntity
 import com.stockfortune.app.data.entity.GanzhiCalendarEntity
+import com.stockfortune.app.data.entity.LuckCyclePeriodEntity
 import com.stockfortune.app.data.entity.ScanCacheEntity
 import com.stockfortune.app.data.entity.StockBaziEntity
 import com.stockfortune.app.data.entity.StockEntity
 import com.stockfortune.app.data.entity.StockHiddenTenGodEntity
+import com.stockfortune.app.data.entity.StockLuckCycleEntity
 import com.stockfortune.app.data.entity.TradeCalendarEntity
 
 /**
@@ -29,6 +32,7 @@ import com.stockfortune.app.data.entity.TradeCalendarEntity
         StockEntity::class, StockBaziEntity::class, StockHiddenTenGodEntity::class,
         GanzhiCalendarEntity::class, TradeCalendarEntity::class, ScanCacheEntity::class,
         FavoriteEntity::class, AppMetaEntity::class,
+        StockLuckCycleEntity::class, LuckCyclePeriodEntity::class,
     ],
     // 版本取自随包生成的清单，避免"清单说 1、实体已经 2"这种只有运行期才发现的脱钩
     version = AssetManifest.SCHEMA_VERSION,
@@ -42,6 +46,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun filterDao(): FilterDao
     abstract fun favoriteDao(): FavoriteDao
     abstract fun metaDao(): MetaDao
+    abstract fun luckCycleDao(): LuckCycleDao
 
     companion object {
         const val ASSET_PATH = "databases/stock_fortune.db"
