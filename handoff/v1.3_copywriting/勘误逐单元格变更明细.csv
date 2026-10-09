@@ -1,0 +1,76 @@
+﻿勘误项,文件,工作表,单元格,原文,修订后,问题与处理
+E-01,规则库,动态插槽设计,E13,AVAILABLE_WHEN_STATUS_EXPLICIT,LEGACY_AUDIT_ONLY_NO_RENDER,将历史通用句降为审核留痕而非最终用户出口
+E-01,规则库,动态插槽设计,F13,必须展示具体缺项名称；不得把UNKNOWN当AVAILABLE,保留原句及旧规则匹配历史；最终五段与页面级说明一律不渲染本插槽。命中仅表示审核条件成立，不等于可见正文。,明确匹配与展示两阶段不等价
+E-01,规则库,动态插槽设计,H13,26例全匹配，同一示例仅出现一次,历史文案只供溯源与旧DSL回归；由 SLOT_PRECISE_ADVANCED_STATUS 执行逐项状态输出；用户级展示标记为NO_RENDER。,历史原句在用户文案模板列保留原值
+E-02,规则库,动态插槽设计,C15,仅对高级维度非AVAILABLE项逐一显示；FLAT/UNKNOWN/CONFLICT×dayun AVAILABLE需隔离,dayun / natal_relation / yongshen 三个状态独立取值；只渲染非AVAILABLE项；先隔离FLAT/UNKNOWN/CONFLICT与确定大运的矛盾输入。,逐项状态，避免一项缺失连带否认另外两项
+E-02,规则库,动态插槽设计,D15,dayun.availability; natal_relation.availability; yongshen.availability; first_day_polarity.state; evidence_status,dayun.availability; natal_relation.availability; yongshen.availability; first_day_polarity.state; dayun.effective_availability; evidence_status,加入冲突隔离后的有效状态；真实算法字段仍待冻结
+E-02,规则库,动态插槽设计,E15,DRAFT_ONLY_NOT_PRODUCTION,REVIEW_ONLY_PRECISE_USER_PATH,仅为候审模拟出口，并未在APP上线
+E-02,规则库,动态插槽设计,F15,不使用旧NA_ADVANCED_MISSING单句覆盖所有；独立已验事件不随其他维度缺失失效,不得引用旧NA_ADVANCED_MISSING正文；单项AVAILABLE不出缺项句；NULL/非法枚举拒绝输出；平盘或阴阳未知、冲突时将确定大运先隔离待复核。,限制仅真实缺项，拒绝无依据联动
+E-02,规则库,动态插槽设计,G15,对真实缺项分别说明大运、原局关系、喜用候选当前状态；只出现一处。,依据《高级条件分项状态》对大运、原局关系、喜用候选逐项取句；AVAILABLE不出缺项句；三个均AVAILABLE时此处留空；最多展示一处页面级说明。,明确渲染源为15条状态文案而非单句
+E-02,规则库,动态插槽设计,H15,审核版分项规则，未连接Android正式数据库。,本项是唯一候审的高级缺项可见出口；须有维度状态证据，仍待算法字段冻结、命理专业终审，禁止导入生产。,阻止旧模板直接显示
+E-01,规则库,机器验证摘要,D7,26/26均有 NA_ADVANCED_MISSING 及综合解释文字,26/26旧规则命中仅作历史DSL匹配记录；用户级缺项统一改走逐项状态槽，不渲染旧通用缺项正文。,避免历史测试摘要把旧命中误写成可见正文
+E-00,规则库,阅读说明,A3,第二阶段｜独立验收整改审核稿｜禁止APP生产导入,第三轮最终勘误与候审稿｜文案创作与结构审核完成，待命理专业终审｜禁止Android生产导入,封口状态而非专业验收通过
+E-01,规则库,阅读说明,A5,修复来源长表+141触发DSL+动态解释插槽；审核规则不得直接接入Android,保持141基础规则及4800来源关联；旧通用缺项句仅作审计留痕，最终由高级条件分项状态逐项展示。,统一阅读引导
+E-01,示例库,示例全文,U2,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U3,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U4,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U5,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U6,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U7,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U8,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U9,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U10,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U11,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U12,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U13,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U14,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U15,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U16,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U17,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U18,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U19,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U20,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U21,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U22,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U23,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U24,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U25,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U26,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,示例全文,U27,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_UNAVAILABLE_ADVANCED,SLOT_MONTH_MAINLINE|SLOT_FORMAL_PAIR|SLOT_PRECISE_ADVANCED_STATUS,仅变动26例的插槽路由引用；不改五段正文或原141命中轨迹
+E-01,示例库,高级字段条件演练,D10,SLOT_UNAVAILABLE_ADVANCED,SLOT_PRECISE_ADVANCED_STATUS,旧通用缺项槽不再参与示范中的最终用户路径
+E-03,示例库,高级模拟15例,B5,财星显现并假设原局七杀,正财月与原局七杀标签并置（未核验跨层关系）,十神标签并置不等于关系事件
+E-03,示例库,高级模拟15例,K5,AVAILABLE,UNAVAILABLE,无可复现的原局/跨层关系事件，不得标记AVAILABLE
+E-03,示例库,高级模拟15例,N5,财星与官杀并置,NONE,原局七杀标签不是六合六冲等事件类型
+E-03,示例库,高级模拟15例,P5,本月以持续业务中的资源对应为主线。中和遇正财，常态资源与持续任务构成解释主轴，传统的关键不只是财星显现，还要看各方关系是否能够衔接。 月支本气仍为正财，使主题集中，但不产生新的关系事件。,本月以持续业务中的资源对应为主线。中和遇正财，常态资源与持续任务构成解释主轴，传统的关键不只是财星显现，还要看各方关系是否能够衔接。月干与本气同为正财，仅增强分类主题；与原局七杀是否发生实际作用还需要独立证据。,同步移除「同神不产生事件」的绝对说法
+E-03,示例库,高级模拟15例,Q5,【假设结构】正财月同时出现模拟原局七杀时，资源与约束可以在传统生克中被并读；但两处干没有形成已验的跨层事件，不能直接作财生杀定论。,【假设标签并置，非已验事件】模拟原局年干庚相对于甲木日主归七杀，流月己为正财；两项十神标签可以分别说明资源与约束的传统象义，但未提供关系事件的参与位置、事件类型与证据ID，不能据此认定财生官杀或已发生跨层作用。,分清已设标签、五行理论联系和关系事件核验
+E-03,示例库,高级模拟15例,S5,这例将财星主线与官杀背景分开：一层说明常态资源分类，另一层说明约束的原局位置。实际生扶路径及大运时间尚待核定，因此暂不对两层作单向评价。,本例仅支持模拟正财月主题与原局七杀标签的并读：一层讲资源分类，一层讲约束象义。真实干支互动尚未核验，大运时间也在核对，故不形成财生杀或综合强弱取向的定论。,综合解释不输出未经验证的作用方向
+E-03,示例库,高级模拟15例,T5,MOCK_NATAL: natal.year.stem=庚、day_master=甲、natal_year_stem_god=七杀、month.stem=己、month_stem_god=正财、旺衰及作用路径待复核。,MOCK_NATAL_LABEL: day_master=甲、natal.year.stem=庚、natal_year_stem_god=七杀、month.stem=己、month_stem_god=正财；上述仅可核对模拟十神标签。若将来认定跨层关系事件，还须event_type/scope/positions/as_of/basis/evidence_id/algorithm_version及作用条件。,证据明确拆为标签层和独立关系事件层
+E-03,示例库,高级模拟15例,U5,假设原局年干庚对应甲木日主的七杀，流月己对应正财；土生金的五行链条只构成传统关系讨论的起点，还须查双方位置与透藏及是否真正发生作用。,模拟条件允许核对庚对甲为七杀、己对甲为正财，以及土生金的五行基础；未给出任何已核验原局关系事件或财生官杀成立条件。原局关系可用性因此记为UNAVAILABLE，不影响单独读取七杀标签。,不以五行生克或标签并置替代真实事件
+E-04,示例库,高级模拟15例,B9,大运、六合、喜用候选方向一致,大运、六合与喜用候选均设可用，整体方向未裁定,去除无证据的三者同向标题
+E-04,示例库,高级模拟15例,Q9,【假设事件】寅亥六合使月支比肩与原局发生一项有位置依据的联结；大运条件与喜用候选同时作为背景时，三层解释呈现相近主题，仍未证明合化。,【假设事件】寅亥六合在模拟参与位置上提供一条地支配对线索，是否合化仍待条件核对。大运与喜用候选虽均设为可用，但未提供大运十神、喜用具体角色及三者互作用依据，因此不能得出三项同向的结论。,可用性是状态，非综合方向结论
+E-04,示例库,高级模拟15例,S9,本月食神重表达、比肩重参与；寅亥六合是另一层结构证据。三项假设若核实可形成“参与—表达—背景支撑”的解释链，但不得把方向一致扩大为必然好坏。,食神侧重表达、比肩侧重同类参与，寅亥六合另属地支关系层。三项模拟高级条件均可用，但整体方向尚未裁定；大运十神、喜用角色以及各层关系依据未齐全前，只能并列说明，不连成统一判断。,明确用户所要求的未裁定归纳
+E-04,示例库,高级模拟15例,T9,MOCK_ALL: month_branch=寅、natal.year.branch=亥、relation_type=六合；dayun区间完整；yongshen角色/方法/源强弱证据完整。,MOCK_STATUS: month_branch=寅、natal.year.branch=亥、relation_type=六合；三个高级availability均设AVAILABLE。要判断共同方向，还须dayun.ganzhi/dayun.stem_god/起运区间与方向来源，yongshen.role/method/basis/source_strength_axis，以及三层事件作用、相互优先级、冲突裁决及证据ID；当前未给出这些细项。,列清缺少的联合推导证据，不伪装为已知
+E-04,示例库,高级模拟15例,U9,假设流月寅与原局年支亥符合六合目录，另假设给出大运区间及喜用方法的完整模拟证据；它们的对象和层级各自独立。,模拟只确认“寅亥六合目录候选”与大运、原局关系、喜用候选三项状态为AVAILABLE；可用性标签不意味着三项同向，缺少具体大运十神、喜用角色和互动判据，综合方向未裁定。,防止availability升级成因果结论
+E-05,示例库,高级模拟15例,P3,本月以持续业务中的资源对应为主线。身强遇正财，在“我克”的框架中，传统更强调职责内的资源配置与持续承接，稳定性的象义因此被放大。 月支本气仍为正财，使主题集中，但不产生新的关系事件。,本月以持续业务中的资源对应为主线。身强遇正财，在“我克”的框架中，传统更强调职责内的资源配置与持续承接，稳定性的象义因此被放大。月支本气同为正财，十神分类仍聚焦常态资源；同神本身不能确定与原局的关系事件，假设的子丑六合另凭参与支位核对。,将绝对句改为分类不决定关系事件，并衔接模拟支位事件
+E-05,示例库,高级模拟15例,P10,本月以持续业务中的资源对应为主线。中和遇正财，常态资源与持续任务构成解释主轴，传统的关键不只是财星显现，还要看各方关系是否能够衔接。 月支本气仍为正财，使主题集中，但不产生新的关系事件。,本月以持续业务中的资源对应为主线。中和遇正财，常态资源与持续任务构成解释主轴，传统的关键不只是财星显现，还要看各方关系是否能够衔接。月支本气同为正财，只增强两处分类的一致性；同神本身不能确定与原局的关系事件，本例的子丑合与丑未冲须分别依据支位。,将绝对句改为分类不决定关系事件，并衔接模拟支位事件
+E-05,示例库,高级模拟15例,P11,本月以制度规制与履职秩序为主线。中和见正官，秩序与自主运行之间可以形成协调关系；传统重名分，也关心制度是否被其他结构扰动。 月支本气仍为正官，使主题集中，但不产生新的关系事件。,本月以制度规制与履职秩序为主线。中和见正官，秩序与自主运行之间可以形成协调关系；传统重名分，也关心制度是否被其他结构扰动。月支本气也归正官，月度规制主题因而更集中；同神本身不能确定与原局的关系事件，模拟酉卯六冲另凭支位证据。,将绝对句改为分类不决定关系事件，并衔接模拟支位事件
+E-05,示例库,高级模拟15例,P13,本月以非固定资源的流动为主线。身强遇偏财，传统用“我克”讨论对流动资源的驾驭可能，主线是资源关系较多变动而非固定回路。 月支本气仍为偏财，使主题集中，但不产生新的关系事件。,本月以非固定资源的流动为主线。身强遇偏财，传统用“我克”讨论对流动资源的驾驭可能，主线是资源关系较多变动而非固定回路。月支本气亦归偏财，分类上呼应资源流动主题；同神本身不能确定与原局的关系事件，模拟辰戌六冲须另核支位。,将绝对句改为分类不决定关系事件，并衔接模拟支位事件
+E-05,示例库,高级模拟15例,P15,本月以持续业务中的资源对应为主线。身弱遇正财，传统“财多身弱”的疑问来自承载与对象之间的条件差，不是财星必为负担；更应同时看可扶助的印比。 月支本气仍为正财，使主题集中，但不产生新的关系事件。,本月以持续业务中的资源对应为主线。身弱遇正财，传统“财多身弱”的疑问来自承载与对象之间的条件差，不是财星必为负担；更应同时看可扶助的印比。月支本气同为正财，强调资源承接的分类角度；同神本身不能确定与原局的关系事件，假设子丑六合可单列，大运矛盾仍需隔离。,将绝对句改为分类不决定关系事件，并衔接模拟支位事件
+E-05,示例库,高级模拟15例,Q13,【假设事件】辰戌冲提供真实关系目录形式的模拟参与位置信息，但它与偏财的资源流动意象不是同一个字段；不可合并为现实资金判断。,【假设事件】若模拟流月辰与原局年支戌的参与位置成立，可在地支关系目录中登记辰戌六冲候选；它不同于偏财的资源流动象义，尚不能推出真实资金变化或事件净影响。,把“真实关系目录形式”改为条件化的模拟事件
+E-03,示例库,高级模拟15例,V5,大运的区间及方向仍在核验，未完成前不作确定判断；喜用候选的方法、角色与依据暂无可核对证据，本次不展开该维度。,大运的区间及方向仍在核验，未完成前不作确定判断；原局关系的事件及参与位置暂无可核对证据，本次不展开该维度；喜用候选的方法、角色与依据暂无可核对证据，本次不展开该维度。,随原局关系状态UNAVAILABLE同步增加仅该项目缺项说明
+E-06,示例库,高级模拟15例,Z3,369,396,正文局部勘误后按原算法重算字数
+E-06,示例库,高级模拟15例,AA3,8d83779c54a745a7949d5bee13056d12d7f764b18e7d97a3e60b8b1b19396778,81568490a86bf3a6d3cd8cde11cdab14e016cefea684d1dda0ee49d7d6b33b5e,正文局部勘误后按原算法重算全文哈希
+E-06,示例库,高级模拟15例,Z5,368,429,正文局部勘误后按原算法重算字数
+E-06,示例库,高级模拟15例,AA5,89eb7579b4cadb5ed50d7a573eb04a67b5687ee7a732a99a81edbfba636f8e72,7d191b62cb9ca38baaec2692a24e028244be275329c693f2c17e5feb198eeba2,正文局部勘误后按原算法重算全文哈希
+E-06,示例库,高级模拟15例,Z9,365,408,正文局部勘误后按原算法重算字数
+E-06,示例库,高级模拟15例,AA9,6e0a879a8eee8e189c107f5c22f055dbb5625e32c2405324b847d08ccf53e0fc,be243cf1d5fd1eb0142c0205d5225a1f6bb2a199a6fd74c45e9e25e1ca0dfc63,正文局部勘误后按原算法重算全文哈希
+E-06,示例库,高级模拟15例,Z10,356,385,正文局部勘误后按原算法重算字数
+E-06,示例库,高级模拟15例,AA10,ccffc935ea7e61ec112eb43b0ee16d593e943d7b49b1a94a503fc15f8071cf72,dc710d57f82ec8ff61bf900cec7719ae2ff6c1bb820530dd408725ee93e1aab8,正文局部勘误后按原算法重算全文哈希
+E-06,示例库,高级模拟15例,Z11,336,360,正文局部勘误后按原算法重算字数
+E-06,示例库,高级模拟15例,AA11,cc275e1a5173677bc6706214dc96e36be8228260ab0c870ed9c7374b4a9d2b86,0f3505fb42aebd6abc6d11dfb124eaf2c5e97fda8aa07326b15c130e6e31ac28,正文局部勘误后按原算法重算全文哈希
+E-06,示例库,高级模拟15例,Z13,349,387,正文局部勘误后按原算法重算字数
+E-06,示例库,高级模拟15例,AA13,5a2d2032f9cf0171af88fe7922dbe86836bfb62a29854492f61f276324a47953,6a6ba645eeb422c54b8cc6405edcb80737064a5c4746b4d7d7fdfdbe103c80d9,正文局部勘误后按原算法重算全文哈希
+E-06,示例库,高级模拟15例,Z15,343,373,正文局部勘误后按原算法重算字数
+E-06,示例库,高级模拟15例,AA15,54ef0008aa26f6445635a38d23d40b6d1d2bef1ed69bcfaa9e2308621ecec4c6,b0325ea9e7a861b89db97fa3d3a788f2c1e5b71c2b14656a84a32abc710ac439,正文局部勘误后按原算法重算全文哈希
+E-00,示例库,阅读说明,A3,第二阶段｜独立验收整改审核稿｜禁止APP生产导入,第三轮最终勘误与候审稿｜文案创作与结构审核完成，待命理专业终审｜非真实股票计算,统一文件状态
+E-01,示例库,阅读说明,A5,五段式示例已整改；26/26高级缺项同策略，所有演示输入均非真实股票,原26个五段式正文不变；7个MOCK案例作局部内容勘误；旧通用缺项规则保留匹配留痕但不作用户展示。,明确范围并避免误读为全面重写

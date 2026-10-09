@@ -1,0 +1,122 @@
+{
+  "status": "文案创作与结构审核完成，待命理专业终审",
+  "qa_count": 26,
+  "pass": 26,
+  "fail": 0,
+  "change_cells": 75,
+  "issues": 9,
+  "hashes": {
+    "V3_original": "d9b9f86712bae8668dad6b79d3ad3be9c66bff5fedc1ae674c550fb137746b91",
+    "V3_backup": "d9b9f86712bae8668dad6b79d3ad3be9c66bff5fedc1ae674c550fb137746b91",
+    "migration": "8b6fbb9a3b837a5480e40722db736d3fd2285105cc4bd589868b2240d62becb9",
+    "30_tengod": "73c5a4541448d13caa596765b80e129d133acf03fc88a5720902225ac680edc4",
+    "rules_final": "98b697cf6503f16d8ae28349f72235c33d97ce17c6f7767d83196f2cb912d5cf",
+    "examples_final": "ef6093904aa222c313126e5875ff055775f8a474ef37c725439b54c692fdff3c"
+  },
+  "checks": {
+    "ORIGINAL_800_BYTE_SHA_UNCHANGED": {
+      "status": "PASS",
+      "evidence": "d9b9f86712bae8668dad6b79d3ad3be9c66bff5fedc1ae674c550fb137746b91"
+    },
+    "SOURCE_MAPPING_XLSX_BYTE_UNCHANGED": {
+      "status": "PASS",
+      "evidence": "8b6fbb9a3b837a5480e40722db736d3fd2285105cc4bd589868b2240d62becb9"
+    },
+    "THIRTY_STRENGTH_FILE_BYTE_UNCHANGED": {
+      "status": "PASS",
+      "evidence": "73c5a4541448d13caa596765b80e129d133acf03fc88a5720902225ac680edc4"
+    },
+    "SOURCE_LONG_TABLE_4800_IDENTICAL": {
+      "status": "PASS",
+      "evidence": "c2fe4afb73b086e6712517d22e345842b98be3ee08444174723642df3e0007c3"
+    },
+    "HIGHER_NEEDS_82_IDENTICAL": {
+      "status": "PASS",
+      "evidence": "82条原样保留"
+    },
+    "RULE_141_IDENTITIES_ALL_ORIGINAL_FIELDS_IDENTICAL": {
+      "status": "PASS",
+      "evidence": "141条原23字段完全相同，另增最终展示闸门字段"
+    },
+    "LEGACY_RULE_AUDIT_ONLY": {
+      "status": "PASS",
+      "evidence": "NA_ADVANCED_MISSING历史DSL不改，最终NO_RENDER"
+    },
+    "SLOT_TWO_ROUTE_DESIGN": {
+      "status": "PASS",
+      "evidence": "旧slot仅审计，新slot逐项"
+    },
+    "STRENGTH_30_IN_RULE_WB_IDENTICAL": {
+      "status": "PASS",
+      "evidence": "30条规则未改"
+    },
+    "RULE_TRUTH_2000_IDENTICAL": {
+      "status": "PASS",
+      "evidence": "2000条历史匹配轨迹未改；旧命中不等于显示"
+    },
+    "ADVANCED_125_IDENTICAL": {
+      "status": "PASS",
+      "evidence": "125条逐项状态真值表未改"
+    },
+    "EXAMPLE_26_IDENTITIES_AND_FIVE_PARAGRAPHS_IDENTICAL": {
+      "status": "PASS",
+      "evidence": "26例正文及全文SHA未变"
+    },
+    "EXAMPLE_26_USE_PRECISE_SLOT": {
+      "status": "PASS",
+      "evidence": "26/26新插槽路由"
+    },
+    "MOCK_15_IDS_PRESERVED": {
+      "status": "PASS",
+      "evidence": "15/15"
+    },
+    "MOCK_ONLY_SEVEN_CONTENT_CHANGED": {
+      "status": "PASS",
+      "evidence": "按要求恰好七例既有数据变化"
+    },
+    "MOCK04_NATAL_LABEL_NOT_EVENT": {
+      "status": "PASS",
+      "evidence": "MOCK-04正确拆分标签并置与证据事件"
+    },
+    "MOCK08_DIRECTION_NOT_ADJUDICATED": {
+      "status": "PASS",
+      "evidence": "三AVAILABLE，方向不下断语"
+    },
+    "MOCK_FIVE_SAME_GOD_LIMITED": {
+      "status": "PASS",
+      "evidence": "5/5"
+    },
+    "MOCK_15_SHA_LENGTH_VALID": {
+      "status": "PASS",
+      "evidence": "15/15正文sha及字符数校验一致"
+    },
+    "MOCK_15_EXACT_NOTICES": {
+      "status": "PASS",
+      "evidence": "[]"
+    },
+    "PRECISE_125_EXHAUSTIVE": {
+      "status": "PASS",
+      "evidence": "125/125独立显示，无交叉否定"
+    },
+    "FLAT_UNKNOWN_CONFLICT_DAYUN_ISOLATED": {
+      "status": "PASS",
+      "evidence": "3种不可推导大运状态"
+    },
+    "COMPLIANCE_USER_VISIBLE_56_TERMS_ZERO": {
+      "status": "PASS",
+      "evidence": "525条候选用户文字, 56个不同禁词, 命中0; []"
+    },
+    "ALL_CANDIDATES_REVIEW_PENDING": {
+      "status": "PASS",
+      "evidence": "141规则+26原示例+15MOCK均待人工终审"
+    },
+    "SOURCE_FILES_BYTE_UNTOUCHED": {
+      "status": "PASS",
+      "evidence": "六个原始输入文件全部字节未改"
+    },
+    "XLSX_NO_ERROR_CELLS": {
+      "status": "PASS",
+      "evidence": "[]"
+    }
+  }
+}
