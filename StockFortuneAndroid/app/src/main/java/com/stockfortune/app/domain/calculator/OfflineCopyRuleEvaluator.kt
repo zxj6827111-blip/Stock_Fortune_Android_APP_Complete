@@ -16,17 +16,16 @@ import com.stockfortune.app.domain.model.TenGod
 import org.json.JSONObject
 
 /**
- * 离线文案规则评估与触发匹配引擎（Rule Matcher Interface & Evaluator）。
+ * 离线文案规则求值与安全门禁引擎。
  *
- * 安全门禁规范（根据 Phase 7 独立代码审查整改要求）：
- * 1. 严格离线计算，不调用网络与外部 LLM；
- * 2. 未识别的 trigger 条件严格返回 false，杜绝默认 true 漏洞；
- * 3. 无规则命中不得自动标记 APPROVED，严格维持 PENDING_REVIEW；
- * 4. productionGate 真实参与展示授权（正式发布包严禁未终审文案，内部测试预览允许候审标记）；
- * 5. 禁止展示的历史规则（isLegacyNoRender / PRODUCTION_BLOCKED）必须保持禁止；
- * 6. 缺少证据的高级规则必须正确降级阻断，不产生无依据断言；
- * 7. 模拟文案（MOCK 前缀 / AUDIT_ONLY）严禁进入正常股票分析结果；
- * 8. 规则优先级裁决：同段落且同冲突组（conflict_group）时，取 priority 最高者。
+ * 核心安全门禁守则：
+ * 1. 未识别的 trigger 条件严格返回 false，严禁默认 true；
+ * 2. 生产正式环境必须同时通过 reviewStatus == APPROVED 与 productionGate == PRODUCTION_RELEASE 双重授权；
+ * 3. 历史禁止规则（HIST_BENCHMARK_PROHIBITED / isLegacyNoRender）绝不渲染；
+ * 4. 缺少证据的高级规则强制降级阻断，不产生虚假命中 ID；
+ * 5. MOCK 规则与普通股票分析结果严格隔离；
+ * 6. 大运方向（dayun.direction）由实际预计算的四象限推步事实传递，严禁根据首日阴阳重新推断；
+ * 7. 六合时间范围（relation.valid_from / valid_to）依据真实原局/流月节气月/大运区间分别设定，严禁将十年大运用于流月六合。
  */
 object OfflineCopyRuleEvaluator {
 
@@ -45,9 +44,12 @@ object OfflineCopyRuleEvaluator {
         val firstDayPolarity: FirstDayPolarity = FirstDayPolarity.YANG,
         val dayunAvailability: AlgorithmAvailability = AlgorithmAvailability.AVAILABLE,
         val currentLuckPeriod: LuckCyclePeriodEntity? = null,
+        val dayunDirection: String? = null, // 来自 StockLuckCycleEntity 预计算事实 ("FORWARD" / "REVERSE")
         val natalAvailability: AlgorithmAvailability = AlgorithmAvailability.AVAILABLE,
         val natalRelations: List<NatalRelationEntity> = emptyList(),
         val hitLiuhe: FortuneCopyEngine.LiuheHit? = null,
+        val flowMonthStartDate: String? = null,
+        val flowMonthEndDate: String? = null,
         val yongshenAvailability: AlgorithmAvailability = AlgorithmAvailability.AVAILABLE,
         val yongshen: StockYongshenEntity? = null,
         val isMockContext: Boolean = false,
@@ -61,7 +63,7 @@ object OfflineCopyRuleEvaluator {
         context: EvaluationContext,
         candidateRules: List<CopyRuleDefinition>,
     ): FiveParagraphInterpretation {
-        // 1. 规则匹配过滤与安全门禁
+        // 门禁：生产构建环境必须严格校验生产授权
         val matchedRules = candidateRules.filter { rule ->
             // 门禁 1：历史旧通用句（NA_ADVANCED_MISSING）仅供审计，绝对禁止渲染
             if (rule.isLegacyNoRender) return@filter false
@@ -69,28 +71,71 @@ object OfflineCopyRuleEvaluator {
             // 门禁 2：生产阻断规则绝对禁止渲染
             if (rule.productionGate == ProductionGate.PRODUCTION_BLOCKED) return@filter false
 
-            // 门禁 3：模拟文案严禁进入正常股票分析结果
+            // 门禁 3：显式历史禁止规则拦截
+            if (rule.ruleId == "HIST_BENCHMARK_PROHIBITED") return@filter false
+
+            // 门禁 4：模拟文案严禁进入正常股票分析结果
             if ((rule.ruleId.startsWith("MOCK") || rule.productionGate == ProductionGate.AUDIT_ONLY) && !context.isMockContext) {
                 return@filter false
             }
 
-            // 门禁 4：正式生产发布门禁校验
-            if (context.isProductionBuild && rule.productionGate != ProductionGate.PRODUCTION_RELEASE) {
-                return@filter false
+            // 门禁 5：正式生产发布双重门禁（reviewStatus 和 productionGate 均需通过）
+            if (context.isProductionBuild) {
+                if (rule.reviewStatus != ReviewStatus.APPROVED || rule.productionGate != ProductionGate.PRODUCTION_RELEASE) {
+                    return@filter false
+                }
             }
 
-            // 门禁 5：页面级状态规则不作为五段式正文段落
+            // 门禁 6：页面级状态规则不作为五段式正文段落
             if (rule.section == CopySection.STATE) {
                 return@filter false
             }
 
-            // 门禁 6：缺少证据的高级规则必须正确降级阻断
+            // 门禁 7：缺少证据的高级规则必须正确降级阻断
             if (!hasRequiredEvidence(rule, context)) {
                 return@filter false
             }
 
-            // 门禁 7：触发条件匹配（未识别条件严格返回 false）
+            // 门禁 8：触发条件匹配（未识别条件严格返回 false）
             matchesTrigger(rule.triggerDsl, context)
+        }
+
+        // 若正式发布生产环境下没有任何过审规则（当前280条均为候审状态），明确输出受控拦截保护，不伪造五段式内容
+        if (context.isProductionBuild && matchedRules.isEmpty()) {
+            return FiveParagraphInterpretation(
+                stockId = context.stockId,
+                stockCode = context.stockCode,
+                year = context.year,
+                month = context.month,
+                basisText = "【候审保护】流月命理依据文案处于待终审状态，正式商用环境严格阻断未过审内容展示。",
+                themeText = "【候审保护】流月十神主题文案处于待终审状态，正式商用环境严格阻断未过审内容展示。",
+                contradictionText = "【候审保护】流月潜在矛盾文案处于待终审状态，正式商用环境严格阻断未过审内容展示。",
+                businessText = "【候审保护】企业经营观察文案处于待终审状态，正式商用环境严格阻断未过审内容展示。",
+                synthesisText = "【候审保护】当前文案规则处于待专家终审状态（PENDING_REVIEW），正式商用生产环境严格阻断未过审内容展示。请在内部审核版本（Debug/Internal）中进行预览验收。",
+                preciseAdvancedNotice = "【生产门禁受控拦截】待审文案禁止在正式发布版本外溢",
+                hitRuleIds = emptyList(),
+                reviewStatus = ReviewStatus.PENDING_REVIEW,
+                isMock = context.isMockContext,
+            )
+        }
+
+        // 若没有任何规则命中（内部预览模式下输入异常等），明确不可用，不允许伪造
+        if (matchedRules.isEmpty()) {
+            return FiveParagraphInterpretation(
+                stockId = context.stockId,
+                stockCode = context.stockCode,
+                year = context.year,
+                month = context.month,
+                basisText = "【受控不可用】未命中匹配的流月命理依据规则。",
+                themeText = "【受控不可用】未命中匹配的流月十神主题规则。",
+                contradictionText = "【受控不可用】未命中匹配的流月潜在矛盾规则。",
+                businessText = "【受控不可用】未命中匹配的企业经营观察规则。",
+                synthesisText = "【受控不可用】当前输入未命中符合条件的有效规则，系统拒绝伪造输出。",
+                preciseAdvancedNotice = "【规则未命中】受控不可用状态",
+                hitRuleIds = emptyList(),
+                reviewStatus = ReviewStatus.PENDING_REVIEW,
+                isMock = context.isMockContext,
+            )
         }
 
         // 2. 按段落分组并按冲突组消解（取最高 priority）
@@ -115,6 +160,8 @@ object OfflineCopyRuleEvaluator {
                 val text = resolvedRules.joinToString(" ") { substitutePlaceholders(it.text, context) }
                 sectionTexts[section] = text
                 hitRuleIds.addAll(resolvedRules.map { it.ruleId })
+            } else {
+                sectionTexts[section] = "【受控不可用】该段落未命中有效规则。"
             }
         }
 
@@ -140,11 +187,11 @@ object OfflineCopyRuleEvaluator {
             stockCode = context.stockCode,
             year = context.year,
             month = context.month,
-            basisText = sectionTexts[CopySection.BASIS] ?: "流月命理依据正在核算",
-            themeText = sectionTexts[CopySection.THEME] ?: "流月十神主题正在配置",
-            contradictionText = sectionTexts[CopySection.CONTRADICTION] ?: "流月潜在矛盾正在核对",
-            businessText = sectionTexts[CopySection.BUSINESS] ?: "企业经营观察维度正在匹配",
-            synthesisText = sectionTexts[CopySection.SYNTHESIS] ?: "流月综合解释正在归纳",
+            basisText = sectionTexts[CopySection.BASIS] ?: "【受控不可用】流月命理依据未就绪",
+            themeText = sectionTexts[CopySection.THEME] ?: "【受控不可用】流月十神主题未就绪",
+            contradictionText = sectionTexts[CopySection.CONTRADICTION] ?: "【受控不可用】流月潜在矛盾未就绪",
+            businessText = sectionTexts[CopySection.BUSINESS] ?: "【受控不可用】企业经营观察未就绪",
+            synthesisText = sectionTexts[CopySection.SYNTHESIS] ?: "【受控不可用】流月综合解释未就绪",
             preciseAdvancedNotice = notice,
             hitRuleIds = hitRuleIds,
             reviewStatus = overallReviewStatus,
@@ -198,7 +245,21 @@ object OfflineCopyRuleEvaluator {
                 val dayunGod = TenGodCalculator.tenGod(ctx.dayStem, p.stem)
                 res = res.replace("{dayun.stem_god}", dayunGod.cn)
             }
+        } else {
+            res = res.replace("{dayun.start_at}", "未起运")
+                .replace("{dayun.start_age}", "--")
+                .replace("{dayun.start_year}", "--")
+                .replace("{dayun.end_year}", "--")
+                .replace("{dayun.period_ganzhi}", "无大运")
+                .replace("{dayun.period_start}", "无")
+                .replace("{dayun.period_end}", "无")
+                .replace("{dayun.ganzhi}", "无大运")
+                .replace("{dayun.stem}", "")
+                .replace("{dayun.branch}", "")
+                .replace("{dayun.stem_god}", "无")
         }
+
+        // 六合时间范围精准替换：依据命中六合的实际范围分别设定，严禁将十年大运用于流月六合
         val lh = ctx.hitLiuhe
         if (lh != null) {
             res = res.replace("{relation.pair}", lh.pairName)
@@ -208,9 +269,20 @@ object OfflineCopyRuleEvaluator {
                 .replace("{relation.position_a}", lh.posA)
                 .replace("{relation.position_b}", lh.posB)
                 .replace("{relation.transformed_element}", "待核验")
-                .replace("{relation.valid_from}", p?.startDate ?: "当月")
-                .replace("{relation.valid_to}", p?.endDate ?: "当月")
+                .replace("{relation.valid_from}", lh.validFrom)
+                .replace("{relation.valid_to}", lh.validTo)
+        } else {
+            res = res.replace("{relation.pair}", "未命中六合")
+                .replace("{relation.scope}", "无")
+                .replace("{relation.branch_a}", "")
+                .replace("{relation.branch_b}", "")
+                .replace("{relation.position_a}", "")
+                .replace("{relation.position_b}", "")
+                .replace("{relation.transformed_element}", "无")
+                .replace("{relation.valid_from}", "无")
+                .replace("{relation.valid_to}", "无")
         }
+
         if (ctx.monthStem.isNotBlank()) {
             res = res.replace("{flow.month_stem}", ctx.monthStem)
         }
@@ -226,6 +298,26 @@ object OfflineCopyRuleEvaluator {
         if (res.contains("{yongshen.method}")) {
             res = res.replace("{yongshen.method}", "扶抑")
         }
+
+        // 喜用占位符
+        val ys = ctx.yongshen
+        if (ys != null) {
+            res = res.replace("{ys_status}", ys.status)
+                .replace("{ys_elements}", ys.candidateElements ?: ys.yongShen ?: "")
+                .replace("{yongshen.yong_shen}", ys.yongShen ?: "")
+                .replace("{yongshen.xi_shen}", ys.xiShen ?: "")
+                .replace("{yongshen.candidate_elements}", ys.candidateElements ?: "")
+        }
+
+        // 基础股票及流月变量
+        res = res.replace("{stock_name}", ctx.stockCode)
+            .replace("{stock_code}", ctx.stockCode)
+            .replace("{year}", ctx.year.toString())
+            .replace("{month}", ctx.month.toString())
+            .replace("{month_ganzhi}", "${ctx.monthStem}${ctx.monthBranch}")
+            .replace("{day_master}", ctx.dayStem)
+            .replace("{day_master_strength}", ctx.strength.cn)
+
         return res
     }
 
@@ -329,120 +421,176 @@ object OfflineCopyRuleEvaluator {
                     val exp = obj.getBoolean(key)
                     (ctx.currentLuckPeriod != null) == exp
                 }
+                // 修复：大运方向必须由真实预计算事实 dayunDirection 判定，禁止仅凭首日阴阳推测；平盘/缺失/冲突绝不命中
                 "dayun.direction" -> {
                     val exp = obj.getString(key)
-                    val dir = if (ctx.firstDayPolarity == FirstDayPolarity.YANG) "FORWARD" else "REVERSE"
-                    dir.equals(exp, ignoreCase = true)
+                    if (ctx.dayunAvailability != AlgorithmAvailability.AVAILABLE ||
+                        ctx.firstDayPolarity == FirstDayPolarity.FLAT ||
+                        ctx.firstDayPolarity == FirstDayPolarity.MISSING ||
+                        ctx.firstDayPolarity == FirstDayPolarity.CONFLICT ||
+                        ctx.currentLuckPeriod == null) {
+                        false
+                    } else {
+                        val dir = ctx.dayunDirection
+                        dir != null && dir.equals(exp, ignoreCase = true)
+                    }
                 }
                 "dayun.natal_relation_group" -> {
                     val exp = obj.getString(key)
                     if (ctx.currentLuckPeriod == null || ctx.dayStem.isBlank()) false
                     else {
-                        val dayunStemGod = TenGodCalculator.tenGod(ctx.dayStem, ctx.currentLuckPeriod.stem)
-                        val rel = derivePairGodGroup(ctx.monthStemGod, dayunStemGod)
-                        when (exp) {
-                            "同类" -> rel == "同神"
-                            "五行同类异神" -> rel == "同五行异神"
-                            "异类" -> rel == "不同类十神"
-                            else -> false
-                        }
+                        val dayunGod = TenGodCalculator.tenGod(ctx.dayStem, ctx.currentLuckPeriod.stem)
+                        val relGroup = if (dayunGod == ctx.monthStemGod) "同类"
+                        else if (TenGodCalculator.elementOf(ctx.currentLuckPeriod.stem) == TenGodCalculator.elementOf(ctx.monthStem)) "五行同类异神"
+                        else "异类"
+                        relGroup.equals(exp, ignoreCase = true)
                     }
                 }
-                "dayun.stem_god" -> {
+                "dayun.base_ten_god", "dayun.stem_god" -> {
+                    val exp = obj.getString(key)
                     if (ctx.currentLuckPeriod == null || ctx.dayStem.isBlank()) false
                     else {
-                        val dayunStemGod = TenGodCalculator.tenGod(ctx.dayStem, ctx.currentLuckPeriod.stem)
-                        dayunStemGod.cn == obj.getString(key)
+                        val dayunGod = TenGodCalculator.tenGod(ctx.dayStem, ctx.currentLuckPeriod.stem)
+                        dayunGod.cn == exp
                     }
                 }
-                "natal.strength_state" -> {
-                    ctx.strength.cn == obj.getString(key)
+                "dayun.day_master_strength", "natal.strength_state" -> {
+                    val exp = obj.getString(key)
+                    ctx.strength.cn == exp
                 }
-                "relation.pair" -> {
-                    ctx.hitLiuhe?.pairName == obj.getString(key)
+                "relation.pair", "liuhe.pair" -> {
+                    val exp = obj.getString(key)
+                    ctx.hitLiuhe != null && (ctx.hitLiuhe.pairName == exp || ctx.hitLiuhe.pairCode.equals(exp, ignoreCase = true))
                 }
                 "relation.scope" -> {
-                    ctx.hitLiuhe?.scope == obj.getString(key)
-                }
-                "relation.type" -> {
-                    obj.getString(key) == "LIUHE" && ctx.hitLiuhe != null
+                    val exp = obj.getString(key)
+                    ctx.hitLiuhe != null && ctx.hitLiuhe.scope.equals(exp, ignoreCase = true)
                 }
                 "relation.transformation_status" -> {
-                    // V1.3 契约规定：支对成立不等于合化成功，状态均为 NOT_VERIFIED
-                    obj.getString(key) == "NOT_VERIFIED" && ctx.hitLiuhe != null
+                    val exp = obj.getString(key)
+                    if (ctx.hitLiuhe == null) false
+                    else exp.equals("NOT_VERIFIED", ignoreCase = true)
                 }
                 "relation.multiplicity" -> {
-                    obj.getString(key) == "MULTIPLE" && ctx.natalRelations.size > 1
+                    val exp = obj.getString(key)
+                    if (exp.equals("MULTIPLE", ignoreCase = true)) {
+                        ctx.natalRelations.count { it.relationType == "六合" } > 1
+                    } else false
                 }
                 "relation.other_events_verified" -> {
                     val exp = obj.getBoolean(key)
-                    ctx.natalRelations.isNotEmpty() == exp
+                    val hasOthers = ctx.natalRelations.any { it.relationType != "六合" }
+                    hasOthers == exp
                 }
-                "relation_scan.availability" -> {
-                    ctx.natalAvailability.code.equals(obj.getString(key), ignoreCase = true)
+                "relation.type" -> {
+                    val exp = obj.getString(key)
+                    if (exp.equals("LIUHE", ignoreCase = true)) ctx.hitLiuhe != null else false
                 }
                 "relation_scan.completeness" -> {
                     val exp = obj.getString(key)
-                    if (exp == "COMPLETE") ctx.natalAvailability == AlgorithmAvailability.AVAILABLE else false
+                    if (exp.equals("COMPLETE", ignoreCase = true)) ctx.natalAvailability == AlgorithmAvailability.AVAILABLE
+                    else if (exp.equals("PARTIAL", ignoreCase = true)) ctx.natalAvailability != AlgorithmAvailability.AVAILABLE
+                    else false
                 }
                 "relation_scan.result" -> {
                     val exp = obj.getString(key)
-                    if (exp == "NONE") ctx.natalRelations.isEmpty() else false
+                    if (exp.equals("NONE", ignoreCase = true)) ctx.hitLiuhe == null else false
                 }
-                "yongshen.availability" -> {
-                    ctx.yongshenAvailability.code.equals(obj.getString(key), ignoreCase = true)
-                }
-                "yongshen.method" -> {
+                "relation_scan.availability" -> {
                     val exp = obj.getString(key)
-                    when (exp) {
-                        "FUYI" -> ctx.yongshen != null && (ctx.yongshen.status == "confirmed" || ctx.yongshen.status == "candidate")
-                        "TIAOHOU" -> ctx.yongshen != null && !ctx.yongshen.tiaohouNote.isNullOrBlank()
-                        else -> false
-                    }
-                }
-                "yongshen.method_verified" -> {
-                    val exp = obj.getBoolean(key)
-                    (ctx.yongshen?.status == "confirmed") == exp
+                    ctx.natalAvailability.code.equals(exp, ignoreCase = true)
                 }
                 "flow.loc" -> {
                     val loc = obj.getString(key)
-                    val expectedRole = obj.optString("yongshen.role")
-                    if (expectedRole.isNullOrEmpty() || ctx.yongshen == null) false
-                    else {
-                        val elem = if (loc == "干") {
-                            TenGodCalculator.elementOf(ctx.monthStem)
-                        } else {
-                            TenGodCalculator.elementOfBranch(ctx.monthBranch)
-                        }
-                        val ys = ctx.yongshen
-                        val actualRole = when {
-                            ys.yongShen.contains(elem) -> "用"
-                            ys.xiShen.contains(elem) -> "喜"
-                            ys.jiShen.contains(elem) -> "制约"
-                            ys.chouShen.contains(elem) -> "消耗"
-                            else -> "中性"
-                        }
-                        actualRole == expectedRole
+                    val elem = if (loc == "干") TenGodCalculator.elementOf(ctx.monthStem) else TenGodCalculator.elementOfBranch(ctx.monthBranch)
+                    val actualRole = deriveYongshenRole(elem, ctx.yongshen)
+                    if (obj.has("yongshen.role")) {
+                        val expRole = obj.getString("yongshen.role")
+                        actualRole == expRole
+                    } else {
+                        true
                     }
                 }
-                "yongshen.role" -> true // 已在 flow.loc 中联合处理
+                "yongshen.role" -> {
+                    if (obj.has("flow.loc")) {
+                        true // 已在 flow.loc 联合校验
+                    } else {
+                        val expRole = obj.getString(key)
+                        val stemRole = deriveYongshenRole(TenGodCalculator.elementOf(ctx.monthStem), ctx.yongshen)
+                        val branchRole = deriveYongshenRole(TenGodCalculator.elementOfBranch(ctx.monthBranch), ctx.yongshen)
+                        expRole == stemRole || expRole == branchRole
+                    }
+                }
+                "yongshen.availability" -> {
+                    val exp = obj.getString(key)
+                    ctx.yongshenAvailability.code.equals(exp, ignoreCase = true)
+                }
+                "yongshen.method" -> {
+                    val exp = obj.getString(key)
+                    if (ctx.yongshen == null || ctx.yongshenAvailability != AlgorithmAvailability.AVAILABLE) false
+                    else exp.equals("FUYI", ignoreCase = true)
+                }
+                "yongshen.method_verified" -> {
+                    val exp = obj.getBoolean(key)
+                    (ctx.yongshen != null && ctx.yongshenAvailability == AlgorithmAvailability.AVAILABLE) == exp
+                }
                 "yongshen.role_comparison" -> {
+                    val exp = obj.getString(key)
                     if (ctx.yongshen == null) false
                     else {
-                        val stemElem = TenGodCalculator.elementOf(ctx.monthStem)
-                        val branchElem = TenGodCalculator.elementOfBranch(ctx.monthBranch)
-                        val ys = ctx.yongshen
-                        val stemRole = if (ys.yongShen.contains(stemElem)) "用" else if (ys.xiShen.contains(stemElem)) "喜" else "其他"
-                        val branchRole = if (ys.yongShen.contains(branchElem)) "用" else if (ys.xiShen.contains(branchElem)) "喜" else "其他"
+                        val stemRole = deriveYongshenRole(TenGodCalculator.elementOf(ctx.monthStem), ctx.yongshen)
+                        val branchRole = deriveYongshenRole(TenGodCalculator.elementOfBranch(ctx.monthBranch), ctx.yongshen)
                         val comp = if (stemRole == branchRole) "SAME" else "DIFFERENT"
-                        comp == obj.getString(key)
+                        comp.equals(exp, ignoreCase = true)
                     }
                 }
-                // 未识别的 JSON 属性严格返回 false，杜绝未知条件放行！
+                "liuhe.month_involvement" -> {
+                    val exp = obj.getBoolean(key)
+                    (ctx.hitLiuhe != null && ctx.hitLiuhe.scope == "FLOW_MONTH_TO_NATAL") == exp
+                }
+                "liuhe.multiple_pairs" -> {
+                    val exp = obj.getBoolean(key)
+                    val count = ctx.natalRelations.count { it.relationType == "六合" }
+                    (count > 1) == exp
+                }
+                "liuhe.hehua_judgement" -> {
+                    val exp = obj.getString(key)
+                    exp.equals("NO_HEHUA", ignoreCase = true)
+                }
+                "liuhe.other_events_coexist" -> {
+                    val exp = obj.getBoolean(key)
+                    val hasOthers = ctx.natalRelations.any { it.relationType != "六合" }
+                    hasOthers == exp
+                }
+                "liuhe.synthesis_nature" -> {
+                    val exp = obj.getString(key)
+                    exp.equals("SYNTHESIS", ignoreCase = true)
+                }
+                "state.target" -> {
+                    false
+                }
+                // 未识别的 JSON 属性严格返回 false
                 else -> false
             }
             if (!matches) return false
         }
         return true
+    }
+
+    private fun deriveYongshenRole(elementCn: String, ys: StockYongshenEntity?): String {
+        if (ys == null || elementCn.isBlank()) return "中性"
+        val yongList = ys.yongShen?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
+        val xiList = ys.xiShen?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
+        val jiList = ys.jiShen?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
+        val chouList = ys.chouShen?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
+        val candList = ys.candidateElements?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
+        return when {
+            elementCn in yongList -> "用"
+            elementCn in xiList -> "喜"
+            elementCn in jiList -> "制约"
+            elementCn in chouList -> "消耗"
+            elementCn in candList -> "用"
+            else -> "中性"
+        }
     }
 }

@@ -48,6 +48,7 @@ class AnalysisRepository(
     private val natalRelationDao: NatalRelationDao? = null,
     private val stockYongshenDao: StockYongshenDao? = null,
     private val stockDao: StockDao? = null,
+    private val copyRuleRepository: CopyRuleRepository? = null,
 ) {
 
     companion object {
@@ -146,6 +147,7 @@ class AnalysisRepository(
         val stockCode = stockDao?.findById(stockId)?.code ?: ""
         val currentPeriod = luckCycleDao?.currentPeriodForDate(stockId, midGz.date)
 
+        val candidateRules = copyRuleRepository?.getRules() ?: CopyRuleRepository.getDefault().getRules()
         val fiveParagraph = FortuneCopyEngine.composeMonthlyInterpretation(
             stockId = stockId,
             stockCode = stockCode,
@@ -163,6 +165,10 @@ class AnalysisRepository(
             currentLuckPeriod = currentPeriod,
             natalRelations = natalRelations,
             yongshen = yongshen,
+            candidateRules = candidateRules,
+            luckCycleDirection = luckCycle?.direction,
+            flowMonthStartDate = start,
+            flowMonthEndDate = end,
         )
 
         return MonthAnalysis(
@@ -238,6 +244,7 @@ class AnalysisRepository(
         val yearStartDate = inYear.firstOrNull()?.date ?: "${year}-02-04"
         val currentPeriod = luckCycleDao?.currentPeriodForDate(stockId, yearStartDate)
 
+        val candidateRules = copyRuleRepository?.getRules() ?: CopyRuleRepository.getDefault().getRules()
         val monthlyInterpretations = months.map { mLabel ->
             val monthPeriod = luckCycleDao?.currentPeriodForDate(stockId, mLabel.startDate)
             FortuneCopyEngine.composeMonthlyInterpretation(
@@ -257,6 +264,10 @@ class AnalysisRepository(
                 currentLuckPeriod = monthPeriod,
                 natalRelations = natalRelations,
                 yongshen = yongshen,
+                candidateRules = candidateRules,
+                luckCycleDirection = luckCycle?.direction,
+                flowMonthStartDate = mLabel.startDate,
+                flowMonthEndDate = mLabel.endDate,
             )
         }
 

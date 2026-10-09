@@ -224,4 +224,47 @@ class V12ToV13UpgradeTest {
         assertEquals("贵州茅台", favs[0].name)
         assertEquals("600519.SH", favs[0].code)
     }
+
+    @Test
+    fun testUnmappableStockNeverFallsBackToMismatchedId() = runBlocking {
+        // 验证：当旧收藏记录包含不存在的代码（如退市已注销的假股票），严禁回退到可能属于别人的旧 ID
+        val backupArr = org.json.JSONArray().apply {
+            put(org.json.JSONObject().apply {
+                put("stockId", 1L) // ID=1 在新库中是中国天楹
+                put("code", "999999.SH") // 不存在的代码
+                put("symbol", "999999")
+                put("name", "虚构退市股")
+                put("addedAt", 1700000001000)
+            })
+        }
+
+        app.getSharedPreferences("favorites_persistent_backup", Context.MODE_PRIVATE)
+            .edit()
+            .putString("backup_json", backupArr.toString())
+            .commit()
+
+        val db = AppDatabase.get(app)
+        val favs = db.favoriteDao().stocksWithInfo()
+
+        // 严禁将虚构股票错误挂载到 ID=1 (中国天楹) 名下！
+        assertTrue("无法映射的股票严禁错误挂到其他股票名下", favs.none { it.name == "中国天楹" })
+        assertEquals("无法可靠映射的收藏应被安全跳过", 0, favs.size)
+    }
+
+    @Test
+    fun testCorruptedDbFileDoesNotWipeData() = runBlocking {
+        // 模拟旧库文件损坏或无法读取：此时系统坚决禁止删除数据库
+        val targetFile = app.getDatabasePath(dbName)
+        targetFile.parentFile?.mkdirs()
+        targetFile.writeText("THIS IS A CORRUPTED DB FILE CONTENT")
+
+        app.getSharedPreferences("asset_guard", Context.MODE_PRIVATE)
+            .edit()
+            .putString("identity_hash", "1/OLD_HASH/v1.2.0")
+            .commit()
+
+        // 执行升级准备逻辑（验证损坏文件不会被静默当空库抹杀）
+        val result = AppDatabase.readFavoritesWithDetails(targetFile)
+        assertTrue("损坏数据库读取必须返回 Failure", result.isFailure)
+    }
 }

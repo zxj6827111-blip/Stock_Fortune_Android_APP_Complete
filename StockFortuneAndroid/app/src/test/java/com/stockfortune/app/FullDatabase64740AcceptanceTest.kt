@@ -5,6 +5,7 @@ import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stockfortune.app.data.db.AppDatabase
+import com.stockfortune.app.data.repository.CopyRuleRepository
 import com.stockfortune.app.data.entity.LuckCyclePeriodEntity
 import com.stockfortune.app.data.entity.NatalRelationEntity
 import com.stockfortune.app.data.entity.StockBaziEntity
@@ -322,14 +323,26 @@ class FullDatabase64740AcceptanceTest {
             }
         }
 
-        // 30 组代表性股票代码
-        val sampleTargetCodes = listOf(
-            "600519", "601318", "601857", "600036", "601088", // 权重蓝筹与央企
-            "002594", "300750", "000333", "002475", "000002", // 制造业与优质民企
-            "688981", "688012", "300059", "688111",           // 科创板与创业板
-            "603222", "000004", "600601", "000001",           // 平盘股、缺失股、老八股
-            "000063", "000035",                               // 起运前与年内交运股
+        // 15 只不同类型的代表性股票（覆盖身强、中和、身弱、平盘、缺失、大运交接、六合、喜用候选等），每只取2个流月，共30组样本
+        val targetStockList = listOf(
+            "600519" to "贵州茅台",
+            "601318" to "中国平安",
+            "601857" to "中国石油",
+            "002594" to "比亚迪",
+            "300750" to "宁德时代",
+            "000333" to "美的集团",
+            "000002" to "万科A",
+            "688981" to "中芯国际",
+            "603222" to "济民健康", // 平盘
+            "000004" to "国华网安", // 缺失
+            "000035" to "中国天楹", // 多组六合
+            "000063" to "中兴通讯", // 大运逆推
+            "600036" to "招商银行",
+            "601088" to "中国神华",
+            "000001" to "平安银行",
         )
+        val sampleTargetCodes = targetStockList.map { it.first }
+        val allValidRuleIds = CopyRuleRepository.getDefault().getRules().map { it.ruleId }.toSet()
 
         val sampleResults = JSONArray()
         val ruleHitFrequency = mutableMapOf<String, Int>()
@@ -337,6 +350,7 @@ class FullDatabase64740AcceptanceTest {
         var totalGenerated = 0
         var totalForbiddenHits = 0
         var totalPendingReviewCount = 0
+        var totalUnreplacedPlaceholderHits = 0
 
         val t0 = System.currentTimeMillis()
 
@@ -378,6 +392,9 @@ class FullDatabase64740AcceptanceTest {
                     currentLuckPeriod = currentPeriod,
                     natalRelations = natalRelations,
                     yongshen = yongshen,
+                    luckCycleDirection = luckCycle?.direction,
+                    flowMonthStartDate = m.date,
+                    flowMonthEndDate = m.date,
                 )
 
                 totalGenerated++
@@ -394,9 +411,10 @@ class FullDatabase64740AcceptanceTest {
                     totalPendingReviewCount++
                 }
 
-                // 校验 3：命中规则集非空
+                // 校验 3：命中规则集非空，且所有命中的规则ID必须在冻结 281 条规则资产中真实存在
                 assertTrue(fp.hitRuleIds.isNotEmpty())
                 fp.hitRuleIds.forEach { rId ->
+                    assertTrue("命中规则 $rId 必须在冻结 281 规则资产中存在", allValidRuleIds.contains(rId))
                     ruleHitFrequency[rId] = (ruleHitFrequency[rId] ?: 0) + 1
                 }
 
@@ -408,9 +426,14 @@ class FullDatabase64740AcceptanceTest {
                     }
                 }
 
-                // 抽样记录样本
-                val isSampleTarget = sampleTargetCodes.any { target -> stock.code.contains(target) }
-                if (isSampleTarget && sampleResults.length() < 30) {
+                // 校验 5：严禁存在未替换占位符（如未处理的 {relation.xxx} 或 {dayun.xxx}）
+                if (fullMarkdown.contains("{") && fullMarkdown.contains("}")) {
+                    totalUnreplacedPlaceholderHits++
+                }
+
+                // 抽样记录样本：从 15 只目标股票中各抽取第 1 月与第 6 月（共 30 组样本）
+                val targetCode = sampleTargetCodes.firstOrNull { stock.code.contains(it) }
+                if (targetCode != null && (m.month == 1 || m.month == 6) && sampleResults.length() < 30) {
                     val hash = sha256(fullMarkdown)
                     val sampleObj = JSONObject().apply {
                         put("stockId", stock.id)
@@ -422,20 +445,22 @@ class FullDatabase64740AcceptanceTest {
                         put("dayunGanzhi", currentPeriod?.ganzhi ?: "无/未起运")
                         put("dayunPeriod", currentPeriod?.let { "${it.startDate}—${it.endDate}" } ?: "N/A")
                         put("dayunAvailability", if (currentPeriod != null) "AVAILABLE" else "UNAVAILABLE")
+                        put("dayunDirection", luckCycle?.direction ?: "N/A")
                         put("firstDayPolarity", firstDayPolarity.name)
                         put("natalRelationsCount", natalRelations.size)
                         put("yongshenStatus", yongshenStatus.name)
-                        put("yongshenElements", yongshen?.yongShen ?: "N/A")
+                        put("yongshenElements", yongshen?.yongShen ?: yongshen?.candidateElements ?: "N/A")
                         put("hitRuleCount", fp.hitRuleIds.size)
                         put("hitRuleIds", JSONArray(fp.hitRuleIds))
                         put("reviewStatus", fp.reviewStatus.name)
                         put("preciseAdvancedNotice", fp.preciseAdvancedNotice)
                         put("fiveParagraphHash", hash)
-                        put("basisSummary", fp.basisText.take(60) + "...")
-                        put("themeSummary", fp.themeText.take(60) + "...")
-                        put("contradictionSummary", fp.contradictionText.take(60) + "...")
-                        put("businessSummary", fp.businessText.take(60) + "...")
-                        put("synthesisSummary", fp.synthesisText.take(60) + "...")
+                        // 提供完整五段式正文（非截断）
+                        put("fullBasisText", fp.basisText)
+                        put("fullThemeText", fp.themeText)
+                        put("fullContradictionText", fp.contradictionText)
+                        put("fullBusinessText", fp.businessText)
+                        put("fullSynthesisText", fp.synthesisText)
                     }
                     sampleResults.put(sampleObj)
                 }
@@ -444,38 +469,33 @@ class FullDatabase64740AcceptanceTest {
 
         val durationMs = System.currentTimeMillis() - t0
 
-        // 补足至 30 组重点样本（添加起运前与历史交运样本）
-        while (sampleResults.length() < 30) {
-            val zteStock = allStocks.first { s -> s.code.contains("000063") }
-            val zteBazi = baziMap[zteStock.id]!!
-            val zteFp = FortuneCopyEngine.composeMonthlyInterpretation(
-                stockId = zteStock.id, stockCode = zteStock.code, dayStem = zteBazi.dayStem,
-                yearPillar = zteBazi.yearPillar, monthPillar = zteBazi.monthPillar, dayPillar = zteBazi.dayPillar,
-                firstDayPolarity = FirstDayPolarity.YANG, dayunStatus = "available", year = 1998, month = 6,
-                monthGanzhi = "戊午", natalRelationsCount = 0, yongshenStatus = YongshenCandidateStatus.UNAVAILABLE,
-                currentLuckPeriod = null, natalRelations = emptyList(), yongshen = null,
-            )
-            sampleResults.put(JSONObject().apply {
-                put("stockId", zteStock.id)
-                put("stockCode", zteStock.code)
-                put("stockName", zteStock.name)
-                put("year", 1998)
-                put("month", 6)
-                put("monthGanzhi", "戊午")
-                put("dayunGanzhi", "未起运(降级)")
-                put("dayunAvailability", "UNAVAILABLE")
-                put("firstDayPolarity", "YANG")
-                put("hitRuleIds", JSONArray(zteFp.hitRuleIds))
-                put("reviewStatus", zteFp.reviewStatus.name)
-                put("fiveParagraphHash", sha256(zteFp.toFormattedMarkdown()))
-                put("degradationNote", "起运前优雅降级，无崩溃，仅展示流月十神")
-            })
-            break
-        }
-
         // 写入结果文件供报告引用
         val reportsDir = File("build/reports").apply { mkdirs() }
         File(reportsDir, "acceptance_64740_android_samples.json").writeText(sampleResults.toString(2))
+
+        // 导出格式化 Markdown 供人工审阅直接查阅
+        val mdSb = StringBuilder()
+        mdSb.append("# 股运通 V1.3｜30 组代表性流月五段式解读人工审阅样例（Android 原生运行时生成）\n\n")
+        mdSb.append("> **生成引擎：** Android FortuneCopyEngine (Kotlin Runtime)  \n")
+        mdSb.append("> **覆盖股票：** 15 只不同类型代表性股票 × 2 个流月 = 30 组完整样例  \n")
+        mdSb.append("> **特征分布：** 涵盖身强、中和、身弱、平盘、缺失、大运交接、六合支对、用神候选等全部关键命理类型  \n\n")
+
+        for (i in 0 until sampleResults.length()) {
+            val s = sampleResults.getJSONObject(i)
+            mdSb.append("## 样例 ${i + 1}：${s.getString("stockName")} (${s.getString("stockCode")}) - ${s.getInt("year")}年${s.getInt("month")}月 (${s.getString("monthGanzhi")})\n\n")
+            mdSb.append("- **大运区间：** ${s.getString("dayunGanzhi")} (${s.getString("dayunPeriod")}) · 方向：${s.getString("dayunDirection")} · 状态：${s.getString("dayunAvailability")}\n")
+            mdSb.append("- **首日形态：** ${s.getString("firstDayPolarity")} · 原局关系数：${s.getInt("natalRelationsCount")} · 喜用状态：${s.getString("yongshenStatus")} (${s.getString("yongshenElements")})\n")
+            mdSb.append("- **命中规则ID (${s.getInt("hitRuleCount")}条)：** `${s.getJSONArray("hitRuleIds")}`\n")
+            mdSb.append("- **审核状态：** `${s.getString("reviewStatus")}` · **文本哈希：** `${s.getString("fiveParagraphHash")}`\n\n")
+            mdSb.append("### 五段式完整正文：\n\n")
+            mdSb.append("1. **【命理依据】** ${s.getString("fullBasisText")}\n\n")
+            mdSb.append("2. **【本月主题】** ${s.getString("fullThemeText")}\n\n")
+            mdSb.append("3. **【潜在矛盾】** ${s.getString("fullContradictionText")}\n\n")
+            mdSb.append("4. **【经营观察】** ${s.getString("fullBusinessText")}\n\n")
+            mdSb.append("5. **【综合解释】** ${s.getString("fullSynthesisText")}\n\n")
+            mdSb.append("---\n\n")
+        }
+        File(reportsDir, "acceptance_64740_android_samples.md").writeText(mdSb.toString())
 
         val summaryObj = JSONObject().apply {
             put("engine", "Android FortuneCopyEngine (Kotlin Runtime)")
@@ -485,6 +505,7 @@ class FullDatabase64740AcceptanceTest {
             put("errorCount", 0)
             put("totalForbiddenHits", totalForbiddenHits)
             put("totalPendingReviewCount", totalPendingReviewCount)
+            put("totalUnreplacedPlaceholderHits", totalUnreplacedPlaceholderHits)
             put("uniqueRulesHit", ruleHitFrequency.size)
             put("durationSeconds", durationMs / 1000.0)
             put("sampleCount", sampleResults.length())
@@ -494,6 +515,7 @@ class FullDatabase64740AcceptanceTest {
         // 断言验证
         assertEquals("全库流月生成总数必须精确等于 64740 份", 64740, totalGenerated)
         assertEquals("全量五段式解读 60 禁词必须为 0 命中", 0, totalForbiddenHits)
+        assertEquals("全量五段式解读未替换占位符必须为 0 命中", 0, totalUnreplacedPlaceholderHits)
         assertEquals("全量五段式解读必须 100% 保持候审状态 PENDING_REVIEW", 64740, totalPendingReviewCount)
         assertTrue("规则库命中规则种类应丰富 (>=120)", ruleHitFrequency.size >= 120)
         assertEquals("30 组抽样样本记录完整", 30, sampleResults.length())

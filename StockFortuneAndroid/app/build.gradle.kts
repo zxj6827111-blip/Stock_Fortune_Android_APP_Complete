@@ -61,7 +61,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
     packaging {
         resources.excludes += setOf("/META-INF/{AL2.0,LGPL2.1}")
     }
@@ -75,13 +78,14 @@ android {
             isReturnDefaultValues = true
             all {
                 it.useJUnit()
-                // Robolectric 离线模式：android-all jar 由 tools/fetch_robolectric.sh 预取，
-                // 避免测试 JVM 自己去拉 144MB 的镜像 jar（网络策略差异会导致卡死）。
-                it.systemProperty("robolectric.offline", "true")
-                it.systemProperty(
-                    "robolectric.dependency.dir",
-                    rootProject.file("build/robolectric-deps").absolutePath,
-                )
+                // Robolectric 依赖解析：优先检测 tools/fetch_robolectric.sh 预取的本地离线镜像；
+                // 若预取目录不存在或为空，则回退至标准依赖解析，防止 CI 运行环境下报错 LocalDependencyResolver.java:50。
+                val roboDepsDir = rootProject.file("build/robolectric-deps")
+                val hasRoboDeps = roboDepsDir.exists() && (roboDepsDir.listFiles()?.any { it.name.endsWith(".jar") } == true)
+                if (hasRoboDeps) {
+                    it.systemProperty("robolectric.offline", "true")
+                    it.systemProperty("robolectric.dependency.dir", roboDepsDir.absolutePath)
+                }
             }
         }
     }

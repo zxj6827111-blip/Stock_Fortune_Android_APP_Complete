@@ -29,6 +29,16 @@ import com.stockfortune.app.domain.model.YongshenCandidateStatus
  */
 object FortuneCopyEngine {
 
+    @Volatile
+    var isProductionBuildOverride: Boolean? = null
+
+    val isProductionBuild: Boolean
+        get() = isProductionBuildOverride ?: try {
+            !com.stockfortune.app.BuildConfig.DEBUG
+        } catch (_: Throwable) {
+            false
+        }
+
     /**
      * 核心月度五段式解读装配入口。
      */
@@ -50,6 +60,10 @@ object FortuneCopyEngine {
         natalRelations: List<com.stockfortune.app.data.entity.NatalRelationEntity> = emptyList(),
         yongshen: StockYongshenEntity? = null,
         candidateRules: List<CopyRuleDefinition>? = null,
+        luckCycleDirection: String? = null,
+        flowMonthStartDate: String? = null,
+        flowMonthEndDate: String? = null,
+        isProductionBuild: Boolean = FortuneCopyEngine.isProductionBuild,
     ): FiveParagraphInterpretation {
         if (monthGanzhi.length < 2 || dayStem.isBlank()) {
             return fallbackUnavailable(stockId, stockCode, year, month)
@@ -87,8 +101,6 @@ object FortuneCopyEngine {
             firstDayPolarity != FirstDayPolarity.CONFLICT &&
             currentLuckPeriod != null
 
-        val hitIds = mutableListOf<String>()
-
         // 识别六合支对（原局内六合 或 流月与原局三柱六合 或 大运与原局三柱六合）
         val hitLiuhe = findLiuheRelation(
             monthBranch = monthBranch,
@@ -97,6 +109,9 @@ object FortuneCopyEngine {
             dayPillar = dayPillar,
             natalRelations = natalRelations,
             currentLuckPeriod = if (isDayunAvailable) currentLuckPeriod else null,
+            flowMonthStartDate = flowMonthStartDate,
+            flowMonthEndDate = flowMonthEndDate,
+            monthGanzhi = monthGanzhi,
         )
 
         val context = OfflineCopyRuleEvaluator.EvaluationContext(
@@ -113,98 +128,38 @@ object FortuneCopyEngine {
             firstDayPolarity = firstDayPolarity,
             dayunAvailability = dayunAvailability,
             currentLuckPeriod = if (isDayunAvailable) currentLuckPeriod else null,
+            dayunDirection = luckCycleDirection,
             natalAvailability = natalAvailability,
             natalRelations = natalRelations,
             hitLiuhe = hitLiuhe,
+            flowMonthStartDate = flowMonthStartDate,
+            flowMonthEndDate = flowMonthEndDate,
             yongshenAvailability = yongshenAvailability,
             yongshen = yongshen,
             isMockContext = false,
-            isProductionBuild = false,
+            isProductionBuild = isProductionBuild,
         )
 
         val candidateList = candidateRules ?: com.stockfortune.app.data.repository.CopyRuleRepository.getDefault().getRules()
-        if (candidateList.isNotEmpty()) {
-            return OfflineCopyRuleEvaluator.evaluate(context, candidateList)
+        if (candidateList.isEmpty()) {
+            return FiveParagraphInterpretation(
+                stockId = stockId,
+                stockCode = stockCode,
+                year = year,
+                month = month,
+                basisText = "【受控不可用】离线文案规则资产未加载或加载失败，请检查 assets 资源配置。",
+                themeText = "【受控不可用】规则库未就绪。",
+                contradictionText = "【受控不可用】规则库未就绪。",
+                businessText = "【受控不可用】规则库未就绪。",
+                synthesisText = "【受控不可用】系统拒绝静默伪造文案输出。请确认 copy_rules_frozen_281.json 资产加载状态。",
+                preciseAdvancedNotice = "【规则库未就绪】离线规则资产加载失败",
+                hitRuleIds = emptyList(),
+                reviewStatus = ReviewStatus.PENDING_REVIEW,
+                isMock = false,
+            )
         }
 
-        // 1. 第一段：命理依据
-        val basisText = buildBasisParagraph(
-            firstDayPolarity = firstDayPolarity,
-            monthStem = monthStem,
-            stemGod = stemGod,
-            monthBranch = monthBranch,
-            branchGod = branchGod,
-            currentLuckPeriod = if (isDayunAvailable) currentLuckPeriod else null,
-            dayStem = dayStem,
-            hitLiuhe = hitLiuhe,
-            yongshen = yongshen,
-            hitIds = hitIds,
-        )
-
-        // 2. 第二段：本月主题（主线 + 大运阶段背景 + 30条十神强弱条件解释副线）
-        val themeText = buildThemeParagraph(
-            stemGod = stemGod,
-            strength = strength,
-            currentLuckPeriod = if (isDayunAvailable) currentLuckPeriod else null,
-            dayStem = dayStem,
-            hitIds = hitIds,
-        )
-
-        // 3. 第三段：潜在矛盾（同神聚焦 vs 异神分类差异 + 大运形式对照 + 六合合化不确定项 + 调候扶抑分离）
-        val contradictionText = buildContradictionParagraph(
-            stemGod = stemGod,
-            branchGod = branchGod,
-            monthStem = monthStem,
-            currentLuckPeriod = if (isDayunAvailable) currentLuckPeriod else null,
-            dayStem = dayStem,
-            hitLiuhe = hitLiuhe,
-            yongshen = yongshen,
-            hitIds = hitIds,
-        )
-
-        // 4. 第四段：企业经营观察（匹配财报与治理披露入口，结合流月与大运）
-        val businessText = buildBusinessParagraph(
-            stemGod = stemGod,
-            branchGod = branchGod,
-            currentLuckPeriod = if (isDayunAvailable) currentLuckPeriod else null,
-            dayStem = dayStem,
-            hitIds = hitIds,
-        )
-
-        // 5. 第五段：综合解释（归纳前四段：强弱解释边界 + 大运十神×强弱 + 喜用候选 + 六合结构总结）
-        val synthesisText = buildSynthesisParagraph(
-            strength = strength,
-            stemGod = stemGod,
-            branchGod = branchGod,
-            currentLuckPeriod = if (isDayunAvailable) currentLuckPeriod else null,
-            dayStem = dayStem,
-            hitLiuhe = hitLiuhe,
-            yongshen = yongshen,
-            hitIds = hitIds,
-        )
-
-        // 6. 分项精确提示
-        val notice = PreciseAdvancedNotice.formatNotice(
-            dayunState = dayunAvailability,
-            natalState = natalAvailability,
-            yongshenState = yongshenAvailability,
-        )
-
-        return FiveParagraphInterpretation(
-            stockId = stockId,
-            stockCode = stockCode,
-            year = year,
-            month = month,
-            basisText = basisText,
-            themeText = themeText,
-            contradictionText = contradictionText,
-            businessText = businessText,
-            synthesisText = synthesisText,
-            preciseAdvancedNotice = notice,
-            hitRuleIds = hitIds,
-            reviewStatus = ReviewStatus.PENDING_REVIEW, // 严格保持待人工终审，未终审前不标记通过
-            isMock = false,
-        )
+        return OfflineCopyRuleEvaluator.evaluate(context, candidateList)
     }
 
     data class LiuheHit(
@@ -215,6 +170,9 @@ object FortuneCopyEngine {
         val branchB: String,
         val posA: String,
         val posB: String,
+        val validFrom: String = "当月",
+        val validTo: String = "当月",
+        val timeDescription: String = "",
     )
 
     private fun findLiuheRelation(
@@ -224,6 +182,9 @@ object FortuneCopyEngine {
         dayPillar: String,
         natalRelations: List<com.stockfortune.app.data.entity.NatalRelationEntity>,
         currentLuckPeriod: LuckCyclePeriodEntity?,
+        flowMonthStartDate: String? = null,
+        flowMonthEndDate: String? = null,
+        monthGanzhi: String = "",
     ): LiuheHit? {
         val natalPillars = listOf(
             "原局年支" to yearPillar.getOrNull(1)?.toString(),
@@ -231,7 +192,7 @@ object FortuneCopyEngine {
             "原局日支" to dayPillar.getOrNull(1)?.toString(),
         )
 
-        // 1. 原局内部六合
+        // 1. 原局内部六合（先天格局，长期终身有效）
         val natalLiuhe = natalRelations.firstOrNull { it.relationType == "六合" }
         if (natalLiuhe != null) {
             val bA = natalLiuhe.sourceGanzhi.takeLast(1)
@@ -246,11 +207,16 @@ object FortuneCopyEngine {
                     branchB = bB,
                     posA = "原局" + pillarCn(natalLiuhe.sourcePillar),
                     posB = "原局" + pillarCn(natalLiuhe.targetPillar),
+                    validFrom = "原局固有",
+                    validTo = "终身成立",
+                    timeDescription = "原局内部先天存在，长期持续作用",
                 )
             }
         }
 
-        // 2. 流月对原局三柱六合
+        // 2. 流月对原局三柱六合（仅在流月节气月期间有效，绝非十年大运）
+        val mStart = flowMonthStartDate ?: "当月流月期"
+        val mEnd = flowMonthEndDate ?: "当月流月期"
         for ((posName, nb) in natalPillars) {
             if (!nb.isNullOrBlank()) {
                 val p = getLiuhePair(monthBranch, nb)
@@ -263,12 +229,15 @@ object FortuneCopyEngine {
                         branchB = nb,
                         posA = "流月支",
                         posB = posName,
+                        validFrom = mStart,
+                        validTo = mEnd,
+                        timeDescription = "流月${monthGanzhi}期间有效（$mStart 至 $mEnd）",
                     )
                 }
             }
         }
 
-        // 3. 大运对原局三柱六合
+        // 3. 大运对原局三柱六合（在该步大运十年区间内有效）
         if (currentLuckPeriod != null) {
             for ((posName, nb) in natalPillars) {
                 if (!nb.isNullOrBlank()) {
@@ -282,6 +251,9 @@ object FortuneCopyEngine {
                             branchB = nb,
                             posA = "大运支",
                             posB = posName,
+                            validFrom = currentLuckPeriod.startDate,
+                            validTo = currentLuckPeriod.endDate,
+                            timeDescription = "大运${currentLuckPeriod.ganzhi}区间有效（${currentLuckPeriod.startDate}至${currentLuckPeriod.endDate}）",
                         )
                     }
                 }
@@ -709,13 +681,36 @@ object FortuneCopyEngine {
             val sliceInterps = monthlyInterpretations.drop(startIdx).take(3)
             val dominantInSeason = sliceMonths.map { it.tenGod.cn }.distinct().joinToString("、")
 
-            // 深度消费该季度 3 个月的实际月度解读核心观点与经营观察
-            val themeHighlights = sliceInterps.mapNotNull { interp ->
-                interp.themeText.split("。", "；").firstOrNull { it.isNotBlank() }?.trim()
+            // 深度消费该季度 3 个月的实际月度解读核心主题与企业经营观察，不单截取首句
+            val themeConcepts = sliceInterps.mapNotNull { interp ->
+                // 提取主题中的核心关键词组
+                interp.themeText.split("。", "；")
+                    .map { it.trim() }
+                    .firstOrNull { it.contains("主线落在") || it.contains("主星") || it.isNotBlank() }
             }.distinct()
 
-            val combinedThemes = if (themeHighlights.isNotEmpty()) {
-                themeHighlights.joinToString("；")
+            val businessDimensions = sliceInterps.mapNotNull { interp ->
+                // 提取经营观察中的公开披露核对入口
+                if (interp.businessText.contains("公开披露中的")) {
+                    interp.businessText.substringAfter("公开披露中的").substringBefore("。").trim('「', '」', ' ')
+                } else null
+            }.distinct()
+
+            val quarterRelations = sliceInterps.flatMap { it.hitRuleIds }
+                .filter { it.startsWith("ADV_LH_PAIR_") }
+                .map { it.removePrefix("ADV_LH_PAIR_") }
+                .distinct()
+
+            val relationPart = if (quarterRelations.isNotEmpty()) {
+                "；季度内见${quarterRelations.joinToString("、")}六合支对互动"
+            } else ""
+
+            val bizPart = if (businessDimensions.isNotEmpty()) {
+                "；经营观察侧重${businessDimensions.take(2).joinToString("与")}"
+            } else ""
+
+            val themePart = if (themeConcepts.isNotEmpty()) {
+                themeConcepts.joinToString("；")
             } else {
                 when (startIdx) {
                     0 -> "立春至季春之规划蓄势与基础梳理"
@@ -724,7 +719,7 @@ object FortuneCopyEngine {
                     else -> "立冬至季冬之回顾审视与跨年承接"
                 }
             }
-            return "主临${dominantInSeason}。该季度月度解读显示：${combinedThemes}。"
+            return "主临${dominantInSeason}。该季度综合研判：$themePart$bizPart$relationPart。符号推演保持中立观察，不作单向定论。"
         }
 
         val seasonalThemes = listOf(

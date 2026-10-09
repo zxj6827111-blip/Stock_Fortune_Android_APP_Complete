@@ -2,9 +2,9 @@ name: Android CI & Phase 7 Acceptance
 
 on:
   push:
-    branches: [ feat/v1.3-offline-fortune ]
+    branches: [ feat/v1.3-offline-fortune, main ]
   pull_request:
-    branches: [ feat/v1.3-offline-fortune ]
+    branches: [ feat/v1.3-offline-fortune, main ]
   workflow_dispatch:
 
 jobs:
@@ -20,10 +20,25 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x StockFortuneAndroid/gradlew
+      - name: Grant execute permission for scripts
+        run: |
+          chmod +x StockFortuneAndroid/gradlew
+          chmod +x StockFortuneAndroid/tools/fetch_robolectric.sh
+          chmod +x StockFortuneAndroid/tools/run_all_acceptance.sh
 
-      - name: Run Full Unit & Acceptance Tests (127 tests)
+      - name: Cache Robolectric Dependencies
+        uses: actions/cache@v4
+        with:
+          path: StockFortuneAndroid/build/robolectric-deps
+          key: robolectric-${{ hashFiles('StockFortuneAndroid/tools/fetch_robolectric.sh') }}
+          restore-keys: |
+            robolectric-
+
+      - name: Fetch Robolectric Pre-instrumented Jar
+        working-directory: StockFortuneAndroid
+        run: bash tools/fetch_robolectric.sh
+
+      - name: Run Full Unit & Acceptance Tests in Android Runtime
         working-directory: StockFortuneAndroid
         run: ./gradlew testDebugUnitTest --continue
 
@@ -31,9 +46,14 @@ jobs:
         working-directory: StockFortuneAndroid
         run: ./gradlew assembleDebug
 
-      - name: Verify Pre-populated DB Size & SHA256
+      - name: Verify Artifact Sizes & SHA256 Checksums
         working-directory: StockFortuneAndroid
         run: |
+          echo "=== Databases & Rules Checksums ==="
           sha256sum app/src/main/assets/databases/stock_fortune.db
           stat -c "%s bytes" app/src/main/assets/databases/stock_fortune.db
+          sha256sum app/src/main/assets/copywriting/copy_rules_frozen_281.json
+          stat -c "%s bytes" app/src/main/assets/copywriting/copy_rules_frozen_281.json
+          echo "=== APK Checksum & Size ==="
           sha256sum app/build/outputs/apk/debug/app-debug.apk
+          stat -c "%s bytes" app/build/outputs/apk/debug/app-debug.apk

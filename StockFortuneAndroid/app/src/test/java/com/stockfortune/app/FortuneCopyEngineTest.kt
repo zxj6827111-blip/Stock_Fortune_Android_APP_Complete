@@ -6,15 +6,20 @@ import com.stockfortune.app.domain.model.ReviewStatus
 import com.stockfortune.app.domain.model.Strength
 import com.stockfortune.app.domain.model.TenGod
 import com.stockfortune.app.domain.model.YongshenCandidateStatus
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 /**
  * Phase 5 离线自然语言组合引擎（FortuneCopyEngine）回归测试。
  */
+@RunWith(AndroidJUnit4::class)
+@Config(sdk = [34])
 class FortuneCopyEngineTest {
 
     private val forbiddenWords = listOf(

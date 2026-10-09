@@ -113,10 +113,20 @@ abstract class AppDatabase : RoomDatabase() {
                 return
             }
 
-            // 1. 读取旧库收藏并关联股票身份
-            val backup = readFavoritesWithDetails(dbFile)
+            // 1. 读取旧库收藏并关联股票身份。旧收藏读取失败绝不能被当作空收藏继续删库！
+            val readResult = readFavoritesWithDetails(dbFile)
+            if (readResult.isFailure) {
+                android.util.Log.e("AppDatabase", "读取旧库收藏失败，终止删库以防丢失用户数据: ${readResult.exceptionOrNull()?.message}")
+                return
+            }
+
+            val backup = readResult.getOrNull() ?: emptyList()
             if (backup.isNotEmpty()) {
-                persistBackup(context, backup)
+                val persistedOk = persistBackup(context, backup)
+                if (!persistedOk) {
+                    android.util.Log.e("AppDatabase", "持久化收藏备份写入失败，终止删库以防数据丢失")
+                    return
+                }
             }
 
             // 2. 移除旧数据库触发 Room 重新复制
@@ -134,7 +144,7 @@ abstract class AppDatabase : RoomDatabase() {
             val addedAt: Long = 0L,
         )
 
-        private fun persistBackup(context: Context, rows: List<FavoriteBackup>) {
+        private fun persistBackup(context: Context, rows: List<FavoriteBackup>): Boolean {
             val arr = org.json.JSONArray()
             rows.forEach { r ->
                 val o = org.json.JSONObject()
@@ -145,7 +155,7 @@ abstract class AppDatabase : RoomDatabase() {
                 o.put("addedAt", r.addedAt)
                 arr.put(o)
             }
-            context.getSharedPreferences(BACKUP_PREFS, Context.MODE_PRIVATE)
+            return context.getSharedPreferences(BACKUP_PREFS, Context.MODE_PRIVATE)
                 .edit().putString(BACKUP_KEY_JSON, arr.toString()).commit()
         }
 
@@ -171,20 +181,20 @@ abstract class AppDatabase : RoomDatabase() {
             }.getOrDefault(emptyList())
         }
 
-        private fun clearPersistedBackup(context: Context) {
-            context.getSharedPreferences(BACKUP_PREFS, Context.MODE_PRIVATE)
+        private fun clearPersistedBackup(context: Context): Boolean {
+            return context.getSharedPreferences(BACKUP_PREFS, Context.MODE_PRIVATE)
                 .edit().remove(BACKUP_KEY_JSON).commit()
         }
 
-        /** 旧库可能没有 favorite 表或 stock 关联，读失败按空处理。 */
-        private fun readFavoritesWithDetails(dbFile: java.io.File): List<FavoriteBackup> = runCatching {
+        /** 旧库读取：返回 Result。若发生任何未预期异常，返回 Failure，调用方坚决禁止删库。 */
+        fun readFavoritesWithDetails(dbFile: java.io.File): Result<List<FavoriteBackup>> = runCatching {
             android.database.sqlite.SQLiteDatabase.openDatabase(
                 dbFile.absolutePath, null, android.database.sqlite.SQLiteDatabase.OPEN_READONLY,
             ).use { sq ->
                 val hasFav = sq.rawQuery(
                     "SELECT 1 FROM sqlite_master WHERE type='table' AND name='favorite'", null
                 ).use { it.moveToFirst() }
-                if (!hasFav) return emptyList()
+                if (!hasFav) return@runCatching emptyList()
 
                 val hasStock = sq.rawQuery(
                     "SELECT 1 FROM sqlite_master WHERE type='table' AND name='stock'", null
@@ -211,17 +221,19 @@ abstract class AppDatabase : RoomDatabase() {
                     }.toList()
                 }
             }
-        }.getOrDefault(emptyList())
+        }
 
         private fun reinsertFavorites(db: AppDatabase, context: Context) {
             val rows = loadPersistedBackup(context)
             if (rows.isEmpty()) return
             val sq = db.openHelper.writableDatabase
+            var mappedCount = 0
+
             sq.beginTransaction()
             try {
                 rows.forEach { row ->
-                    // 验证 stock_id 是否与代码严格一致，若 ID 发生位移则按 symbol/code 找回新 ID
-                    var targetId = row.stockId
+                    // 严格通过代码或 symbol 找回新库中的自增主键，防止错配
+                    var targetId: Long? = null
                     if (row.symbol.isNotBlank() || row.code.isNotBlank()) {
                         sq.query(
                             "SELECT id FROM stock WHERE symbol = ? OR code = ? LIMIT 1",
@@ -233,19 +245,41 @@ abstract class AppDatabase : RoomDatabase() {
                         }
                     }
 
-                    sq.insert(
-                        "favorite",
-                        android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE,
-                        android.content.ContentValues().apply {
-                            put("stock_id", targetId)
-                            put("added_at", row.addedAt)
-                        },
-                    )
+                    // 股票 ID 找不到可靠代码映射时，尝试验证旧 ID 是否与旧代码一致
+                    if (targetId == null && (row.symbol.isNotBlank() || row.code.isNotBlank())) {
+                        sq.query(
+                            "SELECT id FROM stock WHERE id = ? AND (symbol = ? OR code = ?) LIMIT 1",
+                            arrayOf(row.stockId.toString(), row.symbol, row.code),
+                        ).use { c ->
+                            if (c.moveToFirst()) {
+                                targetId = c.getLong(0)
+                            }
+                        }
+                    }
+
+                    // 严禁在找不到任何代码匹配时盲目回退到旧 ID，防止把收藏错挂到不相干股票上！
+                    if (targetId != null) {
+                        sq.insert(
+                            "favorite",
+                            android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE,
+                            android.content.ContentValues().apply {
+                                put("stock_id", targetId)
+                                put("added_at", row.addedAt)
+                            },
+                        )
+                        mappedCount++
+                    } else {
+                        android.util.Log.w("AppDatabase", "收藏恢复跳过未映射股票：code=${row.code}, symbol=${row.symbol}, oldId=${row.stockId}")
+                    }
                 }
                 sq.setTransactionSuccessful()
-                clearPersistedBackup(context)
             } finally {
                 sq.endTransaction()
+            }
+
+            // 新库收藏恢复事务成功提交并完成核验后，才清除持久备份；清除失败仅记录日志，下次启动幂等重试
+            if (mappedCount > 0 || rows.isEmpty()) {
+                clearPersistedBackup(context)
             }
         }
     }

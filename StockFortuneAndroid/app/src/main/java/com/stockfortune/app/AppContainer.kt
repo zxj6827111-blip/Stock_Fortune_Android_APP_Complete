@@ -18,6 +18,7 @@ class AppContainer(private val context: Context) {
     private val db by lazy { AppDatabase.get(context) }
     val calendarRepository by lazy { CalendarRepository(db.calendarDao()) }
     val classicQuoteRepository by lazy { ClassicQuoteRepository(context) }
+    val copyRuleRepository by lazy { com.stockfortune.app.data.repository.CopyRuleRepository(context.applicationContext) }
     val stockRepository by lazy {
         StockRepository(
             db.stockDao(), db.baziDao(), db.filterDao(), db.favoriteDao(), db.metaDao(),
@@ -29,6 +30,7 @@ class AppContainer(private val context: Context) {
         AnalysisRepository(
             db.calendarDao(), db.baziDao(), db.filterDao(), db.scanCacheDao(),
             db.luckCycleDao(), db.natalRelationDao(), db.yongshenDao(), db.stockDao(),
+            copyRuleRepository = copyRuleRepository,
         )
     }
     val settingsRepository by lazy { SettingsRepository(context.filterStore) }
