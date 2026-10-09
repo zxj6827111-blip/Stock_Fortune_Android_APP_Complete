@@ -26,6 +26,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,6 +69,7 @@ import com.stockfortune.app.ui.components.WealthTag
 import com.stockfortune.app.ui.theme.SfColors
 import com.stockfortune.app.ui.theme.SfDimens
 import com.stockfortune.app.ui.theme.wealthColor
+import com.stockfortune.app.ui.vm.AppClock
 import java.time.LocalDate
 
 /*
@@ -115,7 +120,25 @@ fun BasicTab(detail: StockDetail) {
                     PillarColumn(label = p.label, ganzhi = p.ganzhi, elements = p.stemElement + p.branchElement, modifier = Modifier.weight(1f))
                 }
             }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "时柱说明：因A股开盘多为09:30（巳时），时柱仅供排盘参考与多维筛选，命理强弱、喜用及大运均基于年月日三柱确立。",
+                style = MaterialTheme.typography.labelSmall,
+                color = SfColors.TextSub,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "日历标准：依据公历日粒度日历排盘，节气交接以标准公历日为界；不依赖未公开算法。",
+                style = MaterialTheme.typography.labelSmall,
+                color = SfColors.TextSub,
+            )
         }
+
+        NatalRelationCard(detail)
+
+        YongshenCard(detail)
+
+        LuckCycleCard(detail)
 
         SfCard {
             SfSectionTitle("☯ " + stringResource(R.string.yinyang_info))
@@ -293,12 +316,22 @@ fun YearTab(
             DividerLine()
             SfInfoRow("五行", year.yearWuxing, valueColor = SfColors.ZhengCai)
             DividerLine()
+            if (year.currentPeriod != null) {
+                SfInfoRow(
+                    "流年所处大运",
+                    "${year.currentPeriod.ganzhi}大运（${year.currentPeriod.startYear}–${year.currentPeriod.endYear}年）",
+                    valueColor = SfColors.DeepBlue,
+                )
+                DividerLine()
+            }
             SfInfoRow(stringResource(R.string.year_wealth_summary), year.wealthSummary)
             DividerLine()
             SfInfoRow(stringResource(R.string.year_industry), year.industryNote)
             DividerLine()
             SfInfoRow(stringResource(R.string.year_advice), year.advice)
         }
+
+        AnnualSynthesisCard(year, yearValue)
 
         SfCard {
             SfSectionTitle(stringResource(R.string.month_ten_god_list))
@@ -351,6 +384,14 @@ fun YearTab(
                         label.summary,
                         style = MaterialTheme.typography.bodySmall, color = SfColors.TextSub,
                     )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        Text(
+                            "点击查看月度五段式解读 →",
+                            fontSize = 11.sp,
+                            color = SfColors.DeepBlue,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
                 }
             }
         }
@@ -439,6 +480,8 @@ fun MonthTab(
                 )
             }
         }
+
+        MonthlyFiveParagraphCard(m)
 
         SfCard {
             SfSectionTitle(stringResource(R.string.month_trade_days))
@@ -712,4 +755,482 @@ private fun DividerLine() {
 private fun shortIndustry(full: String): String {
     val seg = full.split("-").filter { it.isNotBlank() }.drop(1)
     return seg.filterIndexed { i, v -> i == 0 || v != seg[i - 1] }.joinToString("·")
+}
+
+// ---------------------------------------------------------------- Phase 6 融合卡片
+
+/**
+ * 原局综合解读卡片：年月日三柱 3×3 离线关系矩阵（22 类刑冲合害）。
+ */
+@Composable
+fun NatalRelationCard(detail: StockDetail) {
+    SfCard {
+        SfSectionTitle("原局综合解读")
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "年月日三柱 3×3 离线关系矩阵 · 排除时柱口径",
+            style = MaterialTheme.typography.labelSmall,
+            color = SfColors.TextSub,
+        )
+        Spacer(Modifier.height(10.dp))
+        if (detail.natalRelations.isNotEmpty()) {
+            detail.natalRelations.forEachIndexed { i, rel ->
+                if (i > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    DividerLine()
+                    Spacer(Modifier.height(8.dp))
+                }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                    SfTag(
+                        text = rel.relationType,
+                        foreground = SfColors.DeepBlue,
+                        background = SfColors.OtherTagBg,
+                        fontSize = 11,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = "${rel.positions}（${rel.sourceGanzhi} ↔ ${rel.targetGanzhi}）",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = SfColors.TextMain,
+                        )
+                        if (rel.notes.isNotBlank()) {
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = rel.notes,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = SfColors.TextSub,
+                                lineHeight = 18.sp,
+                            )
+                        }
+                    }
+                }
+            }
+        } else {
+            Text(
+                text = "原局六字清透纯和，年月日三柱无刑冲合害交加。",
+                style = MaterialTheme.typography.bodyMedium,
+                color = SfColors.TextMain,
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = "依据 ADR-0004 与 ADR-0008，原局分析严格基于年月日三柱，排除时柱干扰；规则版本：natal-relation-v1.3",
+            style = MaterialTheme.typography.labelSmall,
+            color = SfColors.TextSub,
+        )
+    }
+}
+
+/**
+ * 喜用候选卡片：三柱六字同源喜用，扶抑调候双轴解耦，展示合规术语。
+ */
+@Composable
+fun YongshenCard(detail: StockDetail) {
+    val y = detail.yongshen
+    SfCard {
+        SfSectionTitle("喜用格局与流通候选")
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "三柱六字同源喜用 · 扶抑调候双轴解耦",
+            style = MaterialTheme.typography.labelSmall,
+            color = SfColors.TextSub,
+        )
+        Spacer(Modifier.height(10.dp))
+
+        if (y != null) {
+            val statusTag = when (y.status) {
+                "confirmed" -> "扶抑已确立" to (Color(0xFF2E9E66) to Color(0xFFE8F8F0))
+                "candidate" -> "中和流通候选" to (SfColors.Gold to SfColors.PianCaiBg)
+                else -> "暂不适用" to (SfColors.TextSub to SfColors.OtherTagBg)
+            }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("推导状态", style = MaterialTheme.typography.bodyMedium, color = SfColors.TextSub)
+                Spacer(Modifier.weight(1f))
+                SfTag(statusTag.first, statusTag.second.first, statusTag.second.second)
+            }
+            DividerLine()
+
+            if (y.status == "confirmed") {
+                if (y.yongShen.isNotBlank()) {
+                    SfInfoRow("扶抑用神", y.yongShen, valueColor = SfColors.DeepBlue)
+                    DividerLine()
+                }
+                if (y.xiShen.isNotBlank()) {
+                    SfInfoRow("扶抑喜神", y.xiShen, valueColor = Color(0xFF2E9E66))
+                    DividerLine()
+                }
+                if (y.jiShen.isNotBlank()) {
+                    SfInfoRow("制衡之神", y.jiShen, valueColor = SfColors.ZhengCai)
+                    DividerLine()
+                }
+                if (y.chouShen.isNotBlank()) {
+                    SfInfoRow("耗身之神", y.chouShen, valueColor = SfColors.PianCai)
+                    DividerLine()
+                }
+            } else if (y.status == "candidate") {
+                if (y.candidateElements.isNotBlank()) {
+                    SfInfoRow("流通候选五行", y.candidateElements, valueColor = SfColors.Gold)
+                    DividerLine()
+                }
+                Text(
+                    text = "格局中和平衡，不设单一主轴，依岁运流年五行顺次调节。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = SfColors.TextSub,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
+                DividerLine()
+            }
+
+            if (y.tiaohouNote.isNotBlank()) {
+                SfInfoRow("调候环境观察", y.tiaohouNote)
+                DividerLine()
+            }
+
+            if (y.rationale.isNotBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = y.rationale,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = SfColors.TextMain,
+                    lineHeight = 20.sp,
+                )
+            }
+        } else {
+            Text(
+                text = "暂无喜用候选预计算数据",
+                style = MaterialTheme.typography.bodyMedium,
+                color = SfColors.TextSub,
+            )
+        }
+
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "依据 ADR-0006 与 ADR-0007，全库喜用推导与强弱同源，无强加唯一喜用神；展示文案遵循合规映射。",
+            style = MaterialTheme.typography.labelSmall,
+            color = SfColors.TextSub,
+        )
+    }
+}
+
+/**
+ * 大运区块卡片：展示顺逆方向、起运岁数与12步大运周期排盘。
+ */
+@Composable
+fun LuckCycleCard(detail: StockDetail) {
+    val lc = detail.luckCycle
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+    SfCard {
+        SfSectionTitle("当前大运与起运说明")
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "年干与有效首日涨跌阴阳联合裁定 · 离线排运",
+            style = MaterialTheme.typography.labelSmall,
+            color = SfColors.TextSub,
+        )
+        Spacer(Modifier.height(10.dp))
+
+        if (lc != null) {
+            val dirText = when (lc.direction) {
+                "forward" -> "顺行"
+                "reverse" -> "逆行"
+                else -> "不适用"
+            }
+            val polText = when (lc.firstDayPolarity.lowercase()) {
+                "yang" -> "阳命（首日收阳）"
+                "yin" -> "阴命（首日收阴）"
+                "flat" -> "平盘（不适用）"
+                "missing" -> "缺失（不适用）"
+                else -> lc.firstDayPolarity
+            }
+            SfInfoRow("首日命别", polText)
+            DividerLine()
+            SfInfoRow("大运方向", dirText)
+            DividerLine()
+
+            if (lc.startAge != null && lc.startDate != null) {
+                SfInfoRow("起运岁数", "约 ${lc.startAge} 岁")
+                DividerLine()
+                SfInfoRow("首运日期", lc.startDate)
+                DividerLine()
+            } else {
+                SfInfoRow("状态说明", lc.statusReason)
+                DividerLine()
+            }
+
+            if (detail.luckPeriods.isNotEmpty()) {
+                Spacer(Modifier.height(6.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("12步大运周期排盘", style = MaterialTheme.typography.titleSmall, color = SfColors.TextMain)
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        if (expanded) "收起 ▴" else "展开全部 ▾",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = SfColors.DeepBlue,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable { expanded = !expanded }.padding(4.dp),
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+
+                val periodsToShow = if (expanded) detail.luckPeriods else detail.luckPeriods.take(3)
+                periodsToShow.forEachIndexed { i, p ->
+                    if (i > 0) DividerLine()
+                    val stemGod = TenGodCalculator.tenGod(detail.bazi.dayStem, p.stem)
+                    val branchGod = TenGodCalculator.tenGod(detail.bazi.dayStem, TenGodCalculator.mainQi(p.branch))
+                    val currentYear = AppClock.today().year
+                    val isCurrent = currentYear in p.startYear..p.endYear
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "第${p.cycleIndex}步",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SfColors.TextSub,
+                            modifier = Modifier.width(42.dp),
+                        )
+                        Text(
+                            p.ganzhi,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isCurrent) SfColors.Gold else SfColors.TextMain,
+                            modifier = Modifier.width(44.dp),
+                        )
+                        Text(
+                            "${p.startYear}–${p.endYear}（${p.startAge}–${p.endAge}岁）",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SfColors.TextSub,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TenGodTag(stemGod)
+                        Spacer(Modifier.width(4.dp))
+                        TenGodTag(branchGod)
+                        if (isCurrent) {
+                            Spacer(Modifier.width(4.dp))
+                            SfTag("当前", SfColors.Gold, SfColors.PianCaiBg, fontSize = 10)
+                        }
+                    }
+                }
+            } else if (lc.status.startsWith("unavailable") || lc.status.contains("not_applicable")) {
+                Spacer(Modifier.height(6.dp))
+                SfAmberCallout(
+                    text = "因上市首日处于平盘或行情缺失，依据 ADR-0001 与 ADR-0002，大运方向未形成裁定，不伪造顺逆周期。",
+                    title = "大运不适用说明",
+                )
+            }
+        } else {
+            Text("暂无大运数据", style = MaterialTheme.typography.bodyMedium, color = SfColors.TextSub)
+        }
+
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "依据 ADR-0001 与 ADR-0002，大运方向由年干与首日涨跌阴阳联合裁定；平盘及缺失显式标为不适用。",
+            style = MaterialTheme.typography.labelSmall,
+            color = SfColors.TextSub,
+        )
+    }
+}
+
+/**
+ * 年度综合命理解释卡片：聚合实际 12 个月月度五段式分析与十神分布。
+ */
+@Composable
+fun AnnualSynthesisCard(year: YearAnalysis, yearValue: Int) {
+    val syn = year.annualSynthesis
+    SfCard {
+        SfSectionTitle("年度综合命理解释")
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "${yearValue}年（${year.yearGanzhi}）· 聚合 12 个月离线分析",
+            style = MaterialTheme.typography.labelSmall,
+            color = SfColors.TextSub,
+        )
+        Spacer(Modifier.height(10.dp))
+
+        if (syn != null) {
+            GoldHintBar(
+                icon = Icons.Default.Info,
+                text = syn.currentPeriodDesc,
+            )
+            Spacer(Modifier.height(10.dp))
+
+            SfInfoRow("流月十神分布", syn.tenGodDistributionSummary)
+            DividerLine()
+
+            Spacer(Modifier.height(6.dp))
+            Text("四季阶段演进", style = MaterialTheme.typography.titleSmall, color = SfColors.TextMain)
+            Spacer(Modifier.height(6.dp))
+            syn.seasonalThemes.forEach { (season, theme) ->
+                Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.Top) {
+                    SfTag(season, SfColors.DeepBlue, SfColors.OtherTagBg, fontSize = 10, bold = false)
+                    Spacer(Modifier.width(8.dp))
+                    Text(theme, style = MaterialTheme.typography.bodySmall, color = SfColors.TextSub, modifier = Modifier.weight(1f))
+                }
+            }
+            DividerLine()
+            Spacer(Modifier.height(6.dp))
+
+            Text("综合解读归纳", style = MaterialTheme.typography.titleSmall, color = SfColors.TextMain)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                syn.structuredSummary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = SfColors.TextMain,
+                lineHeight = 22.sp,
+            )
+
+            Spacer(Modifier.height(10.dp))
+            Text(
+                syn.complianceNotice,
+                style = MaterialTheme.typography.labelSmall,
+                color = SfColors.TextSub,
+            )
+            Text(
+                syn.hitRuleSummary,
+                style = MaterialTheme.typography.labelSmall,
+                color = SfColors.TextSub,
+            )
+        } else {
+            Text("暂无该年度综合解读数据", style = MaterialTheme.typography.bodyMedium, color = SfColors.TextSub)
+        }
+    }
+}
+
+/**
+ * 月度五段式详细解读卡片：命理依据（可展开）、本月主题、潜在矛盾、企业经营观察、综合解释。
+ */
+@Composable
+fun MonthlyFiveParagraphCard(m: MonthAnalysis) {
+    val fp = m.fiveParagraph
+    var basisExpanded by rememberSaveable { mutableStateOf(false) }
+
+    SfCard {
+        SfSectionTitle("月度五段式解读")
+        Spacer(Modifier.height(4.dp))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "${m.year}年${m.month}月（${m.monthGanzhi} · ${m.branchLabel}）",
+                style = MaterialTheme.typography.labelSmall,
+                color = SfColors.TextSub,
+            )
+            Spacer(Modifier.weight(1f))
+            if (fp != null) {
+                SfTag(fp.reviewStatus.cn, SfColors.DeepBlue, SfColors.OtherTagBg, fontSize = 10)
+                Spacer(Modifier.width(4.dp))
+                SfTag("离线确定性生成", SfColors.Gold, SfColors.PianCaiBg, fontSize = 10)
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+
+        if (fp != null) {
+            if (fp.preciseAdvancedNotice.isNotBlank()) {
+                SfAmberCallout(
+                    text = fp.preciseAdvancedNotice,
+                    title = "分项可用性提示",
+                )
+                Spacer(Modifier.height(10.dp))
+            }
+
+            if (m.currentPeriod != null) {
+                Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("当前运步", style = MaterialTheme.typography.labelSmall, color = SfColors.TextSub)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "${m.currentPeriod.ganzhi}大运（${m.currentPeriod.startYear}–${m.currentPeriod.endYear}年）",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = SfColors.DeepBlue,
+                    )
+                }
+                DividerLine()
+                Spacer(Modifier.height(6.dp))
+            }
+
+            // A. 命理依据
+            Column(Modifier.fillMaxWidth()) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("A. 命理依据", style = MaterialTheme.typography.titleSmall, color = SfColors.TextMain, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        if (basisExpanded) "收起依据 ▴" else "展开查看依据 ▾",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = SfColors.DeepBlue,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable { basisExpanded = !basisExpanded }.padding(4.dp),
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(fp.basisText, style = MaterialTheme.typography.bodyMedium, color = SfColors.TextMain, lineHeight = 20.sp)
+                if (basisExpanded) {
+                    Spacer(Modifier.height(6.dp))
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(SfColors.OtherTagBg)
+                            .padding(8.dp),
+                    ) {
+                        Text(
+                            "命中规则依据：${fp.hitRuleIds.joinToString(" · ")}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SfColors.TextSub,
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            DividerLine()
+            Spacer(Modifier.height(8.dp))
+
+            // B. 本月主题
+            Column(Modifier.fillMaxWidth()) {
+                Text("B. 本月主题", style = MaterialTheme.typography.titleSmall, color = SfColors.TextMain, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                Text(fp.themeText, style = MaterialTheme.typography.bodyMedium, color = SfColors.TextMain, lineHeight = 22.sp)
+            }
+            Spacer(Modifier.height(8.dp))
+            DividerLine()
+            Spacer(Modifier.height(8.dp))
+
+            // C. 潜在矛盾
+            Column(Modifier.fillMaxWidth()) {
+                Text("C. 潜在矛盾", style = MaterialTheme.typography.titleSmall, color = SfColors.TextMain, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                Text(fp.contradictionText, style = MaterialTheme.typography.bodyMedium, color = SfColors.TextMain, lineHeight = 22.sp)
+            }
+            Spacer(Modifier.height(8.dp))
+            DividerLine()
+            Spacer(Modifier.height(8.dp))
+
+            // D. 企业经营观察
+            Column(Modifier.fillMaxWidth()) {
+                Text("D. 企业经营观察", style = MaterialTheme.typography.titleSmall, color = SfColors.TextMain, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                Text(fp.businessText, style = MaterialTheme.typography.bodyMedium, color = SfColors.TextMain, lineHeight = 22.sp)
+            }
+            Spacer(Modifier.height(8.dp))
+            DividerLine()
+            Spacer(Modifier.height(8.dp))
+
+            // E. 综合解释
+            Column(Modifier.fillMaxWidth()) {
+                Text("E. 综合解释", style = MaterialTheme.typography.titleSmall, color = SfColors.TextMain, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                Text(fp.synthesisText, style = MaterialTheme.typography.bodyMedium, color = SfColors.TextMain, lineHeight = 22.sp)
+            }
+
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "命理学术分析仅供参考，不构成任何投资建议。",
+                style = MaterialTheme.typography.labelSmall,
+                color = SfColors.TextSub,
+            )
+        } else {
+            Text("暂无当月五段式解读数据", style = MaterialTheme.typography.bodyMedium, color = SfColors.TextSub)
+        }
+    }
 }

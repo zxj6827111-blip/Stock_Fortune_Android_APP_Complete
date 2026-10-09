@@ -156,15 +156,33 @@ class StockDetailViewModel(private val container: AppContainer) : ViewModel() {
             yearRange = container.calendarRepository.yearBounds()
             val detail = container.stockRepository.detail(code)
             if (detail == null) {
-                _state.update { it.copy(notFound = true, code = code) }
+                _state.update {
+                    it.copy(
+                        code = code,
+                        detail = null,
+                        year = null,
+                        month = null,
+                        daily = null,
+                        notFound = true,
+                        loading = false,
+                    )
+                }
                 return@launchLoad
             }
             val y = year.coerceIn(yearRange.first, yearRange.second)
             _state.update {
                 it.copy(
-                    code = detail.stock.code, detail = detail, notFound = false,
-                    yearValue = y, monthYear = monthYm.first, monthValue = monthYm.second,
-                    dailyYear = dailyYm.first, dailyMonth = dailyYm.second,
+                    code = detail.stock.code,
+                    detail = detail,
+                    year = null,
+                    month = null,
+                    daily = null,
+                    notFound = false,
+                    yearValue = y,
+                    monthYear = monthYm.first,
+                    monthValue = monthYm.second,
+                    dailyYear = dailyYm.first,
+                    dailyMonth = dailyYm.second,
                 )
             }
             loadYear(y)
@@ -175,13 +193,16 @@ class StockDetailViewModel(private val container: AppContainer) : ViewModel() {
 
     /**
      * 年 / 月 / 每日三个维度的取数都把目标值作为参数传入，写回时校验目标仍是当前值：
-     * 快速连点 ‹ › 时后发先至的旧结果会被丢弃，避免页面年份回退。
+     * 快速连点 ‹ › 时后发先至的旧结果会被丢弃，避免页面年份回退；
+     * 同时核对股票ID未改变，杜绝切股票时旧股数据泄漏。
      */
     private fun loadYear(y: Int) {
+        val targetStockId = _state.value.detail?.stock?.id ?: return
         _state.launchLoad(viewModelScope, { it }) {
-            val id = _state.value.detail?.stock?.id ?: return@launchLoad
-            val data = container.analysisRepository.yearAnalysis(id, y)
-            _state.update { cur -> if (cur.yearValue == y) cur.copy(year = data) else cur }
+            val data = container.analysisRepository.yearAnalysis(targetStockId, y)
+            _state.update { cur ->
+                if (cur.yearValue == y && cur.detail?.stock?.id == targetStockId) cur.copy(year = data) else cur
+            }
         }
     }
 
@@ -192,11 +213,11 @@ class StockDetailViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private fun loadMonth(year: Int, month: Int) {
+        val targetStockId = _state.value.detail?.stock?.id ?: return
         _state.launchLoad(viewModelScope, { it }) {
-            val id = _state.value.detail?.stock?.id ?: return@launchLoad
-            val data = container.analysisRepository.monthDays(id, year, month)
+            val data = container.analysisRepository.monthDays(targetStockId, year, month)
             _state.update { cur ->
-                if (cur.monthYear == year && cur.monthValue == month) cur.copy(month = data) else cur
+                if (cur.monthYear == year && cur.monthValue == month && cur.detail?.stock?.id == targetStockId) cur.copy(month = data) else cur
             }
         }
     }
@@ -209,11 +230,11 @@ class StockDetailViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private fun loadDaily(year: Int, month: Int) {
+        val targetStockId = _state.value.detail?.stock?.id ?: return
         _state.launchLoad(viewModelScope, { it }) {
-            val id = _state.value.detail?.stock?.id ?: return@launchLoad
-            val data = container.analysisRepository.monthDays(id, year, month)
+            val data = container.analysisRepository.monthDays(targetStockId, year, month)
             _state.update { cur ->
-                if (cur.dailyYear == year && cur.dailyMonth == month) cur.copy(daily = data) else cur
+                if (cur.dailyYear == year && cur.dailyMonth == month && cur.detail?.stock?.id == targetStockId) cur.copy(daily = data) else cur
             }
         }
     }

@@ -4,10 +4,15 @@ import android.util.Log
 import com.stockfortune.app.data.dao.BaziDao
 import com.stockfortune.app.data.dao.CalendarDao
 import com.stockfortune.app.data.dao.FilterDao
+import com.stockfortune.app.data.dao.LuckCycleDao
+import com.stockfortune.app.data.dao.NatalRelationDao
 import com.stockfortune.app.data.dao.ScanCacheDao
+import com.stockfortune.app.data.dao.StockDao
+import com.stockfortune.app.data.dao.StockYongshenDao
 import com.stockfortune.app.data.entity.GanzhiCalendarEntity
 import com.stockfortune.app.data.entity.ScanCacheEntity
 import com.stockfortune.app.domain.calculator.BaziTables
+import com.stockfortune.app.domain.calculator.FortuneCopyEngine
 import com.stockfortune.app.domain.calculator.FortuneText
 import com.stockfortune.app.domain.calculator.GanzhiCalculator
 import com.stockfortune.app.domain.calculator.TenGodCalculator
@@ -15,6 +20,7 @@ import com.stockfortune.app.domain.model.DateSelectionRow
 import com.stockfortune.app.domain.model.DayAnalysis
 import com.stockfortune.app.domain.model.DayDetail
 import com.stockfortune.app.domain.model.FilterQuery
+import com.stockfortune.app.domain.model.FirstDayPolarity
 import com.stockfortune.app.domain.model.FlowPillar
 import com.stockfortune.app.domain.model.HiddenStemItem
 import com.stockfortune.app.domain.model.MonthAnalysis
@@ -26,6 +32,7 @@ import com.stockfortune.app.domain.model.Strength
 import com.stockfortune.app.domain.model.TenGod
 import com.stockfortune.app.domain.model.WealthType
 import com.stockfortune.app.domain.model.YearAnalysis
+import com.stockfortune.app.domain.model.YongshenCandidateStatus
 import java.time.LocalDate
 
 /**
@@ -37,6 +44,10 @@ class AnalysisRepository(
     private val baziDao: BaziDao,
     private val filterDao: FilterDao,
     private val scanCacheDao: ScanCacheDao,
+    private val luckCycleDao: LuckCycleDao? = null,
+    private val natalRelationDao: NatalRelationDao? = null,
+    private val stockYongshenDao: StockYongshenDao? = null,
+    private val stockDao: StockDao? = null,
 ) {
 
     companion object {
@@ -124,6 +135,32 @@ class AnalysisRepository(
         val strength = strengthOf(bazi.dayMasterStrength)
         val zheng = trade.count { it.wealth == WealthType.ZHENG_CAI }
         val pian = trade.count { it.wealth == WealthType.PIAN_CAI }
+
+        val luckCycle = luckCycleDao?.findByStockId(stockId)
+        val firstDayPolarity = FirstDayPolarity.fromCode(luckCycle?.firstDayPolarity)
+        val dayunStatus = luckCycle?.status ?: "available"
+        val natalRelationsCount = natalRelationDao?.getByStockId(stockId)?.size ?: 0
+        val yongshen = stockYongshenDao?.getByStockId(stockId)
+        val yongshenStatus = YongshenCandidateStatus.fromCode(yongshen?.status)
+        val stockCode = stockDao?.findById(stockId)?.code ?: ""
+        val currentPeriod = luckCycleDao?.currentPeriodForYear(stockId, year)
+
+        val fiveParagraph = FortuneCopyEngine.composeMonthlyInterpretation(
+            stockId = stockId,
+            stockCode = stockCode,
+            dayStem = bazi.dayStem,
+            yearPillar = bazi.yearPillar,
+            monthPillar = bazi.monthPillar,
+            dayPillar = bazi.dayPillar,
+            firstDayPolarity = firstDayPolarity,
+            dayunStatus = dayunStatus,
+            year = year,
+            month = month,
+            monthGanzhi = midGz.monthGanzhi,
+            natalRelationsCount = natalRelationsCount,
+            yongshenStatus = yongshenStatus,
+        )
+
         return MonthAnalysis(
             year = year, month = month, monthGanzhi = midGz.monthGanzhi,
             branchLabel = midGz.monthBranchLabel, monthStemTenGod = monthGod,
@@ -133,6 +170,8 @@ class AnalysisRepository(
             otherCount = trade.size - zheng - pian, tradeDayCount = trade.size,
             tip = FortuneText.monthTip(zheng, pian),
             monthNote = monthSpanNote(gzRows, midGz),
+            fiveParagraph = fiveParagraph,
+            currentPeriod = currentPeriod,
         )
     }
 
@@ -183,6 +222,48 @@ class AnalysisRepository(
                     summary = FortuneText.monthSummary(ganzhi, god, wealth, sample.monthBranch, strength),
                 )
             }
+
+        val luckCycle = luckCycleDao?.findByStockId(stockId)
+        val firstDayPolarity = FirstDayPolarity.fromCode(luckCycle?.firstDayPolarity)
+        val dayunStatus = luckCycle?.status ?: "available"
+        val natalRelationsCount = natalRelationDao?.getByStockId(stockId)?.size ?: 0
+        val yongshen = stockYongshenDao?.getByStockId(stockId)
+        val yongshenStatus = YongshenCandidateStatus.fromCode(yongshen?.status)
+        val stockCode = stockDao?.findById(stockId)?.code ?: ""
+        val currentPeriod = luckCycleDao?.currentPeriodForYear(stockId, year)
+
+        val monthlyInterpretations = months.map { mLabel ->
+            FortuneCopyEngine.composeMonthlyInterpretation(
+                stockId = stockId,
+                stockCode = stockCode,
+                dayStem = bazi.dayStem,
+                yearPillar = bazi.yearPillar,
+                monthPillar = bazi.monthPillar,
+                dayPillar = bazi.dayPillar,
+                firstDayPolarity = firstDayPolarity,
+                dayunStatus = dayunStatus,
+                year = year,
+                month = mLabel.month,
+                monthGanzhi = mLabel.monthGanzhi,
+                natalRelationsCount = natalRelationsCount,
+                yongshenStatus = yongshenStatus,
+            )
+        }
+
+        val annualSynthesis = FortuneCopyEngine.composeAnnualSynthesis(
+            stockId = stockId,
+            stockCode = stockCode,
+            dayStem = bazi.dayStem,
+            year = year,
+            yearGanzhi = yearPillar,
+            strength = strength,
+            currentPeriod = currentPeriod,
+            monthlyInterpretations = monthlyInterpretations,
+            months = months,
+            yongshen = yongshen,
+            natalRelationsCount = natalRelationsCount,
+        )
+
         val yearSample = inYear.first()
         val yearWealth = TenGodCalculator.wealthType(bazi.dayStem, yearSample.yearStem, yearSample.yearBranch)
         return YearAnalysis(
@@ -196,6 +277,8 @@ class AnalysisRepository(
             months = months,
             zhengCount = months.count { it.wealth == WealthType.ZHENG_CAI },
             pianCount = months.count { it.wealth == WealthType.PIAN_CAI },
+            currentPeriod = currentPeriod,
+            annualSynthesis = annualSynthesis,
         )
     }
 

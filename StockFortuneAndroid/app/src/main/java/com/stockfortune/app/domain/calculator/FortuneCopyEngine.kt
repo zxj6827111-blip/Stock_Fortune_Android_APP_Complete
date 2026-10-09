@@ -1,10 +1,14 @@
 package com.stockfortune.app.domain.calculator
 
+import com.stockfortune.app.data.entity.LuckCyclePeriodEntity
+import com.stockfortune.app.data.entity.StockYongshenEntity
 import com.stockfortune.app.domain.model.AlgorithmAvailability
+import com.stockfortune.app.domain.model.AnnualSynthesis
 import com.stockfortune.app.domain.model.CopyRuleDefinition
 import com.stockfortune.app.domain.model.CopySection
 import com.stockfortune.app.domain.model.FirstDayPolarity
 import com.stockfortune.app.domain.model.FiveParagraphInterpretation
+import com.stockfortune.app.domain.model.MonthLabel
 import com.stockfortune.app.domain.model.PreciseAdvancedNotice
 import com.stockfortune.app.domain.model.ProductionGate
 import com.stockfortune.app.domain.model.ReviewStatus
@@ -218,17 +222,17 @@ object FortuneCopyEngine {
             }
             TenGod.SHI_SHEN -> when (strength) {
                 Strength.STRONG -> "身强遇食神，我生之物能够顺畅排泄充沛力量，传统谓之秀气流行，产出与变现能力更受关注。"
-                Strength.BALANCED -> "中和遇食神，业务培育与稳健产出保持相对均衡，注意投入节奏的合理把控。"
-                Strength.WEAK -> "身弱遇食神，自身力量本已偏弱，再行泄耗易增加负担，传统强调需防过度消耗。"
+                Strength.BALANCED -> "中和遇食神，业务培育与稳健产出保持相对均衡，投入节奏的动态把控更受重视。"
+                Strength.WEAK -> "身弱遇食神，自身力量本已偏弱，再行泄耗易增加负担，传统强调关照力量收放。"
             }
             TenGod.SHANG_GUAN -> when (strength) {
                 Strength.STRONG -> "身强见伤官，创新与突破意愿强烈，力量充裕下能承受探索风险，但合规边界需严格守护。"
                 Strength.BALANCED -> "中和见伤官，求变与守规兼具，制度执行力与业务灵活性需要细致权衡。"
-                Strength.WEAK -> "身弱见伤官，泄力过甚易导致内控或财务资源承压，不宜轻率开展激进扩张。"
+                Strength.WEAK -> "身弱见伤官，泄力过甚易导致内控或财务资源承压，稳健推进更契合当下格局。"
             }
             TenGod.PIAN_CAI -> when (strength) {
                 Strength.STRONG -> "身强遇偏财，传统用“我克”讨论对流动资源的驾驭可能，主线是资源关系较多变动而非固定回路。"
-                Strength.BALANCED -> "中和遇偏财，外部流动资源的调度空间适中，需审慎评估资产转化的实际效率。"
+                Strength.BALANCED -> "中和遇偏财，外部流动资源的调度空间适中，客观评估资产转化的实际效率。"
                 Strength.WEAK -> "身弱遇偏财，“我克”的财星虽可成为主题，但传统口径会同时询问原局是否有足够力量承载；对象出现与承载能力是两件事。"
             }
             TenGod.ZHENG_CAI -> when (strength) {
@@ -239,7 +243,7 @@ object FortuneCopyEngine {
             TenGod.QI_SHA -> when (strength) {
                 Strength.STRONG -> "身强见七杀，克我者反成锤炼，传统所谓身强任杀为权，外部约束常能化为攻坚与治理提升的动能。"
                 Strength.BALANCED -> "中和见七杀，压力与应对相对对等，在制度约束与风险管控中寻求动态平稳。"
-                Strength.WEAK -> "身弱见七杀，外部规制与履约压力较为显著，传统强调护身为先，需重点防范债务或合规风险。"
+                Strength.WEAK -> "身弱见七杀，外部规制与履约压力较为显著，传统强调护身为先，重点应对外部履约考验。"
             }
             TenGod.ZHENG_GUAN -> when (strength) {
                 Strength.STRONG -> "身强任正官，约束即是定位与责任，组织治理规范化能有效约束并凝聚企业力量。"
@@ -333,6 +337,80 @@ object FortuneCopyEngine {
             hitRuleIds = listOf("FALLBACK_UNAVAILABLE"),
             reviewStatus = ReviewStatus.PENDING_REVIEW,
             isMock = false,
+        )
+    }
+
+    /**
+     * 核心年度综合总结装配入口（聚合 12 个月离线结构化分析结果）。
+     */
+    fun composeAnnualSynthesis(
+        stockId: Long,
+        stockCode: String,
+        dayStem: String,
+        year: Int,
+        yearGanzhi: String,
+        strength: Strength,
+        currentPeriod: LuckCyclePeriodEntity?,
+        monthlyInterpretations: List<FiveParagraphInterpretation>,
+        months: List<MonthLabel>,
+        yongshen: StockYongshenEntity?,
+        natalRelationsCount: Int,
+    ): AnnualSynthesis {
+        val periodDesc = if (currentPeriod != null) {
+            val stemGod = TenGodCalculator.tenGod(dayStem, currentPeriod.stem)
+            val branchGod = TenGodCalculator.tenGod(dayStem, TenGodCalculator.mainQi(currentPeriod.branch))
+            "流年行入 ${currentPeriod.ganzhi}大运（${currentPeriod.startYear}–${currentPeriod.endYear}年，${currentPeriod.startAge}–${currentPeriod.endAge}岁），运干${stemGod.cn}，运支${branchGod.cn}。"
+        } else {
+            "未查得对应年份大运区间，或首日平盘/缺失标为不适用。"
+        }
+
+        val godCounts = months.groupingBy { it.tenGod.cn }.eachCount().entries
+            .sortedByDescending { it.value }
+            .joinToString("、") { "${it.key}${it.value}个月" }
+        val distSummary = "全年12个月流月主星分布：$godCounts。"
+
+        fun seasonSummary(startIdx: Int): String {
+            val sliceMonths = months.drop(startIdx).take(3)
+            val dominantInSeason = sliceMonths.map { it.tenGod.cn }.distinct().joinToString("、")
+            val stageDesc = when (startIdx) {
+                0 -> "立春至季春之规划蓄势与基础梳理"
+                3 -> "立夏至季夏之协同发展与业务推进"
+                6 -> "立秋至季秋之规范治理与平稳运行"
+                else -> "立冬至季冬之回顾审视与跨年承接"
+            }
+            return if (dominantInSeason.isNotBlank()) "主临${dominantInSeason}，聚焦${stageDesc}。" else "聚焦${stageDesc}。"
+        }
+
+        val seasonalThemes = listOf(
+            "春季阶段" to seasonSummary(0),
+            "夏季阶段" to seasonSummary(3),
+            "秋季阶段" to seasonSummary(6),
+            "冬季阶段" to seasonSummary(9),
+        )
+
+        val summaryParts = mutableListOf<String>()
+        summaryParts.add("${year}年岁在${yearGanzhi}，原局日主属${dayStem}，三柱六字口径归为${strength.cn}。")
+        val dominantGod = months.groupingBy { it.tenGod.cn }.eachCount().maxByOrNull { it.value }?.key ?: "常态"
+        summaryParts.add("全年在十神分布上以${dominantGod}为主轴，12个月五段式分析显示：阶段转换体现从前期投入培育，到中期协同推进，再到后期治理规范的递进过程。")
+
+        if (yongshen != null && yongshen.status == "confirmed") {
+            summaryParts.add("结合原局已确立扶抑主轴（以${yongshen.yongShen}为用神、${yongshen.xiShen}为喜神），流年岁运在对应五行当值之月形成助益呼应。")
+        } else if (yongshen != null && yongshen.status == "candidate") {
+            summaryParts.add("结合原局中和平衡格局，流年各月依流通五行（${yongshen.candidateElements}）顺次调节，不执于单一主轴。")
+        } else {
+            summaryParts.add("原局喜用格局依现行规则保持客观观察，结合各流月干支独立推导。")
+        }
+
+        summaryParts.add("年度综合命理分析基于实际12个月离线分析聚合而成，反映传统天干地支符号分类演进，不代表公司实际财务经营或市场走势。")
+
+        return AnnualSynthesis(
+            yearGanzhi = yearGanzhi,
+            currentPeriodDesc = periodDesc,
+            tenGodDistributionSummary = distSummary,
+            seasonalThemes = seasonalThemes,
+            structuredSummary = summaryParts.joinToString(" "),
+            complianceNotice = "命理学术分析仅供参考，不构成任何操作建议。",
+            hitRuleSummary = "FortuneCopyEngine-Annual-v1.3 · 聚合12个月离线结构化分析 · 零LLM确定性生成",
         )
     }
 }

@@ -22,10 +22,14 @@ class AppContainer(private val context: Context) {
         StockRepository(
             db.stockDao(), db.baziDao(), db.filterDao(), db.favoriteDao(), db.metaDao(),
             classicQuoteRepository,
+            db.luckCycleDao(), db.natalRelationDao(), db.yongshenDao(),
         )
     }
     val analysisRepository by lazy {
-        AnalysisRepository(db.calendarDao(), db.baziDao(), db.filterDao(), db.scanCacheDao())
+        AnalysisRepository(
+            db.calendarDao(), db.baziDao(), db.filterDao(), db.scanCacheDao(),
+            db.luckCycleDao(), db.natalRelationDao(), db.yongshenDao(), db.stockDao(),
+        )
     }
     val settingsRepository by lazy { SettingsRepository(context.filterStore) }
     val filterStore: DataStore<Preferences> by lazy { context.filterStore }
