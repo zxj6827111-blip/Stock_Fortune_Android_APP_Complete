@@ -4,6 +4,9 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stockfortune.app.domain.calculator.FortuneText
+import com.stockfortune.app.domain.model.Strength
+import com.stockfortune.app.domain.model.TenGod
+import com.stockfortune.app.domain.model.WealthType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -37,6 +40,27 @@ class ComplianceTextTest {
         }
     }
 
+    /**
+     * 建议句式禁词。上面那 28 个词只堵住了收益侧，「忌合伙大额投资」「适合敲定合作」
+     * 「不可重仓博弈」这类指令句一个都不命中 —— 边界写的是"不含任何收益或买卖表述"，
+     * 词表却比边界窄，等于这类措辞能静静穿过闸门。
+     *
+     * 全部取词组而非单字：单字「当」出现在「当值 / 当日 / 当前」，「应」出现在「暂无对应引文」，
+     * 「宜」出现在两条引文里（己土歌诀「若要物昌，宜助宜幫」），一律会误伤。
+     */
+    private val advisoryBanned = listOf(
+        "忌", "不宜", "宜于", "适合", "慎", "勿", "务必", "尽量", "优先", "应当", "应该",
+        "加仓", "减仓", "重仓", "轻仓", "建仓", "进场", "出场", "持币", "见好就收",
+        "规避", "谨防", "小心", "可取", "避免", "防", "注意", "冲动", "大额", "投机",
+    )
+
+    /** 只对**本项目自写文案**生效：古籍原文是引用不是建议，己土歌诀本身就带「宜助宜幫」。 */
+    private fun assertNoAdvice(label: String, text: String) {
+        advisoryBanned.forEach { b ->
+            assertFalse("[$label] 含建议句式「$b」：$text", text.contains(b))
+        }
+    }
+
     @Test
     fun `资源文案不含收益或操作暗示`() {
         val ctx = ApplicationProvider.getApplicationContext<Context>()
@@ -50,8 +74,8 @@ class ComplianceTextTest {
             R.string.filter_title, R.string.filter_subtitle, R.string.filter_desc,
             R.string.filter_group_hidden_desc, R.string.filter_group_year_desc,
             R.string.filter_group_month_desc, R.string.filter_group_day_desc,
-            R.string.legend_zheng, R.string.legend_pian, R.string.legend_none,
-            R.string.legend_zheng_hint, R.string.legend_pian_hint, R.string.legend_none_hint,
+            R.string.legend_zheng, R.string.legend_pian, R.string.legend_other,
+            R.string.legend_zheng_hint, R.string.legend_pian_hint, R.string.legend_other_hint,
             R.string.date_select_title, R.string.date_select_subtitle, R.string.date_select_hint,
             R.string.mine_offline, R.string.disclaimer, R.string.disclaimer_short,
             R.string.classics_title, R.string.classics_subtitle, R.string.classics_kind_verse,
@@ -66,7 +90,10 @@ class ComplianceTextTest {
             R.string.doc_classics_script, R.string.doc_classics_match, R.string.doc_classics_excerpt,
             R.string.doc_classics_overview,
         )
-        ids.forEach { id -> assertClean(ctx.resources.getResourceEntryName(id), ctx.getString(id)) }
+        ids.forEach { id ->
+            assertClean(ctx.resources.getResourceEntryName(id), ctx.getString(id))
+            assertNoAdvice(ctx.resources.getResourceEntryName(id), ctx.getString(id))
+        }
     }
 
     /**
@@ -93,15 +120,36 @@ class ComplianceTextTest {
     fun `十干概览不含收益或操作暗示`() {
         com.stockfortune.app.domain.calculator.BaziTables.STEMS.forEach { s ->
             assertClean("FATE_FEATURE[$s]", FortuneText.fateFeature(s))
+            assertNoAdvice("FATE_FEATURE[$s]", FortuneText.fateFeature(s))
         }
     }
 
     @Test
     fun `代码常量与生成文案不含收益或操作暗示`() {
+        assertNoAdvice("SCAN_ZHENG_NOTE", FortuneText.SCAN_ZHENG_NOTE)
+        assertNoAdvice("SCAN_PIAN_NOTE", FortuneText.SCAN_PIAN_NOTE)
         assertClean("SCAN_ZHENG_NOTE", FortuneText.SCAN_ZHENG_NOTE)
         assertClean("SCAN_PIAN_NOTE", FortuneText.SCAN_PIAN_NOTE)
         listOf(0 to 0, 3 to 5, 5 to 3, 21 to 0).forEach { (z, p) ->
             assertClean("monthTip($z,$p)", FortuneText.monthTip(z, p))
+        }
+    }
+
+    /**
+     * 强弱 × 财星九格是 Rule v1.2 新增的判词面，且一次在年度页铺开 12 行，
+     * 比原来的单句更需要在门禁里全组合扫一遍 —— 只测 BALANCED 一格的覆盖率约等于没测。
+     */
+    @Test
+    fun `强弱财星九格判词不含收益或操作暗示`() {
+        Strength.entries.forEach { st ->
+            listOf(WealthType.ZHENG_CAI, WealthType.PIAN_CAI, WealthType.OTHER, WealthType.NONE).forEach { w ->
+                assertClean("yearWealth[$st,$w]", FortuneText.yearWealthSummary(w, "丙午", TenGod.BI_JIAN, st))
+                assertNoAdvice("yearWealth[$st,$w]", FortuneText.yearWealthSummary(w, "丙午", TenGod.BI_JIAN, st))
+                TenGod.entries.forEach { g ->
+                    assertClean("month[$st,$w,$g]", FortuneText.monthSummary("丙申", g, w, "申", st))
+                    assertNoAdvice("month[$st,$w,$g]", FortuneText.monthSummary("丙申", g, w, "申", st))
+                }
+            }
         }
     }
 
@@ -116,7 +164,11 @@ class ComplianceTextTest {
             .filter { it.type == Int::class.javaPrimitiveType }
             .map { it.getInt(null) }
         assertTrue("反射不到任何字符串资源，门禁形同虚设", ids.size > 40)
-        ids.forEach { id -> assertClean(ctx.resources.getResourceEntryName(id), ctx.getString(id)) }
+        ids.forEach { id ->
+            assertClean(ctx.resources.getResourceEntryName(id), ctx.getString(id))
+            // 建议句式同样适用：反射全量扫，新加文案不需要有人记得改这里
+            assertNoAdvice(ctx.resources.getResourceEntryName(id), ctx.getString(id))
+        }
     }
 
     /**
@@ -142,7 +194,7 @@ class ComplianceTextTest {
             val text = file.readText()
             literals.findAll(text).forEach { match ->
                 val s = match.value.trim('"')
-                (banned + bannedTraditional).distinct().forEach { word ->
+                (banned + bannedTraditional + advisoryBanned).distinct().forEach { word ->
                     var i = s.indexOf(word)
                     while (i >= 0) {
                         val before = s.substring(0, i).takeLast(3)

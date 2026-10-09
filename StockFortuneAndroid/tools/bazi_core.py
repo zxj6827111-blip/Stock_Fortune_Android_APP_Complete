@@ -140,6 +140,53 @@ def main_qi(branch: str) -> str:
     return HIDDEN_STEMS[branch][0]
 
 
+# ---------------------------------------------------------------- 日主强弱（Rule v1.2）
+#
+# 得令 / 得地 / 得势的三分结构是子平通说；下面的具体权重与阈值是工程取值，
+# 没有任何古籍依据，由它产出的界面文案一律标「本项目概述」，不得挂书名。
+#
+# 刻意只用年、月、日六字，剔除时柱：本项目的时柱是「上市日 9:30 → 巳时」的历法约定，
+# 5395 只股票时支恒为巳，巳藏丙/庚/戊给每个盘的贡献是同一个常数（木 −1.75 到 土 +0.75）。
+# 实测含时柱时身强占比在日主间极差 14 倍（甲 2.8% ↔ 戊 40.9%），剔除后降到 2.3 倍，
+# 而总体三态分布几乎不变（16.4/31.7/52.0 → 16.5/34.0/49.5）。
+# 复算脚本见 tools/strength_distribution.py。
+STRENGTH_BRANCH_WEIGHTS = {"month": (3.0, 1.5, 0.75), "other": (1.0, 0.5, 0.25)}
+STRENGTH_STEM_WEIGHT = 0.7
+STRENGTH_THRESHOLD = 2.0
+STRENGTHS = ("身强", "中和", "身弱")
+
+
+def is_same_party(day_stem: str, other_stem: str) -> bool:
+    """同党 = 同我（比劫）或生我（印）；其余（食伤 / 财 / 官杀）为异党。"""
+    d, o = STEM_ELEMENT[day_stem], STEM_ELEMENT[other_stem]
+    return d == o or GENERATES[o] == d
+
+
+def strength_score(year_pillar: str, month_pillar: str, day_pillar: str) -> float:
+    """三柱加权求和，同党取正、异党取负。日主即日干，不参与自身计分，时柱不计。"""
+    day_stem = day_pillar[0]
+    total = 0.0
+    for i, pillar in enumerate((year_pillar, month_pillar, day_pillar)):
+        stem, branch = pillar[0], pillar[1]
+        if i < 2:  # 年干、月干透干帮身或耗身；日干不重复计入
+            total += STRENGTH_STEM_WEIGHT * (1 if is_same_party(day_stem, stem) else -1)
+        w_main, w_mid, w_rest = STRENGTH_BRANCH_WEIGHTS["month" if i == 1 else "other"]
+        for j, hidden in enumerate(HIDDEN_STEMS[branch]):
+            w = (w_main, w_mid, w_rest)[min(j, 2)]
+            total += w * (1 if is_same_party(day_stem, hidden) else -1)
+    return round(total, 2)
+
+
+def day_master_strength(year_pillar: str, month_pillar: str, day_pillar: str) -> str:
+    """三态而非两态：边界盘硬判强弱会给假精确，「中和」承接本项目的口径声明风格。"""
+    s = strength_score(year_pillar, month_pillar, day_pillar)
+    if s >= STRENGTH_THRESHOLD:
+        return "身强"
+    if s <= -STRENGTH_THRESHOLD:
+        return "身弱"
+    return "中和"
+
+
 def wealth_type_of(day_stem: str, stem: str, branch: str) -> str:
     """单柱财星判定（Rule v1.1，透干优先）：
 

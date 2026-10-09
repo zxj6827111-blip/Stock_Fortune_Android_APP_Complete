@@ -111,7 +111,8 @@ class ClassicsRenderTest {
             "丙" to ("焚烈之火" to "焚烈之火"),
             "丁" to ("温煖之火" to "溫煖之火"),
             "戊" to ("山冈之土" to "山岡之土"),
-            "己" to ("田园之土" to "田園之土"),
+            // 「田园之土」是 v1.0 旧概述的开头，拦不住回归；改用只可能来自原注的「其性卑湿」。
+            "己" to ("其性卑湿" to "其性卑濕"),
             "庚" to ("太白之精" to "太白之精"),
             "辛" to ("温柔清润" to "溫柔清潤"),
             "壬" to ("癸水之源" to "癸水之源"),
@@ -126,11 +127,20 @@ class ClassicsRenderTest {
                 assertTrue("$stem 原注节选「$note」缺少锚点「$inNote」", note.contains(inNote))
             }
         }
-        // 与底本直接冲突、或没有选段依据的旧表述
-        listOf("城墙厚土", "珠玉之金", "刀剑之金", "太阳之火", "灯烛之火", "喜甲木疏", "得壬水淘").forEach { old ->
+        // 一、象义错位：v1.0 用后世通俗喻物顶替了底本喻物，逐条对底本扫描页 8—14 后剔除。
+        //     禁词取"概念承载片段"而非整句，避免旧短语换个连接词就静默穿过。
+        listOf("城墙厚土", "珠玉之金", "刀剑之金", "太阳之火", "灯烛之火", "甲木疏", "壬水淘").forEach { old ->
             com.stockfortune.app.domain.calculator.BaziTables.STEMS.forEach { stem ->
                 val overview = com.stockfortune.app.domain.calculator.FortuneText.fateFeature(stem)
                 assertTrue("$stem 概述仍含旧表述「$old」：$overview", !overview.contains(old))
+            }
+        }
+        // 二、结构禁词：概览只述性质、不述喜忌。v1.0 十条概览条条带「喜…」或「…则X」，
+        //     而十条原注节选里一个都没有 —— 用字级禁词一次覆盖全部喜忌句式，比枚举旧短语防得住改写。
+        listOf("喜", "忌", "则", "則").forEach { forbidden ->
+            com.stockfortune.app.domain.calculator.BaziTables.STEMS.forEach { stem ->
+                val overview = com.stockfortune.app.domain.calculator.FortuneText.fateFeature(stem)
+                assertTrue("$stem 概述含喜忌句式字「$forbidden」，概览只可述性质：$overview", !overview.contains(forbidden))
             }
         }
     }
@@ -139,12 +149,20 @@ class ClassicsRenderTest {
     fun `算法口径页说明引文版本与扫描页码口径`() {
         compose.setContent { StockFortuneTheme { AlgorithmDocScreen(onBack = {}) } }
         compose.waitUntil(15_000) {
-            compose.onAllNodes(hasText("三·六、典籍引文口径")).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodes(hasText("三·七、典籍引文口径")).fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("dtjy-v1", substring = true).assertExists()
         compose.onNodeWithText("扫描页码", substring = true).assertExists()
         compose.onNodeWithText("不是该刊本的印刷叶码", substring = true).assertExists()
         compose.onNodeWithText("保持繁体原貌与原书夹注", substring = true).assertExists()
         compose.onNodeWithText("能匹配到某个日主不代表这些条件在该股命局中成立", substring = true).assertExists()
+        // Rule v1.2 第二轴必须把"权重无古籍依据"和"剔除时柱的理由"写在页面上，
+        // 这两条是这套口径最容易被后人当成天经地义的地方。
+        compose.onNodeWithText("二·五、日主强弱", substring = true).assertExists()
+        compose.onNodeWithText("上述权重与阈值是本项目的工程取值，没有任何古籍依据", substring = true).assertExists()
+        compose.onNodeWithText("5395 只股票时支恒为巳", substring = true).assertExists()
+        // 年度页逐月口径卡（三·六）：干支月区间与「其他 / 无」的区分要在页面上说清
+        compose.onNodeWithText("三·六、年度页的逐月口径", substring = true).assertExists()
+        compose.onNodeWithText("只用于非交易日，两者不同义", substring = true).assertExists()
     }
 }

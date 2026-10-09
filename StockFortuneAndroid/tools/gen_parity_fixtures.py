@@ -66,7 +66,26 @@ def main() -> None:
                 w.writerow([ds, gz[0], gz[1], bc.wealth_type_of(ds, gz[0], gz[1])])
         # 透干优先的边界用例：壬日主遇丙午日，透丙为偏财（午藏丁才是正财）
         w.writerow(["壬", "丙", "午", bc.wealth_type_of("壬", "丙", "午")])
-    print("fixtures written to", OUT, "ganzhi rows:", len(sample))
+
+    # 5) 日主强弱（Rule v1.2，年月日六字口径，时柱不计）。
+    #    除常规抽样外，专门把分数最贴近 ±2.0 阈值的命盘塞进夹具：双端一个是 `>=`、
+    #    一个写成 `>` 这类差异，只有压线样本才测得出来，随机盘几乎全在安全区。
+    scored = []
+    for i in range(0, 12000, 11):
+        r = ganzhi_row(dt.date(1990, 12, 1) + dt.timedelta(days=i))
+        y_p, m_p, d_p = r[1], r[2], r[3]
+        s = bc.strength_score(y_p, m_p, d_p)
+        scored.append((abs(abs(s) - bc.STRENGTH_THRESHOLD), y_p, m_p, d_p, s))
+    scored.sort(key=lambda t: t[0])
+    boundary = scored[:14]
+    spread = sorted(scored[14:], key=lambda t: t[1])
+    rows = {t[1:4] + (t[4],) for t in boundary} | {t[1:4] + (t[4],) for t in spread[::len(spread) // 46]}
+    with (OUT / "strength.csv").open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["year_pillar", "month_pillar", "day_pillar", "score", "strength"])
+        for y_p, m_p, d_p, s in sorted(rows):
+            w.writerow([y_p, m_p, d_p, f"{s:.2f}", bc.day_master_strength(y_p, m_p, d_p)])
+    print("fixtures written to", OUT, "ganzhi rows:", len(sample), "strength rows:", len(rows))
 
 
 if __name__ == "__main__":

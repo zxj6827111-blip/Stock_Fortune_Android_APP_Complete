@@ -1,6 +1,7 @@
 package com.stockfortune.app.domain.calculator
 
 import com.stockfortune.app.domain.model.Element
+import com.stockfortune.app.domain.model.Strength
 import com.stockfortune.app.domain.model.TenGod
 import com.stockfortune.app.domain.model.WealthType
 
@@ -136,6 +137,54 @@ object TenGodCalculator {
             if (g == TenGod.ZHENG_CAI || g == TenGod.PIAN_CAI) return if (g == TenGod.ZHENG_CAI) WealthType.ZHENG_CAI else WealthType.PIAN_CAI
         }
         return WealthType.OTHER
+    }
+
+    // ------------------------------------------------------------ 日主强弱（Rule v1.2）
+    //
+    // 得令 / 得地 / 得势的三分结构是子平通说；下面的权重与阈值是工程取值，无古籍依据，
+    // 由它产出的界面文案一律标「本项目概述」，不挂书名。
+    //
+    // 刻意只用年月日六字、剔除时柱：本项目时柱是「上市日 9:30 → 巳时」的历法约定，
+    // 全部股票时支恒为巳，它给每个盘的是同一个常数项（木 −1.75 到 土 +0.75），
+    // 会把日主之间的身强占比差推到 14 倍；剔除后降到 2.3 倍，总体三态分布几乎不变。
+    // 复算见 tools/strength_distribution.py；与 tools/bazi_core.py 手工镜像，
+    // 改一侧必须同步另一侧并升 rule_version。
+    private val STRENGTH_MONTH_BRANCH_WEIGHTS = doubleArrayOf(3.0, 1.5, 0.75)
+    private val STRENGTH_BRANCH_WEIGHTS = doubleArrayOf(1.0, 0.5, 0.25)
+    private const val STRENGTH_STEM_WEIGHT = 0.7
+    private const val STRENGTH_THRESHOLD = 2.0
+
+    /** 同党 = 同我（比劫）或生我（印）；其余（食伤 / 财 / 官杀）为异党。 */
+    fun isSameParty(dayStem: String, otherStem: String): Boolean {
+        val d = T.STEM_ELEMENT[dayStem] ?: return false
+        val o = T.STEM_ELEMENT[otherStem] ?: return false
+        return d == o || T.GENERATES[o] == d
+    }
+
+    /** 三柱加权求和，同党取正、异党取负；日主即日干，不参与自身计分。 */
+    fun strengthScore(yearPillar: String, monthPillar: String, dayPillar: String): Double {
+        if (yearPillar.length < 2 || monthPillar.length < 2 || dayPillar.length < 2) return 0.0
+        val dayStem = dayPillar[0].toString()
+        var total = 0.0
+        listOf(yearPillar, monthPillar, dayPillar).forEachIndexed { i, pillar ->
+            if (i < 2) {
+                total += STRENGTH_STEM_WEIGHT * (if (isSameParty(dayStem, pillar[0].toString())) 1 else -1)
+            }
+            val w = if (i == 1) STRENGTH_MONTH_BRANCH_WEIGHTS else STRENGTH_BRANCH_WEIGHTS
+            hiddenStems(pillar[1].toString()).forEachIndexed { j, hidden ->
+                total += w[minOf(j, 2)] * (if (isSameParty(dayStem, hidden)) 1 else -1)
+            }
+        }
+        return kotlin.math.round(total * 100) / 100
+    }
+
+    fun dayMasterStrength(yearPillar: String, monthPillar: String, dayPillar: String): Strength {
+        val s = strengthScore(yearPillar, monthPillar, dayPillar)
+        return when {
+            s >= STRENGTH_THRESHOLD -> Strength.STRONG
+            s <= -STRENGTH_THRESHOLD -> Strength.WEAK
+            else -> Strength.BALANCED
+        }
     }
 
     /** 按"旺相休囚死"顺序输出的月令五行描述，如"金旺·水相·土休·火囚·木死" */

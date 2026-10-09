@@ -22,6 +22,7 @@ import com.stockfortune.app.domain.model.MonthLabel
 import com.stockfortune.app.domain.model.PillarHidden
 import com.stockfortune.app.domain.model.ScanRow
 import com.stockfortune.app.domain.model.ScanSummary
+import com.stockfortune.app.domain.model.Strength
 import com.stockfortune.app.domain.model.TenGod
 import com.stockfortune.app.domain.model.WealthType
 import com.stockfortune.app.domain.model.YearAnalysis
@@ -120,19 +121,28 @@ class AnalysisRepository(
         val trade = all.filter { it.isTradeDay }
         val midGz = gzRows[minOf(gzRows.size / 2, gzRows.size - 1)]
         val monthGod = TenGodCalculator.tenGod(bazi.dayStem, midGz.monthStem)
+        val strength = strengthOf(bazi.dayMasterStrength)
         val zheng = trade.count { it.wealth == WealthType.ZHENG_CAI }
         val pian = trade.count { it.wealth == WealthType.PIAN_CAI }
         return MonthAnalysis(
             year = year, month = month, monthGanzhi = midGz.monthGanzhi,
             branchLabel = midGz.monthBranchLabel, monthStemTenGod = monthGod,
             wuxingSummary = TenGodCalculator.seasonSummary(midGz.monthBranch),
-            summary = FortuneText.monthSummary(midGz.monthGanzhi, monthGod, TenGodCalculator.wealthType(bazi.dayStem, midGz.monthStem, midGz.monthBranch), midGz.monthBranch),
+            summary = FortuneText.monthSummary(midGz.monthGanzhi, monthGod, TenGodCalculator.wealthType(bazi.dayStem, midGz.monthStem, midGz.monthBranch), midGz.monthBranch, strength),
             days = all, tradeDays = trade, zhengCount = zheng, pianCount = pian,
             otherCount = trade.size - zheng - pian, tradeDayCount = trade.size,
             tip = FortuneText.monthTip(zheng, pian),
             monthNote = monthSpanNote(gzRows, midGz),
         )
     }
+
+    /**
+     * 预置库由同一 rule_version 产出，认不出强弱标签就是库与代码不匹配 ——
+     * 不能像 WealthType.fromCn 那样兜底成某个默认值，那会把损坏洗白成「中和」。
+     */
+    private fun strengthOf(raw: String): Strength =
+        Strength.fromCn(raw)
+            ?: error("stock_bazi.day_master_strength 出现未知标签「$raw」，预置库与代码 rule_version 不匹配")
 
     /** 公历月若跨两个干支月，给出"哪一天交节、之前属何月"的口径说明。 */
     private fun monthSpanNote(rows: List<GanzhiCalendarEntity>, midGz: GanzhiCalendarEntity): String? {
@@ -157,15 +167,20 @@ class AnalysisRepository(
             .groupingBy { it.yearGanzhi }.eachCount().maxByOrNull { it.value }?.key ?: return null
         val inYear = rows.filter { it.yearGanzhi == yearPillar }
         if (inYear.isEmpty()) return null
+        val strength = strengthOf(bazi.dayMasterStrength)
         val months = inYear.groupBy { it.monthGanzhi }.toList()
             .sortedBy { (_, g) -> g.first().date }
             .mapIndexed { idx, (ganzhi, days) ->
                 val sample = days.first()
                 val wealth = TenGodCalculator.wealthType(bazi.dayStem, sample.monthStem, sample.monthBranch)
+                val god = TenGodCalculator.tenGod(bazi.dayStem, sample.monthStem)
                 MonthLabel(
                     month = idx + 1, monthGanzhi = ganzhi, branchLabel = sample.monthBranchLabel,
-                    wealth = if (wealth == WealthType.OTHER) WealthType.NONE else wealth,
-                    tenGod = TenGodCalculator.tenGod(bazi.dayStem, sample.monthStem),
+                    monthBranch = sample.monthBranch,
+                    wealth = wealth,
+                    tenGod = god,
+                    startDate = days.minOf { it.date }, endDate = days.maxOf { it.date },
+                    summary = FortuneText.monthSummary(ganzhi, god, wealth, sample.monthBranch, strength),
                 )
             }
         val yearSample = inYear.first()
@@ -173,7 +188,9 @@ class AnalysisRepository(
         return YearAnalysis(
             year = year, yearGanzhi = yearPillar,
             yearWuxing = TenGodCalculator.elementOf(yearSample.yearStem) + TenGodCalculator.elementOfBranch(yearSample.yearBranch),
-            wealthSummary = FortuneText.yearWealthSummary(yearWealth, yearPillar),
+            wealthSummary = FortuneText.yearWealthSummary(
+                yearWealth, yearPillar, TenGodCalculator.tenGod(bazi.dayStem, yearSample.yearStem), strength,
+            ),
             industryNote = FortuneText.yearIndustryNote(bazi.dayStem, yearSample.yearBranch),
             advice = FortuneText.yearAdvice(yearWealth),
             months = months,
