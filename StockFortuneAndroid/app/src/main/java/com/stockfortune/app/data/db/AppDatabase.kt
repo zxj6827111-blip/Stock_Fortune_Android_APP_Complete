@@ -71,75 +71,179 @@ abstract class AppDatabase : RoomDatabase() {
             instance ?: build(context.applicationContext).also { instance = it }
         }
 
+        @androidx.annotation.VisibleForTesting
+        fun resetForTesting() {
+            synchronized(this) {
+                instance?.close()
+                instance = null
+            }
+        }
+
+        private const val BACKUP_PREFS = "favorites_persistent_backup"
+        private const val BACKUP_KEY_JSON = "backup_json"
+
         private fun build(app: Context): AppDatabase {
-            val restoredFavorites = ensureAssetUpToDate(app)
+            ensureAssetUpToDate(app)
             val db = Room.databaseBuilder(app, AppDatabase::class.java, DB_NAME)
                 .createFromAsset(ASSET_PATH)
                 .setJournalMode(JournalMode.TRUNCATE)
                 .build()
-            reinsertFavorites(db, restoredFavorites)
+            reinsertFavorites(db, app)
             return db
         }
 
         /**
          * Room 只在数据库文件不存在时才复制 assets。装上带 schema/数据变更的新包后，
          * 旧的本地库会让 Room 抛 "cannot verify the data integrity" 直接崩溃。
-         * 这里比对随包生成的身份（schema 哈希 + 数据版本），不一致时先把用户收藏读出、
-         * 再删本地库让 Room 重新复制，最后把收藏写回。
          *
-         * 删除失败时**不写入新身份**：下次启动会重试，避免出现"守卫已放行但旧库还在"
-         * 这种 Room 崩溃且无法自愈的状态。
+         * 持久化安全升级策略：
+         * 1. 升级前先将收藏与股票代码/名称写入独立持久存储（SharedPreferences commit）；
+         * 2. 删库重建，即使在复制或建库过程中发生异常中断，持久备份不会丢失；
+         * 3. 重建后优先通过股票代码与名称校验/重对齐 stock_id，防止版本间自增 ID 偏移；
+         * 4. 只有在事务写回完全成功后才清除持久备份。
          */
-        private fun ensureAssetUpToDate(context: Context): List<FavoriteBackup> {
+        private fun ensureAssetUpToDate(context: Context) {
             val prefs = context.getSharedPreferences(GUARD_PREFS, Context.MODE_PRIVATE)
-            // 必须含 SCHEMA_VERSION：只比 identityHash 时，单独递增 Room version（实体未变
-            // 但强制重复制库、或改 DAO 视图）不会触发删库，Room 随即抛
-            // "A migration from 1 to 2 was not provided" —— 老用户升级即闪退。
             val identity = "${AssetManifest.SCHEMA_VERSION}/${AssetManifest.IDENTITY_HASH}/" +
                 AssetManifest.DATA_VERSION
-            if (prefs.getString(GUARD_KEY, null) == identity) return emptyList()
+            if (prefs.getString(GUARD_KEY, null) == identity) return
             val dbFile = context.getDatabasePath(DB_NAME)
             if (!dbFile.exists()) {
-                prefs.edit().putString(GUARD_KEY, identity).apply()
-                return emptyList()
+                prefs.edit().putString(GUARD_KEY, identity).commit()
+                return
             }
-            val backup = readFavorites(dbFile)
-            if (!dbFile.delete()) return emptyList()
+
+            // 1. 读取旧库收藏并关联股票身份
+            val backup = readFavoritesWithDetails(dbFile)
+            if (backup.isNotEmpty()) {
+                persistBackup(context, backup)
+            }
+
+            // 2. 移除旧数据库触发 Room 重新复制
+            if (!dbFile.delete()) return
             context.getDatabasePath("$DB_NAME-wal").delete()
             context.getDatabasePath("$DB_NAME-shm").delete()
-            prefs.edit().putString(GUARD_KEY, identity).apply()
-            return backup
+            prefs.edit().putString(GUARD_KEY, identity).commit()
         }
 
-        private data class FavoriteBackup(val stockId: Long, val addedAt: Long)
+        data class FavoriteBackup(
+            val stockId: Long,
+            val code: String = "",
+            val symbol: String = "",
+            val name: String = "",
+            val addedAt: Long = 0L,
+        )
 
-        /** 旧库可能没有 favorite 表（更早期版本），读失败按空处理。 */
-        private fun readFavorites(dbFile: java.io.File): List<FavoriteBackup> = runCatching {
+        private fun persistBackup(context: Context, rows: List<FavoriteBackup>) {
+            val arr = org.json.JSONArray()
+            rows.forEach { r ->
+                val o = org.json.JSONObject()
+                o.put("stockId", r.stockId)
+                o.put("code", r.code)
+                o.put("symbol", r.symbol)
+                o.put("name", r.name)
+                o.put("addedAt", r.addedAt)
+                arr.put(o)
+            }
+            context.getSharedPreferences(BACKUP_PREFS, Context.MODE_PRIVATE)
+                .edit().putString(BACKUP_KEY_JSON, arr.toString()).commit()
+        }
+
+        private fun loadPersistedBackup(context: Context): List<FavoriteBackup> {
+            val s = context.getSharedPreferences(BACKUP_PREFS, Context.MODE_PRIVATE)
+                .getString(BACKUP_KEY_JSON, null) ?: return emptyList()
+            return runCatching {
+                val arr = org.json.JSONArray(s)
+                val list = mutableListOf<FavoriteBackup>()
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    list.add(
+                        FavoriteBackup(
+                            stockId = o.getLong("stockId"),
+                            code = o.optString("code", ""),
+                            symbol = o.optString("symbol", ""),
+                            name = o.optString("name", ""),
+                            addedAt = o.optLong("addedAt", System.currentTimeMillis()),
+                        )
+                    )
+                }
+                list
+            }.getOrDefault(emptyList())
+        }
+
+        private fun clearPersistedBackup(context: Context) {
+            context.getSharedPreferences(BACKUP_PREFS, Context.MODE_PRIVATE)
+                .edit().remove(BACKUP_KEY_JSON).commit()
+        }
+
+        /** 旧库可能没有 favorite 表或 stock 关联，读失败按空处理。 */
+        private fun readFavoritesWithDetails(dbFile: java.io.File): List<FavoriteBackup> = runCatching {
             android.database.sqlite.SQLiteDatabase.openDatabase(
                 dbFile.absolutePath, null, android.database.sqlite.SQLiteDatabase.OPEN_READONLY,
             ).use { sq ->
-                sq.rawQuery("SELECT stock_id, added_at FROM favorite", null).use { c ->
-                    generateSequence { if (c.moveToNext()) FavoriteBackup(c.getLong(0), c.getLong(1)) else null }.toList()
+                val hasFav = sq.rawQuery(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='favorite'", null
+                ).use { it.moveToFirst() }
+                if (!hasFav) return emptyList()
+
+                val hasStock = sq.rawQuery(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='stock'", null
+                ).use { it.moveToFirst() }
+
+                val sql = if (hasStock) {
+                    """SELECT f.stock_id, COALESCE(s.code, ''), COALESCE(s.symbol, ''), COALESCE(s.name, ''), f.added_at
+                       FROM favorite f LEFT JOIN stock s ON s.id = f.stock_id"""
+                } else {
+                    "SELECT stock_id, '', '', '', added_at FROM favorite"
+                }
+
+                sq.rawQuery(sql, null).use { c ->
+                    generateSequence {
+                        if (c.moveToNext()) {
+                            FavoriteBackup(
+                                stockId = c.getLong(0),
+                                code = c.getString(1),
+                                symbol = c.getString(2),
+                                name = c.getString(3),
+                                addedAt = c.getLong(4),
+                            )
+                        } else null
+                    }.toList()
                 }
             }
         }.getOrDefault(emptyList())
 
-        private fun reinsertFavorites(db: AppDatabase, rows: List<FavoriteBackup>) {
+        private fun reinsertFavorites(db: AppDatabase, context: Context) {
+            val rows = loadPersistedBackup(context)
             if (rows.isEmpty()) return
             val sq = db.openHelper.writableDatabase
             sq.beginTransaction()
             try {
                 rows.forEach { row ->
+                    // 验证 stock_id 是否与代码严格一致，若 ID 发生位移则按 symbol/code 找回新 ID
+                    var targetId = row.stockId
+                    if (row.symbol.isNotBlank() || row.code.isNotBlank()) {
+                        sq.query(
+                            "SELECT id FROM stock WHERE symbol = ? OR code = ? LIMIT 1",
+                            arrayOf(row.symbol, row.code),
+                        ).use { c ->
+                            if (c.moveToFirst()) {
+                                targetId = c.getLong(0)
+                            }
+                        }
+                    }
+
                     sq.insert(
                         "favorite",
                         android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE,
                         android.content.ContentValues().apply {
-                            put("stock_id", row.stockId)
+                            put("stock_id", targetId)
                             put("added_at", row.addedAt)
                         },
                     )
                 }
                 sq.setTransactionSuccessful()
+                clearPersistedBackup(context)
             } finally {
                 sq.endTransaction()
             }

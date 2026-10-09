@@ -20,3 +20,5 @@ StockFortuneAndroid/release/*.xlsx
 
 # 本机的信号统计产物，非工程内容，且命名易被公开仓库误读为收益声明
 /2026-10-01_正财偏财信号当日涨跌统计.html
+build_stock_search.py
+*纯离线Demo.html*

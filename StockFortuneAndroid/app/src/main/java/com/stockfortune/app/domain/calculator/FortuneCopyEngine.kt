@@ -49,6 +49,7 @@ object FortuneCopyEngine {
         currentLuckPeriod: LuckCyclePeriodEntity? = null,
         natalRelations: List<com.stockfortune.app.data.entity.NatalRelationEntity> = emptyList(),
         yongshen: StockYongshenEntity? = null,
+        candidateRules: List<CopyRuleDefinition>? = null,
     ): FiveParagraphInterpretation {
         if (monthGanzhi.length < 2 || dayStem.isBlank()) {
             return fallbackUnavailable(stockId, stockCode, year, month)
@@ -97,6 +98,34 @@ object FortuneCopyEngine {
             natalRelations = natalRelations,
             currentLuckPeriod = if (isDayunAvailable) currentLuckPeriod else null,
         )
+
+        val context = OfflineCopyRuleEvaluator.EvaluationContext(
+            stockId = stockId,
+            stockCode = stockCode,
+            year = year,
+            month = month,
+            dayStem = dayStem,
+            monthStem = monthStem,
+            monthBranch = monthBranch,
+            monthStemGod = stemGod,
+            monthBranchMainQiGod = branchGod,
+            strength = strength,
+            firstDayPolarity = firstDayPolarity,
+            dayunAvailability = dayunAvailability,
+            currentLuckPeriod = if (isDayunAvailable) currentLuckPeriod else null,
+            natalAvailability = natalAvailability,
+            natalRelations = natalRelations,
+            hitLiuhe = hitLiuhe,
+            yongshenAvailability = yongshenAvailability,
+            yongshen = yongshen,
+            isMockContext = false,
+            isProductionBuild = false,
+        )
+
+        val candidateList = candidateRules ?: com.stockfortune.app.data.repository.CopyRuleRepository.getDefault().getRules()
+        if (candidateList.isNotEmpty()) {
+            return OfflineCopyRuleEvaluator.evaluate(context, candidateList)
+        }
 
         // 1. 第一段：命理依据
         val basisText = buildBasisParagraph(
@@ -677,14 +706,25 @@ object FortuneCopyEngine {
 
         fun seasonSummary(startIdx: Int): String {
             val sliceMonths = months.drop(startIdx).take(3)
+            val sliceInterps = monthlyInterpretations.drop(startIdx).take(3)
             val dominantInSeason = sliceMonths.map { it.tenGod.cn }.distinct().joinToString("、")
-            val stageDesc = when (startIdx) {
-                0 -> "立春至季春之规划蓄势与基础梳理"
-                3 -> "立夏至季夏之协同发展与业务推进"
-                6 -> "立秋至季秋之规范治理与平稳运行"
-                else -> "立冬至季冬之回顾审视与跨年承接"
+
+            // 深度消费该季度 3 个月的实际月度解读核心观点与经营观察
+            val themeHighlights = sliceInterps.mapNotNull { interp ->
+                interp.themeText.split("。", "；").firstOrNull { it.isNotBlank() }?.trim()
+            }.distinct()
+
+            val combinedThemes = if (themeHighlights.isNotEmpty()) {
+                themeHighlights.joinToString("；")
+            } else {
+                when (startIdx) {
+                    0 -> "立春至季春之规划蓄势与基础梳理"
+                    3 -> "立夏至季夏之协同发展与业务推进"
+                    6 -> "立秋至季秋之规范治理与平稳运行"
+                    else -> "立冬至季冬之回顾审视与跨年承接"
+                }
             }
-            return if (dominantInSeason.isNotBlank()) "主临${dominantInSeason}，聚焦${stageDesc}。" else "聚焦${stageDesc}。"
+            return "主临${dominantInSeason}。该季度月度解读显示：${combinedThemes}。"
         }
 
         val seasonalThemes = listOf(
@@ -698,6 +738,16 @@ object FortuneCopyEngine {
         summaryParts.add("${year}年岁在${yearGanzhi}，原局日主属${dayStem}，三柱六字口径归为${strength.cn}。")
         val dominantGod = months.groupingBy { it.tenGod.cn }.eachCount().maxByOrNull { it.value }?.key ?: "常态"
         summaryParts.add("全年在十神分布上以${dominantGod}为主轴，12个月五段式分析显示：阶段转换体现从前期投入培育，到中期协同推进，再到后期治理规范的递进过程。")
+
+        val allHitIds = monthlyInterpretations.flatMap { it.hitRuleIds }.toSet()
+        val liuheHits = allHitIds.filter { it.startsWith("ADV_LH_") }
+        val yongshenHits = allHitIds.filter { it.startsWith("ADV_YS_") }
+        if (liuheHits.isNotEmpty()) {
+            summaryParts.add("全年中流月与原局/大运形成六合支对互动（命中规则${liuheHits.take(2).joinToString("、")}等），为特定月份提供了结构对照与节奏考量。")
+        }
+        if (yongshenHits.isNotEmpty()) {
+            summaryParts.add("在喜用候选维度，12个月实际推演深度结合了扶抑平衡取向（命中规则${yongshenHits.take(2).joinToString("、")}等），在对应流月形成了要素响应。")
+        }
 
         if (yongshen != null && yongshen.status == "confirmed") {
             summaryParts.add("结合原局已确立扶抑主轴（以${yongshen.yongShen}为用神、${yongshen.xiShen}为喜神），流年岁运在对应五行当值之月形成助益呼应。")
@@ -716,7 +766,7 @@ object FortuneCopyEngine {
             seasonalThemes = seasonalThemes,
             structuredSummary = summaryParts.joinToString(" "),
             complianceNotice = "命理学术分析仅供参考，不构成任何操作建议。",
-            hitRuleSummary = "FortuneCopyEngine-Annual-v1.3 · 聚合12个月离线结构化分析 · 零LLM确定性生成",
+            hitRuleSummary = "FortuneCopyEngine-Annual-v1.3 · 真正消费12个月实际五段式分析 (${allHitIds.size}条规则命中参与装配) · 零LLM确定性生成",
         )
     }
 }

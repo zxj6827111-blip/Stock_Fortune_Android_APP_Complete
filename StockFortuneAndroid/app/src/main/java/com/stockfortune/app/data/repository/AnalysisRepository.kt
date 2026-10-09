@@ -144,7 +144,7 @@ class AnalysisRepository(
         val yongshen = stockYongshenDao?.getByStockId(stockId)
         val yongshenStatus = YongshenCandidateStatus.fromCode(yongshen?.status)
         val stockCode = stockDao?.findById(stockId)?.code ?: ""
-        val currentPeriod = luckCycleDao?.currentPeriodForYear(stockId, year)
+        val currentPeriod = luckCycleDao?.currentPeriodForDate(stockId, midGz.date)
 
         val fiveParagraph = FortuneCopyEngine.composeMonthlyInterpretation(
             stockId = stockId,
@@ -230,13 +230,16 @@ class AnalysisRepository(
         val luckCycle = luckCycleDao?.findByStockId(stockId)
         val firstDayPolarity = FirstDayPolarity.fromCode(luckCycle?.firstDayPolarity)
         val dayunStatus = luckCycle?.status ?: "available"
-        val natalRelationsCount = natalRelationDao?.getByStockId(stockId)?.size ?: 0
+        val natalRelations = natalRelationDao?.getByStockId(stockId) ?: emptyList()
+        val natalRelationsCount = natalRelations.size
         val yongshen = stockYongshenDao?.getByStockId(stockId)
         val yongshenStatus = YongshenCandidateStatus.fromCode(yongshen?.status)
         val stockCode = stockDao?.findById(stockId)?.code ?: ""
-        val currentPeriod = luckCycleDao?.currentPeriodForYear(stockId, year)
+        val yearStartDate = inYear.firstOrNull()?.date ?: "${year}-02-04"
+        val currentPeriod = luckCycleDao?.currentPeriodForDate(stockId, yearStartDate)
 
         val monthlyInterpretations = months.map { mLabel ->
+            val monthPeriod = luckCycleDao?.currentPeriodForDate(stockId, mLabel.startDate)
             FortuneCopyEngine.composeMonthlyInterpretation(
                 stockId = stockId,
                 stockCode = stockCode,
@@ -251,6 +254,9 @@ class AnalysisRepository(
                 monthGanzhi = mLabel.monthGanzhi,
                 natalRelationsCount = natalRelationsCount,
                 yongshenStatus = yongshenStatus,
+                currentLuckPeriod = monthPeriod,
+                natalRelations = natalRelations,
+                yongshen = yongshen,
             )
         }
 

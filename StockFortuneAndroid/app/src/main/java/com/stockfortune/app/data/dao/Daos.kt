@@ -187,7 +187,16 @@ interface LuckCycleDao {
 
     @Query(
         """SELECT * FROM luck_cycle_period
+           WHERE stock_id = :stockId AND :date >= start_date AND (:date < end_date OR (cycle_index = 12 AND :date <= end_date))
+           ORDER BY cycle_index ASC
+           LIMIT 1"""
+    )
+    suspend fun currentPeriodForDate(stockId: Long, date: String): com.stockfortune.app.data.entity.LuckCyclePeriodEntity?
+
+    @Query(
+        """SELECT * FROM luck_cycle_period
            WHERE stock_id = :stockId AND :year BETWEEN start_year AND end_year
+           ORDER BY cycle_index ASC
            LIMIT 1"""
     )
     suspend fun currentPeriodForYear(stockId: Long, year: Int): com.stockfortune.app.data.entity.LuckCyclePeriodEntity?

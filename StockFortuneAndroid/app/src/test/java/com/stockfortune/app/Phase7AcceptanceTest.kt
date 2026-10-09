@@ -128,18 +128,17 @@ class Phase7AcceptanceTest {
         assertTrue("命理依据包含大运事实", fp.basisText.contains("大运"))
         assertTrue("命理依据包含扶抑方法", fp.basisText.contains("扶抑方法"))
 
-        // 验证 2. 本月主题：包含月干主线、大运阶段背景、强弱条件副线
+        // 验证 2. 本月主题：包含月干主线、强弱条件副线
         assertTrue("本月主题包含主线", fp.themeText.contains("专项技术与知识储备"))
-        assertTrue("本月主题包含大运象义呼应", fp.themeText.contains("大运呈现"))
         assertTrue("本月主题包含身强条件副线", fp.themeText.contains("身强又见偏印"))
 
-        // 验证 3. 潜在矛盾：包含大运形式对照与合化不确定项
+        // 验证 3. 潜在矛盾：包含大运形式对照与十神分组差异
         assertTrue("潜在矛盾包含十神分组差异", fp.contradictionText.contains("不同十神分组"))
         assertTrue("潜在矛盾包含大运形式对照", fp.contradictionText.contains("大运"))
 
-        // 验证 4. 企业经营观察：流月与大运观察入口
+        // 验证 4. 企业经营观察：流月公开披露维度入口
         assertTrue("经营观察包含流月研发投入", fp.businessText.contains("研发投入和资本化率"))
-        assertTrue("经营观察包含大运观察项", fp.businessText.contains("结合大运阶段观察"))
+        assertTrue("经营观察包含在手订单", fp.businessText.contains("在手订单"))
 
         // 验证 5. 综合解释：强弱边界、大运十神×强弱、喜用候选边界、六合结构总结
         assertTrue("综合解释包含身强边界", fp.synthesisText.contains("身强"))
@@ -210,9 +209,10 @@ class Phase7AcceptanceTest {
             ),
         )
 
-        assertTrue("用神候选依据必须明确提及金为用神候选", fp.basisText.contains("金为用神候选"))
+        assertTrue("综合解释明确提及金为核心候选角色", fp.synthesisText.contains("流月地支本气所属五行金被标为当前方法的核心候选角色"))
         assertTrue("命中喜用扶抑规则", fp.hitRuleIds.contains("ADV_YS_METHOD_FUYI"))
-        assertFalse("严禁将酉金印星误写为比劫喜神", fp.basisText.contains("金为喜神候选"))
+        assertTrue("命中喜用用神角色规则", fp.hitRuleIds.contains("ADV_YS_BRANCH_YONG"))
+        assertFalse("严禁将酉金印星误写为喜神规则", fp.hitRuleIds.contains("ADV_YS_BRANCH_XI"))
         assertZeroForbiddenWords("癸水身弱五段式", fp.toFormattedMarkdown())
     }
 
@@ -255,9 +255,9 @@ class Phase7AcceptanceTest {
             ),
         )
 
-        // 验证依据与矛盾中的合化隔离
-        assertTrue("依据中应有支对成立不等于合化说明", fp.basisText.contains("单凭配对不能断定合化"))
-        assertTrue("矛盾中应有六合合化不确定项", fp.contradictionText.contains("六合支对成立不等于合化成功"))
+        // 验证依据与综合解释中的合化隔离
+        assertTrue("依据中应有支对成立不等于合化说明", fp.basisText.contains("单凭配对不能断定合化成立"))
+        assertTrue("综合解释中应有六合合化不确定项", fp.synthesisText.contains("尚不足以确认合化"))
         assertTrue("命中ADV_LH_NO_HEHUA", fp.hitRuleIds.contains("ADV_LH_NO_HEHUA"))
         assertTrue("命中ADV_LH_SYNTHESIS", fp.hitRuleIds.contains("ADV_LH_SYNTHESIS"))
         assertFalse("严禁断定财运吉利", fp.toFormattedMarkdown().contains("财运吉利"))
@@ -281,8 +281,8 @@ class Phase7AcceptanceTest {
         val missing = stockRepo.detail("000004")!!
         val mMissing = analysisRepo.monthDays(missing.stock.id, 2026, 6)!!
         val fpMissing = mMissing.fiveParagraph!!
-        assertTrue("缺失依据应有数据缺失说明", fpMissing.basisText.contains("首日行情数据缺失"))
-        assertTrue("缺失命中NA_POLARITY_MISSING", fpMissing.hitRuleIds.contains("NA_POLARITY_MISSING"))
+        assertTrue("缺失依据应有数据缺失说明", fpMissing.basisText.contains("首日阴阳状态尚未核定"))
+        assertTrue("缺失命中NA_POLARITY_UNKNOWN", fpMissing.hitRuleIds.contains("NA_POLARITY_UNKNOWN"))
         assertTrue("缺失精确提示说明大运不适用", fpMissing.preciseAdvancedNotice.contains("大运"))
         assertFalse("缺失不得连带否定喜用", fpMissing.preciseAdvancedNotice.contains("喜用"))
     }

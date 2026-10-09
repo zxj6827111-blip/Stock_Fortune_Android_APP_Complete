@@ -65,7 +65,8 @@ enum class CopySection(val cn: String, val order: Int) {
     THEME("本月主题", 2),
     CONTRADICTION("潜在矛盾", 3),
     BUSINESS("企业经营观察", 4),
-    SYNTHESIS("综合解释", 5);
+    SYNTHESIS("综合解释", 5),
+    STATE("页面级状态", 6);
 
     companion object {
         fun fromCn(cn: String?): CopySection? = entries.firstOrNull { it.cn == cn }
@@ -85,8 +86,11 @@ data class CopyRuleDefinition(
     val text: String,
     val ruleVersion: String,
     val reviewStatus: ReviewStatus = ReviewStatus.PENDING_REVIEW,
-    val productionGate: ProductionGate = ProductionGate.PRODUCTION_BLOCKED,
+    val productionGate: ProductionGate = ProductionGate.CANDIDATE_ONLY,
     val isLegacyNoRender: Boolean = false,
+    val module: String = "基础",
+    val source: String = "",
+    val sourceId: String = "",
 )
 
 /**

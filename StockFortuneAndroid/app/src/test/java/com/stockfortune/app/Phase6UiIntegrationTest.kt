@@ -309,10 +309,10 @@ class Phase6UiIntegrationTest {
 
         // 月度五段式卡片渲染
         compose.onNodeWithText("月度五段式解读").assertExists()
-        compose.onNodeWithText("本月主题", substring = true).assertExists()
-        compose.onNodeWithText("潜在矛盾", substring = true).assertExists()
-        compose.onNodeWithText("企业经营观察", substring = true).assertExists()
-        compose.onNodeWithText("综合解释", substring = true).assertExists()
+        compose.onNodeWithText("B. 本月主题").assertExists()
+        compose.onNodeWithText("C. 潜在矛盾").assertExists()
+        compose.onNodeWithText("D. 企业经营观察").assertExists()
+        compose.onNodeWithText("E. 综合解释").assertExists()
 
         // 折叠命理依据与点击展开
         compose.onNodeWithText("展开查看依据 ▾").assertExists()
