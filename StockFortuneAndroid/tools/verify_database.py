@@ -339,6 +339,27 @@ def main() -> int:
           len(period_rows) == 5079 * 12,
           f"实际 {len(period_rows)} 行 vs 期望 {5079 * 12}")
 
+    # ---- C40-C42 V1.3 Phase 2 原局关系与时间互动引擎门禁 (Gate G2)
+    import relation_core as rc
+    natal_rows = con.execute("SELECT chart_key, listing_date, relation_type, category, positions, source_pillar, target_pillar, source_ganzhi, target_ganzhi, element, notes, rule_version, status FROM natal_relation").fetchall()
+    unique_natal_charts = len(set(r["listing_date"] for r in natal_rows))
+    check("C40 natal_relation 7931 行且有刑冲合害盘 2720/2776 (56 盘原局无刑冲合害)",
+          unique_natal_charts == 2720 and len(natal_rows) == 7931,
+          f"有关系盘 {unique_natal_charts}/2776 (无关系盘 {2776 - unique_natal_charts}), 总行数 {len(natal_rows)}")
+
+    db_rel_types = set(r["relation_type"] for r in natal_rows)
+    catalog_types = set(rc.RELATION_TYPES)
+    unregistered = db_rel_types - catalog_types
+    check("C41 natal_relation 关系类型无非法未定义类型",
+          len(unregistered) == 0,
+          f"非法类型: {unregistered}")
+
+    maotai_rels = set(r["relation_type"] for r in natal_rows if r["listing_date"] == "2001-08-27")
+    expected_maotai = {"天干五合", "六合", "天合地合", "六破", "相刑"}
+    check("C42 贵州茅台(2001-08-27) 命中原局天合地合/六合/五合/六破/相刑",
+          expected_maotai <= maotai_rels,
+          f"实际命中文案类型: {maotai_rels}")
+
     con.close()
     print(f"\n==== 校验结果: {len(PASSES)} 通过 / {len(FAILS)} 失败 ====")
     for f in FAILS:

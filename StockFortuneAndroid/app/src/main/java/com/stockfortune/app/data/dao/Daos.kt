@@ -198,3 +198,25 @@ interface LuckCycleDao {
     @Query("SELECT COUNT(*) FROM luck_cycle_period")
     suspend fun countPeriods(): Int
 }
+
+@Dao
+interface NatalRelationDao {
+    @Query("SELECT * FROM natal_relation WHERE chart_key = :chartKey")
+    suspend fun getByChartKey(chartKey: String): List<com.stockfortune.app.data.entity.NatalRelationEntity>
+
+    @Query("SELECT * FROM natal_relation WHERE listing_date = :listingDate")
+    suspend fun getByListingDate(listingDate: String): List<com.stockfortune.app.data.entity.NatalRelationEntity>
+
+    @Query(
+        """SELECT nr.* FROM natal_relation nr
+           INNER JOIN stock s ON nr.listing_date = s.listing_date
+           WHERE s.id = :stockId"""
+    )
+    suspend fun getByStockId(stockId: Long): List<com.stockfortune.app.data.entity.NatalRelationEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(relations: List<com.stockfortune.app.data.entity.NatalRelationEntity>)
+
+    @Query("SELECT COUNT(*) FROM natal_relation")
+    suspend fun count(): Long
+}

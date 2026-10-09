@@ -23,7 +23,8 @@
     "stock_hidden_ten_god": 53347,
     "stock_luck_cycle": 5395,
     "luck_cycle_period": 60948,
-    "app_meta": 13
+    "natal_relation": 7931,
+    "app_meta": 15
   },
   "calendar": {
     "start": "1990-12-01",
@@ -35,6 +36,6 @@
       "1999-05-07:劳动节"
     ]
   },
-  "db_bytes": 15822848,
-  "sql_lines": 163453
+  "db_bytes": 17502208,
+  "sql_lines": 171390
 }

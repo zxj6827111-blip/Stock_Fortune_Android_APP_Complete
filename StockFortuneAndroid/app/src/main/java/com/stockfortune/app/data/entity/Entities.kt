@@ -168,6 +168,31 @@ data class LuckCyclePeriodEntity(
     @ColumnInfo(name = "rule_version") val ruleVersion: String,
 )
 
+@Entity(
+    tableName = "natal_relation",
+    indices = [
+        Index("chart_key"),
+        Index("listing_date"),
+        Index("relation_type"),
+    ],
+)
+data class NatalRelationEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "chart_key") val chartKey: String,
+    @ColumnInfo(name = "listing_date") val listingDate: String,
+    @ColumnInfo(name = "relation_type") val relationType: String,
+    val category: String,
+    val positions: String,
+    @ColumnInfo(name = "source_pillar") val sourcePillar: String,
+    @ColumnInfo(name = "target_pillar") val targetPillar: String,
+    @ColumnInfo(name = "source_ganzhi") val sourceGanzhi: String,
+    @ColumnInfo(name = "target_ganzhi") val targetGanzhi: String,
+    val element: String?,
+    val notes: String,
+    @ColumnInfo(name = "rule_version") val ruleVersion: String,
+    val status: String,
+)
+
 /** 扫描用的扁平投影：股票 + 日主 */
 data class StockWithDayMaster(
     @ColumnInfo(name = "id") val stockId: Long,

@@ -133,7 +133,39 @@ def main() -> None:
                 first_gz, res["boundary_flag"] or "",
             ])
 
-    print("fixtures written to", OUT, "ganzhi rows:", len(sample), "strength rows:", len(rows), "dayun rows:", len(seen_codes))
+    # 7) 原局内部关系（V1.3 Gate G2 夹具）
+    #    选取代表性命局：茅台、宁德时代、平安银行、神华(0关系)、三合/三会/三刑/天合地合等多样性命盘
+    import relation_core as rc
+    STRUCTURAL_TYPES = frozenset({
+        "天干五合", "天干相冲", "六合", "六冲", "三合", "半合", "三会",
+        "相刑", "三刑", "自刑", "相害", "六破", "同支", "伏吟", "反吟", "天合地合", "天克地冲"
+    })
+    golden_codes = ["600519", "300750", "000001", "601088", "002171"]
+    natal_picks = [r for r in wb_rows if r.code in golden_codes]
+    # 再额外抽取 45 只各类型命盘
+    picks_more = rng.sample(wb_rows, 45)
+    natal_picks.extend(picks_more)
+
+    seen_chart_keys = set()
+    with (OUT / "natal_relation.csv").open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["code", "listing_date", "year_pillar", "month_pillar", "day_pillar",
+                    "relation_count", "relation_types"])
+        for r in natal_picks:
+            ck = f"{r.year_pillar}_{r.month_pillar}_{r.day_pillar}"
+            if ck in seen_chart_keys:
+                continue
+            seen_chart_keys.add(ck)
+            events = rc.compute_natal_internal_relations(r.year_pillar, r.month_pillar, r.day_pillar)
+            struct_events = [e for e in events if e.relation_type in STRUCTURAL_TYPES]
+            types_str = ";".join(e.relation_type for e in struct_events)
+            w.writerow([
+                r.code, r.listing_date.isoformat(), r.year_pillar, r.month_pillar, r.day_pillar,
+                len(struct_events), types_str
+            ])
+
+    print("fixtures written to", OUT, "ganzhi rows:", len(sample), "strength rows:", len(rows),
+          "dayun rows:", len(seen_codes), "natal rows:", len(seen_chart_keys))
 
 
 if __name__ == "__main__":
