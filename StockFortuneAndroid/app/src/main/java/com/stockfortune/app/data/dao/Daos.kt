@@ -220,3 +220,25 @@ interface NatalRelationDao {
     @Query("SELECT COUNT(*) FROM natal_relation")
     suspend fun count(): Long
 }
+
+@Dao
+interface StockYongshenDao {
+    @Query("SELECT * FROM stock_yongshen WHERE chart_key = :chartKey LIMIT 1")
+    suspend fun getByChartKey(chartKey: String): com.stockfortune.app.data.entity.StockYongshenEntity?
+
+    @Query(
+        """SELECT sy.* FROM stock_yongshen sy
+           INNER JOIN stock_bazi sb ON (sb.year_pillar || '_' || sb.month_pillar || '_' || sb.day_pillar) = sy.chart_key
+           WHERE sb.stock_id = :stockId LIMIT 1"""
+    )
+    suspend fun getByStockId(stockId: Long): com.stockfortune.app.data.entity.StockYongshenEntity?
+
+    @Query("SELECT * FROM stock_yongshen WHERE status = :status")
+    suspend fun getByStatus(status: String): List<com.stockfortune.app.data.entity.StockYongshenEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(rows: List<com.stockfortune.app.data.entity.StockYongshenEntity>)
+
+    @Query("SELECT COUNT(*) FROM stock_yongshen")
+    suspend fun count(): Long
+}

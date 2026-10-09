@@ -164,8 +164,56 @@ def main() -> None:
                 len(struct_events), types_str
             ])
 
+    # 8) 喜用候选与格局解释（V1.3 Gate G3 夹具）
+    #    选取代表性命盘：茅台、宁德、平安、神华、压线极限盘、身强、身弱、中和各类型
+    import yongshen_core as yc
+    yongshen_picks = [r for r in wb_rows if r.code in golden_codes]
+    boundary_charts = [
+        ("丁酉", "乙巳", "戊戌"),  # 恰好 +2.0 (身强)
+        ("丁丑", "癸丑", "乙卯"),  # 恰好 -2.0 (身弱)
+        ("丁丑", "乙巳", "庚午"),  # -1.9 (中和)
+        ("丁丑", "丙午", "丙午"),  # +1.65 (中和)
+        ("丁丑", "壬子", "甲午"),  # +0.75 (中和)
+    ]
+    yongshen_picks.extend(rng.sample(wb_rows, 40))
+    seen_yongshen_keys = set()
+    with (OUT / "yongshen.csv").open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow([
+            "year_pillar", "month_pillar", "day_pillar",
+            "day_stem", "month_branch", "strength_score", "strength_level",
+            "status", "yong_shen", "xi_shen", "ji_shen", "chou_shen",
+            "candidate_elements", "tiaohou_note", "rationale"
+        ])
+        for y, m, d in boundary_charts:
+            ck = f"{y}_{m}_{d}"
+            seen_yongshen_keys.add(ck)
+            res = yc.compute_yongshen_candidate(y, m, d)
+            w.writerow([
+                y, m, d,
+                res["day_stem"], res["month_branch"], f"{res['strength_score']:.2f}", res["strength_level"],
+                res["status"], ",".join(res["yong_shen"]), ",".join(res["xi_shen"]),
+                ",".join(res["ji_shen"]), ",".join(res["chou_shen"]),
+                ",".join(res["candidate_elements"]), res["tiaohou_note"], res["rationale"]
+            ])
+        for r in yongshen_picks:
+            y, m, d = r.year_pillar, r.month_pillar, r.day_pillar
+            ck = f"{y}_{m}_{d}"
+            if ck in seen_yongshen_keys:
+                continue
+            seen_yongshen_keys.add(ck)
+            res = yc.compute_yongshen_candidate(y, m, d)
+            w.writerow([
+                y, m, d,
+                res["day_stem"], res["month_branch"], f"{res['strength_score']:.2f}", res["strength_level"],
+                res["status"], ",".join(res["yong_shen"]), ",".join(res["xi_shen"]),
+                ",".join(res["ji_shen"]), ",".join(res["chou_shen"]),
+                ",".join(res["candidate_elements"]), res["tiaohou_note"], res["rationale"]
+            ])
+
     print("fixtures written to", OUT, "ganzhi rows:", len(sample), "strength rows:", len(rows),
-          "dayun rows:", len(seen_codes), "natal rows:", len(seen_chart_keys))
+          "dayun rows:", len(seen_codes), "natal rows:", len(seen_chart_keys),
+          "yongshen rows:", len(seen_yongshen_keys))
 
 
 if __name__ == "__main__":

@@ -24,7 +24,8 @@
     "stock_luck_cycle": 5395,
     "luck_cycle_period": 60948,
     "natal_relation": 7931,
-    "app_meta": 15
+    "stock_yongshen": 2776,
+    "app_meta": 17
   },
   "calendar": {
     "start": "1990-12-01",
@@ -36,6 +37,6 @@
       "1999-05-07:劳动节"
     ]
   },
-  "db_bytes": 17502208,
-  "sql_lines": 171390
+  "db_bytes": 18526208,
+  "sql_lines": 174170
 }

@@ -13,6 +13,7 @@ import com.stockfortune.app.data.dao.MetaDao
 import com.stockfortune.app.data.dao.NatalRelationDao
 import com.stockfortune.app.data.dao.ScanCacheDao
 import com.stockfortune.app.data.dao.StockDao
+import com.stockfortune.app.data.dao.StockYongshenDao
 import com.stockfortune.app.data.entity.AppMetaEntity
 import com.stockfortune.app.data.entity.FavoriteEntity
 import com.stockfortune.app.data.entity.GanzhiCalendarEntity
@@ -23,6 +24,7 @@ import com.stockfortune.app.data.entity.StockBaziEntity
 import com.stockfortune.app.data.entity.StockEntity
 import com.stockfortune.app.data.entity.StockHiddenTenGodEntity
 import com.stockfortune.app.data.entity.StockLuckCycleEntity
+import com.stockfortune.app.data.entity.StockYongshenEntity
 import com.stockfortune.app.data.entity.TradeCalendarEntity
 
 /**
@@ -36,6 +38,7 @@ import com.stockfortune.app.data.entity.TradeCalendarEntity
         FavoriteEntity::class, AppMetaEntity::class,
         StockLuckCycleEntity::class, LuckCyclePeriodEntity::class,
         NatalRelationEntity::class,
+        StockYongshenEntity::class,
     ],
     // 版本取自随包生成的清单，避免"清单说 1、实体已经 2"这种只有运行期才发现的脱钩
     version = AssetManifest.SCHEMA_VERSION,
@@ -51,6 +54,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun metaDao(): MetaDao
     abstract fun luckCycleDao(): LuckCycleDao
     abstract fun natalRelationDao(): NatalRelationDao
+    abstract fun yongshenDao(): StockYongshenDao
 
     companion object {
         const val ASSET_PATH = "databases/stock_fortune.db"

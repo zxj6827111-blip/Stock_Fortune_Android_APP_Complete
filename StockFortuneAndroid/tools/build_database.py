@@ -22,6 +22,7 @@ import dayun_core as dc
 import relation_core as rc
 import solar_terms as st
 import trade_calendar as tc
+import yongshen_core as yc
 from stock_xlsx import read_industry, read_workbook
 
 from lunar_python import Solar
@@ -37,7 +38,7 @@ ASSETS_DB = ROOT / "app" / "src" / "main" / "assets" / "databases" / "stock_fort
 SQL_OUT = ROOT / "database" / "init_stock_fortune.sql"
 REPORT_OUT = ROOT / "database" / "import_report.json"
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 CALENDAR_VERSION = "2026-09-29"
 
 DDL = """
@@ -171,6 +172,25 @@ CREATE TABLE natal_relation(
 CREATE INDEX index_natal_relation_chart_key ON natal_relation(chart_key);
 CREATE INDEX index_natal_relation_listing_date ON natal_relation(listing_date);
 CREATE INDEX index_natal_relation_relation_type ON natal_relation(relation_type);
+
+CREATE TABLE stock_yongshen(
+  chart_key TEXT PRIMARY KEY NOT NULL,
+  day_stem TEXT NOT NULL,
+  month_branch TEXT NOT NULL,
+  strength_score REAL NOT NULL,
+  strength_level TEXT NOT NULL,
+  status TEXT NOT NULL,
+  yong_shen TEXT NOT NULL,
+  xi_shen TEXT NOT NULL,
+  ji_shen TEXT NOT NULL,
+  chou_shen TEXT NOT NULL,
+  xian_shen TEXT NOT NULL,
+  candidate_elements TEXT NOT NULL,
+  tiaohou_note TEXT NOT NULL,
+  rationale TEXT NOT NULL,
+  rule_version TEXT NOT NULL
+);
+CREATE INDEX index_stock_yongshen_chart_key ON stock_yongshen(chart_key);
 """
 
 BOARD_BY_PREFIX = {
@@ -372,6 +392,35 @@ def build(start: dt.date, end: dt.date, xlsx: Path) -> dict:
                 ))
     emit("natal_relation", natal_cols, natal_batch)
 
+    # 喜用候选与格局解释（按 2776 张唯一盘构建并映射，Phase 3 P3-B）
+    yongshen_cols = [
+        "chart_key", "day_stem", "month_branch", "strength_score", "strength_level",
+        "status", "yong_shen", "xi_shen", "ji_shen", "chou_shen", "xian_shen",
+        "candidate_elements", "tiaohou_note", "rationale", "rule_version"
+    ]
+    yongshen_batch = []
+    for ld_str, (y, m, d) in unique_charts.items():
+        chart_key = f"{y}_{m}_{d}"
+        res = yc.compute_yongshen_candidate(y, m, d)
+        yongshen_batch.append((
+            chart_key,
+            res["day_stem"],
+            res["month_branch"],
+            res["strength_score"],
+            res["strength_level"],
+            res["status"],
+            ",".join(res["yong_shen"]),
+            ",".join(res["xi_shen"]),
+            ",".join(res["ji_shen"]),
+            ",".join(res["chou_shen"]),
+            ",".join(res["xian_shen"]),
+            ",".join(res["candidate_elements"]),
+            res["tiaohou_note"],
+            res["rationale"],
+            res["rule_version"],
+        ))
+    emit("stock_yongshen", yongshen_cols, yongshen_batch)
+
     # 日历
     gz_cols = ["date", "year_ganzhi", "month_ganzhi", "day_ganzhi", "year_stem", "year_branch",
                "month_stem", "month_branch", "day_stem", "day_branch", "month_branch_label", "solar_term"]
@@ -395,6 +444,7 @@ def build(start: dt.date, end: dt.date, xlsx: Path) -> dict:
     n_luck = cur.execute("SELECT COUNT(*) FROM stock_luck_cycle").fetchone()[0]
     n_period = cur.execute("SELECT COUNT(*) FROM luck_cycle_period").fetchone()[0]
     n_natal = cur.execute("SELECT COUNT(*) FROM natal_relation").fetchone()[0]
+    n_yongshen = cur.execute("SELECT COUNT(*) FROM stock_yongshen").fetchone()[0]
     meta_rows = [
         ("schema_version", str(SCHEMA_VERSION)),
         ("data_version", meta["snapshot_max_listing_date"]),
@@ -406,10 +456,12 @@ def build(start: dt.date, end: dt.date, xlsx: Path) -> dict:
         ("luck_cycle_count", str(n_luck)),
         ("luck_period_count", str(n_period)),
         ("natal_relation_count", str(n_natal)),
+        ("yongshen_count", str(n_yongshen)),
         ("source_sha256", meta["sha256"]),
         ("rule_version", "bazi-rule-v1.2"),
         ("dayun_rule_version", "stock-luck-cycle-v1.3"),
         ("relation_rule_version", "natal-relation-v1.3"),
+        ("yongshen_rule_version", "yongshen-candidate-v1.3"),
         ("generated_at", dt.datetime.now().isoformat(timespec="seconds")),
     ]
     emit("app_meta", ["key", "value"], meta_rows)
@@ -434,7 +486,7 @@ def build(start: dt.date, end: dt.date, xlsx: Path) -> dict:
                      "correction_samples": [f"{d}:{r}" for d, r in corrected[:20]]},
     }
     con2 = sqlite3.connect(db_path)
-    for t in ("stock_bazi", "stock_hidden_ten_god", "stock_luck_cycle", "luck_cycle_period", "natal_relation", "app_meta"):
+    for t in ("stock_bazi", "stock_hidden_ten_god", "stock_luck_cycle", "luck_cycle_period", "natal_relation", "stock_yongshen", "app_meta"):
         report["counts"][t] = con2.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
     report["db_bytes"] = db_path.stat().st_size
     report["sql_lines"] = len(sql_lines)

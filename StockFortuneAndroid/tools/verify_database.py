@@ -360,6 +360,45 @@ def main() -> int:
           expected_maotai <= maotai_rels,
           f"实际命中文案类型: {maotai_rels}")
 
+    # ---- C50-C52 V1.3 Phase 3 喜用候选与格局解释门禁 (Gate G3)
+    yongshen_rows = con.execute(
+        "SELECT chart_key, day_stem, month_branch, strength_score, strength_level, status, "
+        "yong_shen, xi_shen, ji_shen, chou_shen, xian_shen, candidate_elements, "
+        "tiaohou_note, rationale, rule_version FROM stock_yongshen"
+    ).fetchall()
+    check("C50 stock_yongshen 覆盖 2776 唯一盘且无缺失",
+          len(yongshen_rows) == 2776,
+          f"实际 {len(yongshen_rows)} 盘 vs 期望 2776 盘")
+
+    inconsistent = []
+    forbidden_ji_count = 0
+    for r in yongshen_rows:
+        score = r["strength_score"]
+        status = r["status"]
+        level = r["strength_level"]
+        yong = r["yong_shen"]
+        cands = r["candidate_elements"]
+        if "忌" in r["rationale"]:
+            forbidden_ji_count += 1
+        if score >= 2.0:
+            if status != "confirmed" or level != "身强" or not yong or not cands:
+                inconsistent.append((r["chart_key"], score, status, level, yong))
+        elif score <= -2.0:
+            if status != "confirmed" or level != "身弱" or not yong or not cands:
+                inconsistent.append((r["chart_key"], score, status, level, yong))
+        else:
+            if status != "candidate" or level != "中和" or yong != "" or not cands:
+                inconsistent.append((r["chart_key"], score, status, level, yong))
+
+    check("C51 stock_yongshen 强弱与喜用状态严格自洽 (身强/弱 confirmed 有用神，中和 candidate 零用神但有候选)",
+          len(inconsistent) == 0,
+          f"自洽异常 {len(inconsistent)} 盘: {inconsistent[:3]}")
+
+    rules_ok = all(r["rule_version"] == "yongshen-candidate-v1.3" for r in yongshen_rows)
+    check("C52 stock_yongshen 版本统一且理由文案 100% 避开禁词「忌」",
+          rules_ok and forbidden_ji_count == 0,
+          f"版本合规: {rules_ok}, 禁词「忌」出现次数: {forbidden_ji_count}")
+
     con.close()
     print(f"\n==== 校验结果: {len(PASSES)} 通过 / {len(FAILS)} 失败 ====")
     for f in FAILS:

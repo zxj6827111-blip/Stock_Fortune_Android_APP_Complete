@@ -193,6 +193,30 @@ data class NatalRelationEntity(
     val status: String,
 )
 
+@Entity(
+    tableName = "stock_yongshen",
+    indices = [
+        Index("chart_key"),
+    ],
+)
+data class StockYongshenEntity(
+    @PrimaryKey @ColumnInfo(name = "chart_key") val chartKey: String,
+    @ColumnInfo(name = "day_stem") val dayStem: String,
+    @ColumnInfo(name = "month_branch") val monthBranch: String,
+    @ColumnInfo(name = "strength_score") val strengthScore: Double,
+    @ColumnInfo(name = "strength_level") val strengthLevel: String,
+    val status: String,
+    @ColumnInfo(name = "yong_shen") val yongShen: String,
+    @ColumnInfo(name = "xi_shen") val xiShen: String,
+    @ColumnInfo(name = "ji_shen") val jiShen: String,
+    @ColumnInfo(name = "chou_shen") val chouShen: String,
+    @ColumnInfo(name = "xian_shen") val xianShen: String,
+    @ColumnInfo(name = "candidate_elements") val candidateElements: String,
+    @ColumnInfo(name = "tiaohou_note") val tiaohouNote: String,
+    val rationale: String,
+    @ColumnInfo(name = "rule_version") val ruleVersion: String,
+)
+
 /** 扫描用的扁平投影：股票 + 日主 */
 data class StockWithDayMaster(
     @ColumnInfo(name = "id") val stockId: Long,
