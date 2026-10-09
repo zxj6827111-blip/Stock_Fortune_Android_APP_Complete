@@ -19,6 +19,23 @@ enum class ReviewStatus(val cn: String) {
         get() = this == APPROVED
 }
 
+/**
+ * 首日命别与极性（FirstDayPolarity，契约 3.1 节规范）。
+ */
+enum class FirstDayPolarity(val code: String, val label: String) {
+    YANG("yang", "阳"),          // 首日收盘价 > 开盘价
+    YIN("yin", "阴"),            // 首日收盘价 < 开盘价
+    FLAT("flat", "平"),          // 首日收盘价 == 开盘价（315 只样本）
+    MISSING("missing", "缺失"),  // 首日行情数据缺失（如 000004.SZ）
+    CONFLICT("conflict", "冲突"); // 多源数据自洽校验冲突
+
+    companion object {
+        fun fromCode(code: String?): FirstDayPolarity {
+            return entries.firstOrNull { it.code.equals(code, ignoreCase = true) } ?: MISSING
+        }
+    }
+}
+
 enum class ProductionGate(val label: String) {
     AUDIT_ONLY("仅供审核"),
     CANDIDATE_ONLY("候审候选"),

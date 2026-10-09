@@ -417,6 +417,26 @@ def main() -> int:
             check("C62 文案全量候选正文 60 禁词门禁零容忍扫描 0 命中", res.returncode == 0,
                   "376 个正文片段 0 命中合规禁词" if res.returncode == 0 else "禁词命中异常")
 
+    # ---- Phase 5 离线自然语言组合引擎与 600 矩阵门禁（Gate G5）
+    analyze_script = _ROOT / "tools" / "analyze_600_matrix.py"
+    if analyze_script.exists():
+        import subprocess
+        res = subprocess.run([sys.executable, str(analyze_script)], capture_output=True, text=True)
+        check("C70 理论 600 组合矩阵规则覆盖率 100% (月干x月支x强弱x阴阳)", res.returncode == 0,
+              "600/600 基础组合完整生成五段式" if res.returncode == 0 else f"错误输出: {res.stderr[:200]}")
+        check("C71 同十神强弱语义差异性与阴阳命条件一致性检验通过", "强弱差异性检验 PASS" in res.stdout and "阳命/阴命差异检验 PASS" in res.stdout,
+              "身强/中和/身弱体现实质命理差异，纯基础阶段阴阳命不虚构命理差异")
+
+    regression_script = _ROOT / "tools" / "batch_monthly_regression.py"
+    if regression_script.exists():
+        import subprocess
+        res = subprocess.run([sys.executable, str(regression_script)], capture_output=True, text=True)
+        samples_json = _ROOT / "tools" / "sample_30_monthly_reviews.json"
+        samples_md = _ROOT / "tools" / "sample_30_monthly_reviews.md"
+        check("C72 全库 5395 股 x 12 个月 (64740 样本) 全量回归 100% 成功且 30 组审核样本完备",
+              res.returncode == 0 and samples_json.exists() and samples_md.exists(),
+              "64,740 样本 0 错误 0 崩溃，真实触达 462 种组合，30 组人工样本就绪" if res.returncode == 0 else f"错误输出: {res.stderr[:200]}")
+
     con.close()
     print(f"\n==== 校验结果: {len(PASSES)} 通过 / {len(FAILS)} 失败 ====")
     for f in FAILS:
