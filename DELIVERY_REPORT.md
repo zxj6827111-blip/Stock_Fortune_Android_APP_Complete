@@ -1,7 +1,7 @@
 # 交付报告 · 股运通（Stock Fortune Android APP）v1.2.0
 
 交付日期：2026-09-29（v1.0.0）｜ 封版：2026-10-02（v1.1.0，versionCode 2）｜ 2026-10-09（v1.2.0，versionCode 3，见 §12）｜ 目标：完全离线的 A 股股票八字 / 十神 / 择日研究 APP（Kotlin + Room/SQLite）
-结论：**v1.1.0 可封版**（v1.0.0 之后做了一次全仓代码审计，修掉 3 个 CRITICAL、9 个 HIGH，模拟器按用户路径逐项复验通过，见 §11）。**v1.2.0 是算法轴扩展，代码与预置库已就绪、门禁全绿，但尚未重跑 `tools/build_all.sh` 出签名包，也未做模拟器复验**（见 §12.6）。
+结论：**v1.1.0 可封版**（v1.0.0 之后做了一次全仓代码审计，修掉 3 个 CRITICAL、9 个 HIGH，模拟器按用户路径逐项复验通过，见 §11）。**v1.2.0 已走完封版流程**：9 步流水线全绿、签名包重出、模拟器覆盖安装 v1.1.0→v1.2.0 并按用户路径逐页复验通过（见 §12.7）。
 
 ---
 
@@ -9,7 +9,7 @@
 
 | 类别 | 路径 | 说明 |
 |---|---|---|
-| 可安装包 | `StockFortuneAndroid/release/stock-fortune-release.apk` | 11 MB，**仍是 `versionName=1.1.0` / `versionCode=2` 的历史归档**，R8 混淆 + 本地自签名（v2 方案）。v1.2.0 需先重跑 `tools/build_all.sh` 重出包，直接装它会看不到日主强弱 |
+| 可安装包 | `StockFortuneAndroid/release/stock-fortune-release.apk` | 11 MB，`versionName=1.2.0` / `versionCode=3`，R8 混淆 + 本地自签名（v2 方案），**推荐安装**；sha256 `bfc1d88f…43b97c4e` |
 | 调试包 | `StockFortuneAndroid/release/stock-fortune-debug.apk` | 约 27 MB，含 Compose 调试工具 |
 | 崩溃反解映射 | `StockFortuneAndroid/release/verification/mapping-release.txt` | R8 `mapping.txt` 归档（v1.0.0 未归档，线上栈无法反解） |
 | 安装/签名/数据更新 | `StockFortuneAndroid/release/README.md` | 含 adb 与手动两种安装路径、证书信息、数据更新流程 |
@@ -316,8 +316,29 @@ bash tools/fetch_robolectric.sh http://127.0.0.1:7897   # 仅首次跑 UI 测试
 
 ### 12.6 本版明确没做
 
-- **未重跑 `tools/build_all.sh`**：`release/*.apk` 与验证归档仍是 v1.1.0 的产物，模拟器逐页复验待做；未打 tag、未建 GitHub Release。因此 v1.2.0 目前是「代码与数据就绪」，不是「已交付安装包」。
+- **未建 GitHub Release**：release 产物是否公开分发由需求方决定；APK 本身按既定口径不入库（`.gitignore` 排除 `release/*.apk`）。
 - **审阅工具链不入库**：`tools/build_advice_xlsx.py`、`build_fragment_xlsx.py`、`extract_advice_review.py` 留在本地。理由三条：它们硬编码了需求方规则库的表名/列名与自评措辞，而该库本体按既定口径排除在公开仓库外；`GOLDENS` 逐字抄了现行判词做基准，任何文案微调都会让脚本自我拒绝出表；且 `build_fragment_xlsx.py` 里 55 条是未定稿提案，其中「…专项应付款与递延收益」按现有 substring 禁词表会命中「收益」，还没到能进 Kotlin 的状态。其产物 `release/*.xlsx` 已进 `.gitignore`。
 - 强弱轴下游只有「十神 × 强弱」两轴，**未做干支关系加权**：刑冲合会、调候、大运、喜用/用神引擎仍缺（§8 后续可做清单里的项，本版未触碰）。
-- `generated_at` 进 `app_meta` 且 DATA_VERSION 取整库 md5 这条遗留未解：重跑构建器仍会换 DATA_VERSION，让已装设备删库重抄。
+- `generated_at` 进 `app_meta` 且 DATA_VERSION 取整库 md5 这条遗留未解：重跑构建器仍会换 DATA_VERSION，让已装设备删库重抄。**本版实测复现**：输入完全相同（同一 xlsx、同一 rule_version），DATA_VERSION 仍从 `2025-02-06+a2c3d433ee27` 变成 `2025-02-06+aaf86250c1f8`，`identityHash` 保持 `a9f01a28a8ba17058a049e9d43ef006b` 不变；重建前后 `init_stock_fortune.sql` **只有 1 行不同**（`generated_at` 时间戳）。即数据一个字节没变、只有时间戳动了，也会触发删库重建。
+
+### 12.7 封版构建与真机复验（2026-10-09）
+
+**流水线**：`SF_PY=/usr/bin/python3 bash tools/build_all.sh` 九步全绿 —— 数据层门禁 **35 通过 / 0 失败**、引文语料 `CLASSICS_OK`、构建器行为测试 **74 项 OK**、parity + 68 项 JVM 用例、`lintRelease` 无 Error、`apksigner verify` 通过（v2 方案，证书 `CN=StockFortune Local Build`，SHA-256 `e463b73f…49820371`）、`zipalign -c 4` OK、R8 `mapping.txt` 归档。产物 `release/stock-fortune-release.apk` 11 MB（sha256 `bfc1d88f…43b97c4e`）/ debug 35 MB，`aapt2 dump badging` 确认 `versionCode=3 versionName=1.2.0`。
+
+**真机**（sf_avd / Android 15 / 1080×2400）：**覆盖安装** v1.1.0（versionCode 2）→ v1.2.0（versionCode 3），未卸载、未清数据。逐项按用户路径点：
+
+| 检查 | 结果 |
+|---|---|
+| 冷启动 | 正常，全程 **0 FATAL / 0 ANR**，被吞异常日志为空 |
+| 我的页 | 算法口径显示 **`bazi-rule-v1.2`**，收录 5395 只，与预置库 `app_meta` 一致 |
+| 基本信息（603002 宏昌电子） | 四柱 壬辰 / 乙巳 / 己卯 / 己巳、纳音 城头土、**日主强弱（本项目概述）= 中和**、命理特征两行长文案换行不截断 |
+| 年度页 12 行 | 每行 = 月干支 + 交节区间 + 十神标签 + 财星标签 + 判词，无重叠无截断；图例已是**「其他（干支皆非财星）」** |
+| 判词三分支 | 「庚寅以伤官当值，干支皆非财星…」「壬辰透正财，财星显象…」「**己亥正财藏支**，传统口径主稳健…」逐字命中，与 `build_advice_xlsx.py` 里那三条真机 GOLDENS 完全一致 |
+| 跨年区间 | 子月 `12.7–1.4`、丑月 `1.5–2.3` 正确省略起点年份 |
+| 两页一致性 | 点亥月行跳月度页，「月运简述」与年度页该行**同一句**；交节说明「本月 11月7日交节入己亥；此前 6 天仍属戊戌」 |
+| 口径页 | 「二·五 日主强弱（Rule v1.2）」含 14 倍 / 2.3 倍与「没有任何古籍依据」声明；「三·六 年度页的逐月口径」在；典籍卡编号顺延为三·七 |
+| 收藏 | 星标 603002 → force-stop → 冷启动，「我的收藏 1 只」保留 |
+| 其余页无回归 | 扫描（945 / 1088）、选股、日历、择日均正常；择日页新提示语「筛选与该股票干支相合的交易吉日」已生效 |
+
+**观感瑕疵（未改，记录）**：壬辰这类月份，行右侧「月干十神」与「财星」两个标签同为「正财」并排显示，语义不同（前者是干十神、后者是该柱财星判定）但视觉上像重复。合并成一列或给财星标签加前缀需在文案层定一次口径，本版按原样交付。
 
