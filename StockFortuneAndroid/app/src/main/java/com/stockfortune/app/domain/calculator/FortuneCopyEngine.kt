@@ -46,6 +46,9 @@ object FortuneCopyEngine {
         monthGanzhi: String,
         natalRelationsCount: Int,
         yongshenStatus: YongshenCandidateStatus,
+        currentLuckPeriod: LuckCyclePeriodEntity? = null,
+        natalRelations: List<com.stockfortune.app.data.entity.NatalRelationEntity> = emptyList(),
+        yongshen: StockYongshenEntity? = null,
     ): FiveParagraphInterpretation {
         if (monthGanzhi.length < 2 || dayStem.isBlank()) {
             return fallbackUnavailable(stockId, stockCode, year, month)
@@ -77,15 +80,23 @@ object FortuneCopyEngine {
             YongshenCandidateStatus.UNAVAILABLE -> AlgorithmAvailability.UNAVAILABLE
         }
 
-        val polCode = when (firstDayPolarity) {
-            FirstDayPolarity.YANG -> "YANG"
-            FirstDayPolarity.YIN -> "YIN"
-            FirstDayPolarity.FLAT -> "FLAT"
-            FirstDayPolarity.MISSING -> "MISSING"
-            FirstDayPolarity.CONFLICT -> "CONFLICT"
-        }
+        val isDayunAvailable = dayunAvailability == AlgorithmAvailability.AVAILABLE &&
+            firstDayPolarity != FirstDayPolarity.FLAT &&
+            firstDayPolarity != FirstDayPolarity.MISSING &&
+            firstDayPolarity != FirstDayPolarity.CONFLICT &&
+            currentLuckPeriod != null
 
         val hitIds = mutableListOf<String>()
+
+        // 识别六合支对（原局内六合 或 流月与原局三柱六合 或 大运与原局三柱六合）
+        val hitLiuhe = findLiuheRelation(
+            monthBranch = monthBranch,
+            yearPillar = yearPillar,
+            monthPillar = monthPillar,
+            dayPillar = dayPillar,
+            natalRelations = natalRelations,
+            currentLuckPeriod = if (isDayunAvailable) currentLuckPeriod else null,
+        )
 
         // 1. 第一段：命理依据
         val basisText = buildBasisParagraph(
@@ -94,35 +105,52 @@ object FortuneCopyEngine {
             stemGod = stemGod,
             monthBranch = monthBranch,
             branchGod = branchGod,
+            currentLuckPeriod = if (isDayunAvailable) currentLuckPeriod else null,
+            dayStem = dayStem,
+            hitLiuhe = hitLiuhe,
+            yongshen = yongshen,
             hitIds = hitIds,
         )
 
-        // 2. 第二段：本月主题（主线 + 30条十神强弱条件解释副线）
+        // 2. 第二段：本月主题（主线 + 大运阶段背景 + 30条十神强弱条件解释副线）
         val themeText = buildThemeParagraph(
             stemGod = stemGod,
             strength = strength,
+            currentLuckPeriod = if (isDayunAvailable) currentLuckPeriod else null,
+            dayStem = dayStem,
             hitIds = hitIds,
         )
 
-        // 3. 第三段：潜在矛盾（同神聚焦 vs 异神分类差异）
+        // 3. 第三段：潜在矛盾（同神聚焦 vs 异神分类差异 + 大运形式对照 + 六合合化不确定项 + 调候扶抑分离）
         val contradictionText = buildContradictionParagraph(
             stemGod = stemGod,
             branchGod = branchGod,
+            monthStem = monthStem,
+            currentLuckPeriod = if (isDayunAvailable) currentLuckPeriod else null,
+            dayStem = dayStem,
+            hitLiuhe = hitLiuhe,
+            yongshen = yongshen,
             hitIds = hitIds,
         )
 
-        // 4. 第四段：企业经营观察（匹配财报与治理披露入口）
+        // 4. 第四段：企业经营观察（匹配财报与治理披露入口，结合流月与大运）
         val businessText = buildBusinessParagraph(
             stemGod = stemGod,
             branchGod = branchGod,
+            currentLuckPeriod = if (isDayunAvailable) currentLuckPeriod else null,
+            dayStem = dayStem,
             hitIds = hitIds,
         )
 
-        // 5. 第五段：综合解释（归纳前四段，指出强弱解释边界）
+        // 5. 第五段：综合解释（归纳前四段：强弱解释边界 + 大运十神×强弱 + 喜用候选 + 六合结构总结）
         val synthesisText = buildSynthesisParagraph(
             strength = strength,
             stemGod = stemGod,
             branchGod = branchGod,
+            currentLuckPeriod = if (isDayunAvailable) currentLuckPeriod else null,
+            dayStem = dayStem,
+            hitLiuhe = hitLiuhe,
+            yongshen = yongshen,
             hitIds = hitIds,
         )
 
@@ -150,12 +178,126 @@ object FortuneCopyEngine {
         )
     }
 
+    data class LiuheHit(
+        val pairName: String,
+        val pairCode: String,
+        val scope: String,
+        val branchA: String,
+        val branchB: String,
+        val posA: String,
+        val posB: String,
+    )
+
+    private fun findLiuheRelation(
+        monthBranch: String,
+        yearPillar: String,
+        monthPillar: String,
+        dayPillar: String,
+        natalRelations: List<com.stockfortune.app.data.entity.NatalRelationEntity>,
+        currentLuckPeriod: LuckCyclePeriodEntity?,
+    ): LiuheHit? {
+        val natalPillars = listOf(
+            "原局年支" to yearPillar.getOrNull(1)?.toString(),
+            "原局月支" to monthPillar.getOrNull(1)?.toString(),
+            "原局日支" to dayPillar.getOrNull(1)?.toString(),
+        )
+
+        // 1. 原局内部六合
+        val natalLiuhe = natalRelations.firstOrNull { it.relationType == "六合" }
+        if (natalLiuhe != null) {
+            val bA = natalLiuhe.sourceGanzhi.takeLast(1)
+            val bB = natalLiuhe.targetGanzhi.takeLast(1)
+            val p = getLiuhePair(bA, bB)
+            if (p != null) {
+                return LiuheHit(
+                    pairName = p.first,
+                    pairCode = p.second,
+                    scope = "NATAL_INTERNAL",
+                    branchA = bA,
+                    branchB = bB,
+                    posA = "原局" + pillarCn(natalLiuhe.sourcePillar),
+                    posB = "原局" + pillarCn(natalLiuhe.targetPillar),
+                )
+            }
+        }
+
+        // 2. 流月对原局三柱六合
+        for ((posName, nb) in natalPillars) {
+            if (!nb.isNullOrBlank()) {
+                val p = getLiuhePair(monthBranch, nb)
+                if (p != null) {
+                    return LiuheHit(
+                        pairName = p.first,
+                        pairCode = p.second,
+                        scope = "FLOW_MONTH_TO_NATAL",
+                        branchA = monthBranch,
+                        branchB = nb,
+                        posA = "流月支",
+                        posB = posName,
+                    )
+                }
+            }
+        }
+
+        // 3. 大运对原局三柱六合
+        if (currentLuckPeriod != null) {
+            for ((posName, nb) in natalPillars) {
+                if (!nb.isNullOrBlank()) {
+                    val p = getLiuhePair(currentLuckPeriod.branch, nb)
+                    if (p != null) {
+                        return LiuheHit(
+                            pairName = p.first,
+                            pairCode = p.second,
+                            scope = "DAYUN_TO_NATAL",
+                            branchA = currentLuckPeriod.branch,
+                            branchB = nb,
+                            posA = "大运支",
+                            posB = posName,
+                        )
+                    }
+                }
+            }
+        }
+
+        return null
+    }
+
+    private fun getLiuhePair(a: String, b: String): Pair<String, String>? {
+        val key = if (a <= b) "$a$b" else "$b$a"
+        return when (key) {
+            "丑子", "子丑" -> "子丑" to "ZICHOU"
+            "亥寅", "寅亥" -> "寅亥" to "YINHAI"
+            "卯戌", "戌卯" -> "卯戌" to "MAOXU"
+            "酉辰", "辰酉" -> "辰酉" to "CHENYOU"
+            "巳申", "申巳" -> "巳申" to "SISHEN"
+            "午未", "未午" -> "午未" to "WUWEI"
+            else -> null
+        }
+    }
+
+    private fun pillarCn(pillar: String): String = when (pillar.lowercase()) {
+        "year" -> "年支"
+        "month" -> "月支"
+        "day" -> "日支"
+        else -> "支"
+    }
+
+    private fun strengthSuffix(s: Strength): String = when (s) {
+        Strength.STRONG -> "STR"
+        Strength.BALANCED -> "BAL"
+        Strength.WEAK -> "WEK"
+    }
+
     private fun buildBasisParagraph(
         firstDayPolarity: FirstDayPolarity,
         monthStem: String,
         stemGod: TenGod,
         monthBranch: String,
         branchGod: TenGod,
+        currentLuckPeriod: LuckCyclePeriodEntity?,
+        dayStem: String,
+        hitLiuhe: LiuheHit?,
+        yongshen: StockYongshenEntity?,
         hitIds: MutableList<String>,
     ): String {
         val parts = mutableListOf<String>()
@@ -166,6 +308,11 @@ object FortuneCopyEngine {
         } else if (firstDayPolarity == FirstDayPolarity.MISSING) {
             parts.add("首日行情数据缺失，大运方向未形成裁定；大运维度在此情形下暂停。")
             hitIds.add("NA_POLARITY_MISSING")
+        } else if (currentLuckPeriod != null) {
+            val dayunStemGod = TenGodCalculator.tenGod(dayStem, currentLuckPeriod.stem)
+            parts.add("流年行入${currentLuckPeriod.ganzhi}大运（${currentLuckPeriod.startYear}–${currentLuckPeriod.endYear}年），运干对日主为${dayunStemGod.cn}；起运与大运周期已由干支历法独立推导核验。")
+            hitIds.add("ADV_DY_PERIOD_FACT")
+            hitIds.add("ADV_DY_BASE_${dayunStemGod.name}")
         }
 
         parts.add("流月天干对应${stemGod.cn}，仅表示该位置的十神分类；不等于公司已经出现某类经营事件。")
@@ -174,12 +321,33 @@ object FortuneCopyEngine {
         parts.add("流月地支本气对应${branchGod.cn}；此处仅采用本气，不将中气和余气一并计入当月主题。")
         hitIds.add("BAS_BRANCH_${branchGod.name}")
 
+        if (hitLiuhe != null) {
+            parts.add("经核验，${hitLiuhe.posA}「${hitLiuhe.branchA}」与${hitLiuhe.posB}「${hitLiuhe.branchB}」符合${hitLiuhe.pairName}六合支对；此识别给出支位对应关系，单凭配对不能断定合化。")
+            hitIds.add("ADV_LH_PAIR_${hitLiuhe.pairCode}")
+            when (hitLiuhe.scope) {
+                "NATAL_INTERNAL" -> hitIds.add("ADV_LH_NATAL_${hitLiuhe.pairCode}")
+                "FLOW_MONTH_TO_NATAL" -> hitIds.add("ADV_LH_MONTH_${hitLiuhe.pairCode}")
+                "DAYUN_TO_NATAL" -> hitIds.add("ADV_LH_DAYUN_${hitLiuhe.pairCode}")
+            }
+        }
+
+        if (yongshen != null && yongshen.status == "confirmed") {
+            parts.add("按已核验的扶抑方法，${yongshen.yongShen}为用神候选、${yongshen.xiShen}为喜神候选。")
+            hitIds.add("ADV_YS_METHOD_FUYI")
+            if (!yongshen.tiaohouNote.isNullOrBlank()) {
+                parts.add("调候提示作为独立时令环境参考（${yongshen.tiaohouNote}），未经裁定不直接改写扶抑角色。")
+                hitIds.add("ADV_YS_METHOD_TIAOHOU")
+            }
+        }
+
         return parts.joinToString(" ")
     }
 
     private fun buildThemeParagraph(
         stemGod: TenGod,
         strength: Strength,
+        currentLuckPeriod: LuckCyclePeriodEntity?,
+        dayStem: String,
         hitIds: MutableList<String>,
     ): String {
         val parts = mutableListOf<String>()
@@ -200,10 +368,132 @@ object FortuneCopyEngine {
         parts.add(mainTheme)
         hitIds.add("THM_${stemGod.name}")
 
+        // 大运背景呼应（如果有效大运存在）
+        if (currentLuckPeriod != null) {
+            val dayunStemGod = TenGodCalculator.tenGod(dayStem, currentLuckPeriod.stem)
+            val relationNote = if (stemGod == dayunStemGod) "形成同类十神呼应" else "相互补充"
+            parts.add("大运呈现${dayunStemGod.cn}象义，阶段背景与流月${relationNote}，月干仍为当月解释主轴。")
+        }
+
         // 30 条十神强弱条件解释（有依据的强弱差异副线）
         val strengthSupplement = getStrengthTenGodExplanation(stemGod, strength)
         parts.add(strengthSupplement)
         hitIds.add("SGS_${stemGod.name}_${strength.name}")
+
+        return parts.joinToString(" ")
+    }
+
+    private fun buildContradictionParagraph(
+        stemGod: TenGod,
+        branchGod: TenGod,
+        monthStem: String,
+        currentLuckPeriod: LuckCyclePeriodEntity?,
+        dayStem: String,
+        hitLiuhe: LiuheHit?,
+        yongshen: StockYongshenEntity?,
+        hitIds: MutableList<String>,
+    ): String {
+        val parts = mutableListOf<String>()
+
+        if (stemGod == branchGod) {
+            hitIds.add("CNT_IDENTICAL")
+            parts.add("月干与本气为同一十神，说明流月两处分类指向相近的象义；这是形式上的聚焦，不是已核验的原局关系事件。")
+        } else {
+            hitIds.add("CNT_DISTINCT")
+            parts.add("月干与本气来自不同十神分组，形成主题与副线的分类差异；这并非已核验的相冲、相刑或经营矛盾。")
+        }
+
+        // 大运形式对照
+        if (currentLuckPeriod != null) {
+            val dayunStemGod = TenGodCalculator.tenGod(dayStem, currentLuckPeriod.stem)
+            if (dayunStemGod == stemGod) {
+                parts.add("大运天干与流月天干属于同类十神，形成形式上的主题聚焦；这并非原局已核验的相互转化，各自作用范围依然受限于时间层级。")
+                hitIds.add("ADV_DY_NATAL_FORMAL_SAME")
+            } else if (TenGodCalculator.elementOf(currentLuckPeriod.stem) == TenGodCalculator.elementOf(monthStem)) {
+                parts.add("大运天干与流月天干五行同类异神，属于形式呼应，各方权责边界仍需独立审视。")
+                hitIds.add("ADV_DY_NATAL_FORMAL_SAME_ELEMENT")
+            } else {
+                parts.add("大运与流月分属不同十神分组，反映阶段背景与当期关注的层次分工；二者并存并不构成已核验的干支刑冲克害。")
+                hitIds.add("ADV_DY_NATAL_FORMAL_DISTINCT")
+            }
+        }
+
+        // 六合合化不确定项
+        if (hitLiuhe != null) {
+            parts.add("六合支对成立不等于合化成功。未经独立证据确认合化条件时，不得判定合化成立，亦不作确定性偏向推断。")
+            hitIds.add("ADV_LH_NO_HEHUA")
+        }
+
+        // 调候与扶抑分离
+        if (yongshen != null && yongshen.status == "confirmed" && !yongshen.tiaohouNote.isNullOrBlank()) {
+            parts.add("调候提示属于时令环境维度，不得自动覆盖已核验的扶抑用喜角色，双方未经共同裁定时分开展示。")
+        }
+
+        return parts.joinToString(" ")
+    }
+
+    private fun buildBusinessParagraph(
+        stemGod: TenGod,
+        branchGod: TenGod,
+        currentLuckPeriod: LuckCyclePeriodEntity?,
+        dayStem: String,
+        hitIds: MutableList<String>,
+    ): String {
+        val entry1 = getBusinessEntry(stemGod)
+        val entry2 = getBusinessEntry(branchGod)
+        hitIds.add("ENT_${stemGod.name}_${branchGod.name}")
+        return if (currentLuckPeriod != null) {
+            val dayunStemGod = TenGodCalculator.tenGod(dayStem, currentLuckPeriod.stem)
+            val entryDayun = getBusinessEntry(dayunStemGod)
+            "经营观察可对照公开披露中的「$entry1」与「$entry2」，并结合大运阶段观察「$entryDayun」。这些项目仅作为信息核对入口，不能据此认定公司已发生对应事项。"
+        } else {
+            "经营观察可对照公开披露中的「$entry1」与「$entry2」。这两个项目仅作为信息核对入口，不能据此认定公司已发生对应事项。"
+        }
+    }
+
+    private fun buildSynthesisParagraph(
+        strength: Strength,
+        stemGod: TenGod,
+        branchGod: TenGod,
+        currentLuckPeriod: LuckCyclePeriodEntity?,
+        dayStem: String,
+        hitLiuhe: LiuheHit?,
+        yongshen: StockYongshenEntity?,
+        hitIds: MutableList<String>,
+    ): String {
+        val parts = mutableListOf<String>()
+
+        hitIds.add("SUM_${strength.name}")
+        val strengthBase = when (strength) {
+            Strength.STRONG -> "原局强弱按现行三柱六字口径标为身强。这里讨论的是传统分类对本月主题的解释边界，不代表公司具备现实经营承载能力。"
+            Strength.BALANCED -> "原局强弱按现行三柱六字口径标为中和。主题与副线是否相互呼应不能仅凭本月十神或一个强弱标签判定。"
+            Strength.WEAK -> "原局强弱按现行三柱六字口径标为身弱。该强弱归类不等于公司实际财务承压，仍须另行核对经营信息。"
+        }
+        parts.add(strengthBase)
+
+        // 大运十神×强弱
+        if (currentLuckPeriod != null) {
+            val dayunStemGod = TenGodCalculator.tenGod(dayStem, currentLuckPeriod.stem)
+            parts.add(getDayunStrengthExplanation(dayunStemGod, strength))
+            hitIds.add("ADV_DY_${dayunStemGod.name}_${strengthSuffix(strength)}")
+        }
+
+        // 喜用候选总结
+        if (yongshen != null) {
+            if (yongshen.status == "confirmed") {
+                parts.add("流月五行角色结合原局扶抑主轴审视，此处是附有方法版本及来源的候选角色，不是唯一用神裁断；若扶抑与调候意见不同，分别保留依据，等待独立裁决。")
+                hitIds.add("ADV_YS_CANDIDATE_ONLY")
+            } else if (yongshen.status == "candidate") {
+                parts.add("原局处于中和平衡，多五行流通候选不强加单一主轴，依岁运流动调节。")
+                hitIds.add("ADV_YS_CANDIDATE_ONLY")
+            }
+        }
+
+        // 六合结构总结
+        if (hitLiuhe != null) {
+            parts.add("六合支对补充了结构位置关系，在合化与最终喜用未裁定前，不给出单一吉凶或确定性财运结论。")
+            hitIds.add("ADV_LH_SYNTHESIS")
+        }
 
         return parts.joinToString(" ")
     }
@@ -263,31 +553,6 @@ object FortuneCopyEngine {
         }
     }
 
-    private fun buildContradictionParagraph(
-        stemGod: TenGod,
-        branchGod: TenGod,
-        hitIds: MutableList<String>,
-    ): String {
-        return if (stemGod == branchGod) {
-            hitIds.add("CNT_IDENTICAL")
-            "月干与本气为同一十神，说明流月两处分类指向相近的象义；这是形式上的聚焦，不是已核验的原局关系事件。"
-        } else {
-            hitIds.add("CNT_DISTINCT")
-            "月干与本气来自不同十神分组，形成主题与副线的分类差异；这并非已核验的相冲、相刑或经营矛盾。"
-        }
-    }
-
-    private fun buildBusinessParagraph(
-        stemGod: TenGod,
-        branchGod: TenGod,
-        hitIds: MutableList<String>,
-    ): String {
-        val entry1 = getBusinessEntry(stemGod)
-        val entry2 = getBusinessEntry(branchGod)
-        hitIds.add("ENT_${stemGod.name}_${branchGod.name}")
-        return "经营观察可对照公开披露中的「$entry1」与「$entry2」。这两个项目仅作为信息核对入口，不能据此认定公司已发生对应事项。"
-    }
-
     private fun getBusinessEntry(god: TenGod): String {
         return when (god) {
             TenGod.BI_JIAN -> "关联交易及定价"
@@ -303,17 +568,58 @@ object FortuneCopyEngine {
         }
     }
 
-    private fun buildSynthesisParagraph(
-        strength: Strength,
-        stemGod: TenGod,
-        branchGod: TenGod,
-        hitIds: MutableList<String>,
-    ): String {
-        hitIds.add("SUM_${strength.name}")
-        return when (strength) {
-            Strength.STRONG -> "原局强弱按现行三柱六字口径标为身强。这里讨论的是传统分类对本月主题的解释边界，不代表公司具备现实经营承载能力。"
-            Strength.BALANCED -> "原局强弱按现行三柱六字口径标为中和。主题与副线是否相互呼应不能仅凭本月十神或一个强弱标签判定。"
-            Strength.WEAK -> "原局强弱按现行三柱六字口径标为身弱。该强弱归类不等于公司实际财务承压，仍须另行核对经营信息。"
+    private fun getDayunStrengthExplanation(god: TenGod, strength: Strength): String {
+        return when (god) {
+            TenGod.BI_JIAN -> when (strength) {
+                Strength.STRONG -> "身强时遇比肩大运，同类之气与原局既有支撑并列，传统解释更重视参与主体增加以后，职责与资源配置是否均衡；这不是合作效率变化的事实判断。"
+                Strength.BALANCED -> "中和遇比肩大运，可以同时讨论相互支持与责任分配，原局其他十神的参与程度才决定论述偏向，单凭此格不作有利或不利的定论。"
+                Strength.WEAK -> "身弱遇比肩大运，同类元素具有补入支持的结构可能，但扶助是否落实仍取决于根气、透藏与其他干支；不能直接断言合作带来实际改善。"
+            }
+            TenGod.JIE_CAI -> when (strength) {
+                Strength.STRONG -> "身强遇劫财大运，原局同类力量与阶段性的分配主题叠加，解释侧重权属安排和分配边界；这只是传统结构对照，并非企业发生权益争议。"
+                Strength.BALANCED -> "中和遇劫财大运，同类支持与资源分担两面同时存在，仍须观察财星和印星等条件才可能判断其在命局中的作用。"
+                Strength.WEAK -> "身弱遇劫财大运，劫财的同类属性可纳入扶身讨论，但资源共同承担与分配也是独立议题，不得把扶身直接说成资源增多。"
+            }
+            TenGod.SHI_SHEN -> when (strength) {
+                Strength.STRONG -> "身强遇食神大运，向外表达可作为结构中的一个出口，但是否形成有效流通仍取决于原局组合，不能由食神一项认定已经产生成果。"
+                Strength.BALANCED -> "中和遇食神大运，成果表达与日主消耗两面需同时考察，原局的根气和其他十神决定其作用条件。"
+                Strength.WEAK -> "身弱遇食神大运，日主生出的具体五行取决于日主属性，传统解释会额外检视持续输出与原局承接的关系，不作单向吉凶判断。"
+            }
+            TenGod.SHANG_GUAN -> when (strength) {
+                Strength.STRONG -> "身强遇伤官大运，表达和调整主题可能更加突出，但不能直接推出与正官形成具体制约，更不对应现实监管或经营事件。"
+                Strength.BALANCED -> "中和遇伤官大运，创新表达与既定秩序之间是否形成张力，还需要原局官印等因素来确认；伤官标签本身不足以裁断。"
+                Strength.WEAK -> "身弱遇伤官大运，向外表达伴随泄身的传统解释，需要进一步核对印比是否构成支持；不能将结构上的消耗写成现实能力不足。"
+            }
+            TenGod.PIAN_CAI -> when (strength) {
+                Strength.STRONG -> "身强遇偏财大运，日主对财星的承接条件成为一个可讨论的结构点，但财星位置、透藏和流月关系尚需验证，不等于资源已经实现转化。"
+                Strength.BALANCED -> "中和遇偏财大运，资源对象出现与实际承接程度仍是两层问题；阶段主题成立不意味着偏财作用已经确定。"
+                Strength.WEAK -> "身弱遇偏财大运，财星作为日主所克的一类关系，其对象性可被描述，承接条件则必须连同印比、根气和岁月事件核对。"
+            }
+            TenGod.ZHENG_CAI -> when (strength) {
+                Strength.STRONG -> "身强遇正财大运，可讨论原局对财星的承载与管理主题，但持续性资源是否形成真实兑现不由十神决定。"
+                Strength.BALANCED -> "中和遇正财大运，资源持续与分配秩序之间的解释仍需其他十神和相应位置参与，不能仅凭中和断定财星作用。"
+                Strength.WEAK -> "身弱遇正财大运，传统解释会把常态资源主题与承接能力分开：有财星类别不代表有足够生扶条件，也不代表现实资源增减。"
+            }
+            TenGod.QI_SHA -> when (strength) {
+                Strength.STRONG -> "身强遇七杀大运，可讨论约束与日主承载之间的互动可能，但是否出现有效制化需要另有经核验的事件和位置证据。"
+                Strength.BALANCED -> "中和遇七杀大运，约束强度与承担能力并未因“中和”而自动匹配；仍须核对根气、印星及其排列。"
+                Strength.WEAK -> "身弱遇七杀大运，克制日主的结构更需要检视是否存在生扶和转化依据；不能把七杀理解为现实企业已经承受外部处罚。"
+            }
+            TenGod.ZHENG_GUAN -> when (strength) {
+                Strength.STRONG -> "身强遇正官大运，约束与承接可作为一组结构议题，但是否形成有效官印关系，仍须进一步确认印星的作用位置。"
+                Strength.BALANCED -> "中和遇正官大运，规则主题存在而实际协调方向未定，需查看官星力量与其他原局因素，不能用“中和”替代全盘论断。"
+                Strength.WEAK -> "身弱遇正官大运，官星约束的传统象义需要与原局支持条件并读，是否有印星生扶及有效配合尚待关系验证。"
+            }
+            TenGod.PIAN_YIN -> when (strength) {
+                Strength.STRONG -> "身强遇偏印大运，同类支持已经较多的情况下，偏印是否继续形成有意义的支持，需要考察食伤等其他因素，不作“印多必好”结论。"
+                Strength.BALANCED -> "中和遇偏印大运，知识积累与向外表达能否协调取决于具体结构，单独的偏印标签不能决定任何压制或提升关系。"
+                Strength.WEAK -> "身弱遇偏印大运，偏印具有生日主的传统象义，但是否获得实际扶助，仍需结合位置、根气与月令来源核对。"
+            }
+            TenGod.ZHENG_YIN -> when (strength) {
+                Strength.STRONG -> "身强遇正印大运，生扶元素与已有力量并列，解释焦点转向支持是否与输出相协调，不能仅用印星认定结构趋于完善。"
+                Strength.BALANCED -> "中和遇正印大运，稳定支撑和消耗输出两端均需兼顾，正印是否构成全盘关键条件还要看其他五行和生克位置。"
+                Strength.WEAK -> "身弱遇正印大运，正印具有生日主的传统可能，但实际支持是否成立仍须核对根气、透藏和其他层次，不能将候选扶助写成确定结论。"
+            }
         }
     }
 

@@ -139,7 +139,8 @@ class AnalysisRepository(
         val luckCycle = luckCycleDao?.findByStockId(stockId)
         val firstDayPolarity = FirstDayPolarity.fromCode(luckCycle?.firstDayPolarity)
         val dayunStatus = luckCycle?.status ?: "available"
-        val natalRelationsCount = natalRelationDao?.getByStockId(stockId)?.size ?: 0
+        val natalRelations = natalRelationDao?.getByStockId(stockId) ?: emptyList()
+        val natalRelationsCount = natalRelations.size
         val yongshen = stockYongshenDao?.getByStockId(stockId)
         val yongshenStatus = YongshenCandidateStatus.fromCode(yongshen?.status)
         val stockCode = stockDao?.findById(stockId)?.code ?: ""
@@ -159,6 +160,9 @@ class AnalysisRepository(
             monthGanzhi = midGz.monthGanzhi,
             natalRelationsCount = natalRelationsCount,
             yongshenStatus = yongshenStatus,
+            currentLuckPeriod = currentPeriod,
+            natalRelations = natalRelations,
+            yongshen = yongshen,
         )
 
         return MonthAnalysis(

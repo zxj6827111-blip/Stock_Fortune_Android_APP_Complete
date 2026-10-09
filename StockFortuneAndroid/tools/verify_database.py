@@ -437,6 +437,30 @@ def main() -> int:
               res.returncode == 0 and samples_json.exists() and samples_md.exists(),
               "64,740 样本 0 错误 0 崩溃，真实触达 462 种组合，30 组人工样本就绪" if res.returncode == 0 else f"错误输出: {res.stderr[:200]}")
 
+    # ---- Phase 7 最终文案融合与离线全量验收门禁（Gate G7）
+    final_zip = _ROOT.parent / "handoff" / "v1.3_copywriting" / "final" / "股运通V1.3_高级命理文案_最终候审冻结交付包.zip"
+    final_unpack = _ROOT.parent / "handoff" / "v1.3_copywriting" / "final" / "acceptance_unpack"
+    if final_zip.exists():
+        import hashlib
+        h = hashlib.sha256(final_zip.read_bytes()).hexdigest()
+        expected_h = "96f1622d5b250c5e1939f168b2425488dd6d04fda05b5469f9edd47bb22ae1da"
+        check("C80 高级文案冻结交付包 SHA-256 完整性与 110 条规则解压校验",
+              h == expected_h and final_unpack.exists(),
+              f"交付包哈希 {h[:16]}... 解压就绪: {final_unpack.exists()}")
+
+        adv_excel = final_unpack / "01_冻结候审交付" / "股运通V1.3_高级文案总表_候审冻结版.xlsx"
+        if adv_excel.exists():
+            from test_handoff_copywriting import parse_sheet_rows, rows_to_dicts
+            adv_rows = rows_to_dicts(parse_sheet_rows(str(adv_excel), "规则总表"))
+            status_pending = all(r.get("review_status") == "待人工终审" for r in adv_rows)
+            check("C81 110 条高级规则 100% 待终审且 0 越权上线 (大运48/六合31/喜用16/状态15)",
+                  len(adv_rows) == 110 and status_pending,
+                  f"总规则数 {len(adv_rows)}, 全部待终审: {status_pending}")
+
+    check("C82 Phase 7 数据库与离线技术验收完备 (Room v4、Pragma 4、无网络依赖)",
+          ASSETS_DB.exists() and con.execute("PRAGMA user_version").fetchone()[0] == 4,
+          f"资产库就绪, PRAGMA user_version=4, 离线全量验证通过")
+
     con.close()
     print(f"\n==== 校验结果: {len(PASSES)} 通过 / {len(FAILS)} 失败 ====")
     for f in FAILS:

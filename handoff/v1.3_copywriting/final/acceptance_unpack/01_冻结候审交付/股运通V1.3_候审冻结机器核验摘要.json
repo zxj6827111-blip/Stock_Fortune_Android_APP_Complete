@@ -1,0 +1,111 @@
+{
+  "freeze_tag": "V1.3高级命理文案候审冻结版",
+  "freeze_date": "2026-10-09",
+  "baseline": {
+    "original_v3_sha256": "d9b9f86712bae8668dad6b79d3ad3be9c66bff5fedc1ae674c550fb137746b91",
+    "baseline_141_sha256": "98b697cf6503f16d8ae28349f72235c33d97ce17c6f7767d83196f2cb912d5cf",
+    "strength_30_sha256": "73c5a4541448d13caa596765b80e129d133acf03fc88a5720902225ac680edc4",
+    "advanced_110_sha256": "9eec2bb65a2980bbdcd063963a7722a7116a56d6ce16073f21dbf320e3730269",
+    "v3_rows": 800,
+    "source_link_rows": 4800,
+    "base_rule_count": 141,
+    "strength_rule_count": 30,
+    "advanced_rule_count": 110,
+    "advanced_distribution": {
+      "大运": 48,
+      "六合": 31,
+      "喜用": 16,
+      "状态": 15
+    }
+  },
+  "preserved": {
+    "advanced_110_id_same": true,
+    "advanced_110_trigger_same": true,
+    "advanced_110_review_status_same": true,
+    "base_141_unchanged": true,
+    "strength_30_unchanged": true,
+    "v3_800_unchanged": true,
+    "4800_links_unchanged": true,
+    "requirements_82_ids_same": true
+  },
+  "targeted_edit": {
+    "advanced_text_cells_changed": 23,
+    "advanced_evidence_key_cells_changed": 12,
+    "mock_yongshen_role_corrected": true,
+    "natal_relation_scope": "year/month/day ONLY, hour EXCLUDED",
+    "interval_evidence_draft": "required for month/dayun cross layer, not implemented"
+  },
+  "full_mock_examples": 11,
+  "full_five_sections": 11,
+  "case_ids": [
+    "SIM-01",
+    "SIM-02",
+    "SIM-03",
+    "SIM-04",
+    "SIM-05",
+    "SIM-06",
+    "SIM-07",
+    "SIM-08",
+    "SIM-09",
+    "SIM-10",
+    "SIM-11"
+  ],
+  "maturity_counter": {
+    "已有候审正文": 47,
+    "仅有模板": 31,
+    "已有部分候审正文": 4
+  },
+  "requirements_by_phase": {
+    "P2 大运": 36,
+    "P3 喜用": 10,
+    "P3 格局": 10,
+    "P4 关系": 22,
+    "P4 叠加": 4
+  },
+  "compliance": {
+    "source": "Android main ComplianceTextTest.kt verified snapshot from baseline",
+    "defined_terms": 58,
+    "unique_terms": 56,
+    "candidate_texts_scanned": 165,
+    "violations": 0,
+    "local_latest_android_not_revalidated": true
+  },
+  "expert_review": "PENDING",
+  "algorithm_gate": "BLOCKED",
+  "production_import": "BLOCKED",
+  "files": [
+    {
+      "filename": "股运通V1.3_高级文案总表_候审冻结版.xlsx",
+      "sha256": "6faef5b13ecc31cec029cc47f08ac99b3cbf34edf2096bbf934b5c76eebbfeb1"
+    },
+    {
+      "filename": "股运通V1.3_大运_独立审核表_候审冻结版.xlsx",
+      "sha256": "bd595c090cb21452c88d67e8a9a9cdffd26a6aa6c38ccef743723f877f9c6573"
+    },
+    {
+      "filename": "股运通V1.3_六合_独立审核表_候审冻结版.xlsx",
+      "sha256": "9a9ce4bd9789d451353252fab020663b348d1c1c06072b2eef884b031b603ef8"
+    },
+    {
+      "filename": "股运通V1.3_喜用_独立审核表_候审冻结版.xlsx",
+      "sha256": "1f8337e66b58f7af0ba875ec7988512c7e71a242e912b67cc84bbb57fcb8328d"
+    },
+    {
+      "filename": "股运通V1.3_完整五段式模拟案例_候审冻结版.xlsx",
+      "sha256": "d942b24a17612aa254dcae5e7718234ee02f5754fe42380552b7013bfc9164e4"
+    },
+    {
+      "filename": "股运通V1.3_82项高级需求完成状态_候审冻结版.xlsx",
+      "sha256": "a2bfb7b9aadc816991e4afbe0f6490ebbacf3f02b06216a89e4e712264e60b83"
+    },
+    {
+      "filename": "股运通V1.3_高级命理文案_最终勘误清单.xlsx",
+      "sha256": "53b4db0429ec8a2af053b83c3fa6caa2aedf695fde9cf43bc8c35450740873cc"
+    }
+  ],
+  "delivery_zip": {
+    "name": "股运通V1.3_高级命理文案_最终候审冻结交付包.zip",
+    "file_count_excl_manifest": 14,
+    "zip_integrity": "verified_after_packaging"
+  }
+}
