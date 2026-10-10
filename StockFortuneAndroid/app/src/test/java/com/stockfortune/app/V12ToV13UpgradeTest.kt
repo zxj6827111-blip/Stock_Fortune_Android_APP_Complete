@@ -267,4 +267,103 @@ class V12ToV13UpgradeTest {
         val result = AppDatabase.readFavoritesWithDetails(targetFile)
         assertTrue("损坏数据库读取必须返回 Failure", result.isFailure)
     }
+
+    @Test
+    fun testMixedFavoritesRecoveryWithRetrySafety() = runBlocking {
+        // 场景验收：旧库存在 10 条收藏，其中 9 条可以映射，1 条无法映射。
+        // 要求：
+        // 1. 9 条正常恢复；
+        // 2. 未映射的 1 条继续保存于可靠的待恢复记录；
+        // 3. 不得因 mappedCount > 0 就清除所有备份；
+        // 4. 重新启动后能够安全重试；
+        // 5. 不允许错误映射到其他股票。
+
+        val realStocks = listOf(
+            Triple(4898L, "600519.SH", "贵州茅台"),
+            Triple(349L, "601318.SH", "中国平安"),
+            Triple(1541L, "002594.SZ", "比亚迪"),
+            Triple(5161L, "000001.SZ", "平安银行"),
+            Triple(2026L, "600036.SH", "招商银行"),
+            Triple(132L, "300750.SZ", "宁德时代"),
+            Triple(1793L, "000333.SZ", "美的集团"),
+            Triple(2998L, "000002.SZ", "万科A"),
+            Triple(5209L, "601857.SH", "中国石油"),
+        )
+
+        val backupArr = org.json.JSONArray()
+        var ts = 1700000000000L
+        realStocks.forEach { (id, code, name) ->
+            backupArr.put(org.json.JSONObject().apply {
+                put("stockId", id)
+                put("code", code)
+                put("symbol", code.substringBefore("."))
+                put("name", name)
+                put("addedAt", ts++)
+            })
+        }
+        // 第 10 条：无法映射的代码（如退市已注销的股票）
+        backupArr.put(org.json.JSONObject().apply {
+            put("stockId", 99999L)
+            put("code", "999999.SH")
+            put("symbol", "999999")
+            put("name", "退市未知股")
+            put("addedAt", ts++)
+        })
+
+        assertEquals("总备份数量必须为 10 条", 10, backupArr.length())
+
+        app.getSharedPreferences("favorites_persistent_backup", Context.MODE_PRIVATE)
+            .edit()
+            .putString("backup_json", backupArr.toString())
+            .commit()
+
+        // 第一次启动应用，触发恢复
+        val db1 = AppDatabase.get(app)
+        val favs1 = db1.favoriteDao().stocksWithInfo()
+
+        // 校验 1：9 条正常恢复，未映射的 1 条不入库
+        assertEquals("9 条可识别股票必须正常恢复", 9, favs1.size)
+        realStocks.forEach { (id, code, name) ->
+            val f = favs1.firstOrNull { it.id == id }
+            assertNotNull("股票 $name ($code) 必须成功恢复", f)
+            assertEquals(code, f!!.code)
+            assertEquals(name, f.name)
+        }
+        assertTrue("严禁将未映射股票错误入库或挂载", favs1.none { it.id == 99999L || it.code == "999999.SH" })
+
+        // 校验 2 & 3：不得因 mappedCount > 0 清除所有备份，未映射项必须保存在持久备份中
+        val backupPrefs = app.getSharedPreferences("favorites_persistent_backup", Context.MODE_PRIVATE)
+        val remainingJson1 = backupPrefs.getString("backup_json", null)
+        assertNotNull("未映射记录必须继续持久化保留在备份中", remainingJson1)
+        val remainingArr1 = org.json.JSONArray(remainingJson1)
+        assertEquals("备份中应仅保留未映射的 1 条记录", 1, remainingArr1.length())
+        assertEquals("999999.SH", remainingArr1.getJSONObject(0).getString("code"))
+
+        // 校验 4：重启应用，验证安全幂等重试
+        AppDatabase.resetForTesting()
+        val db2 = AppDatabase.get(app)
+        val favs2 = db2.favoriteDao().stocksWithInfo()
+        assertEquals("重启后数据库内恢复的 9 条收藏不受影响", 9, favs2.size)
+
+        val remainingJson2 = backupPrefs.getString("backup_json", null)
+        assertNotNull("重启后未映射记录依然安全保留待重试", remainingJson2)
+        val remainingArr2 = org.json.JSONArray(remainingJson2)
+        assertEquals(1, remainingArr2.length())
+        assertEquals("999999.SH", remainingArr2.getJSONObject(0).getString("code"))
+
+        // 校验 5：模拟字典补齐该股票，再次启动能够成功重试并清空备份
+        val sq2 = db2.openHelper.writableDatabase
+        sq2.execSQL(
+            """INSERT INTO stock (id, code, symbol, name, exchange, board, listing_date, first_day_flag, industry, industry_full, stock_nature)
+               VALUES (99999, '999999.SH', '999999', '退市未知股', 'SH', '主板', '2020-01-01', 'NORMAL', '综合', '综合类', '普通股')"""
+        )
+        AppDatabase.resetForTesting()
+        val db3 = AppDatabase.get(app)
+        val favs3 = db3.favoriteDao().stocksWithInfo()
+        assertEquals("字典更新重试后全部 10 条收藏均成功恢复", 10, favs3.size)
+        assertTrue("第 10 条股票已成功入库", favs3.any { it.code == "999999.SH" })
+
+        val finalBackupJson = backupPrefs.getString("backup_json", null)
+        assertTrue("所有收藏均成功恢复后，持久备份应彻底清空", finalBackupJson == null)
+    }
 }

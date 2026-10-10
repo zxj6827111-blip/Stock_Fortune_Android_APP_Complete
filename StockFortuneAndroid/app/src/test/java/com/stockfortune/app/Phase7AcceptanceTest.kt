@@ -329,4 +329,37 @@ class Phase7AcceptanceTest {
         assertTrue("2035年五段式齐全", m2035.fiveParagraph!!.isComplete)
         assertZeroForbiddenWords("2035年茅台解读", m2035.fiveParagraph!!.toFormattedMarkdown())
     }
+
+    /**
+     * 8. 年度与月度六合事件日期契约完全一致且无重复称谓专项验证
+     */
+    @Test
+    fun `年度与月度六合事件日期契约完全一致且无重复称谓`() = runBlocking {
+        // 中国天楹 000035 在 2026 年 1 月命中流月子丑六合 (FLOW_MONTH_TO_NATAL)
+        val tianying = stockRepo.detail("000035")!!
+        val m1 = analysisRepo.monthDays(tianying.stock.id, 2026, 1)!!
+        assertNotNull(m1.fiveParagraph)
+        val fpMonth = m1.fiveParagraph!!
+
+        // 验证 1：流月页面六合区间必须严格为节气月 (2026-01-05—2026-02-03)，杜绝单日虚构
+        assertTrue("流月六合必须包含真实节气月起止日期", fpMonth.contradictionText.contains("2026-01-05—2026-02-03"))
+        assertFalse("流月六合严禁出现单日伪区间", fpMonth.contradictionText.contains("2026-01-15—2026-01-15"))
+
+        // 验证 2：严禁出现“原局原局”重复称谓
+        assertFalse("全五段式文案严禁包含原局原局", fpMonth.toFormattedMarkdown().contains("原局原局"))
+        assertTrue("位置称谓必须规范为与原局日支", fpMonth.contradictionText.contains("与原局日支的子"))
+
+        // 验证 3：跨节气提示说明
+        assertNotNull("跨节气公历月必须提供口径说明", m1.monthNote)
+        assertTrue("口径说明必须包含交节日期与主干支", m1.monthNote!!.contains("1月5日交节入己丑"))
+
+        // 验证 4：年度运势页与月度详情页六合日期契约完全一致
+        val y2026 = analysisRepo.yearAnalysis(tianying.stock.id, 2026)!!
+        // 年度中对应己丑月（通常为前一年的腊月或交节后的对应流月）
+        val chouMonthInYear = y2026.months.firstOrNull { it.monthGanzhi == "己丑" }
+        if (chouMonthInYear != null) {
+            assertEquals("年度与月度的己丑月起始日期必须完全一致", "2026-01-05", chouMonthInYear.startDate)
+            assertEquals("年度与月度的己丑月结束日期必须完全一致", "2026-02-03", chouMonthInYear.endDate)
+        }
+    }
 }

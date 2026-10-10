@@ -252,4 +252,101 @@ class LiuheTimeRangeTest {
         val text = OfflineCopyRuleEvaluator.substitutePlaceholders(templateRule.text, ctx)
         assertEquals("六合支对子丑在流月支与原局年支成立，有效期自2026-04-05至2026-05-04。", text)
     }
+
+    @Test
+    fun testCase7_NoDuplicatePillarPrefixInFrozenRules() {
+        // 边界 7：冻结 281 条文案规则中包含 “与原局{relation.position_b}” 模板，替换后严禁出现 “原局原局” 重复称谓
+        val frozenMonthRule = CopyRuleDefinition(
+            ruleId = "ADV_LH_MONTH_ZICHOU",
+            section = CopySection.CONTRADICTION,
+            triggerDsl = """{"liuhe.pair": "ZICHOU"}""",
+            priority = 90,
+            conflictGroup = "LH_MONTH_ZICHOU",
+            evidenceKeys = listOf("liuhe.pair"),
+            text = "仅在已核验的流月区间{relation.valid_from}—{relation.valid_to}内，流月支{relation.branch_a}与原局{relation.position_b}的{relation.branch_b}符合子丑六合支对。两处位置必须各自对照；该事件不自动构成合化。",
+            ruleVersion = "1.3.0",
+            reviewStatus = ReviewStatus.PENDING_REVIEW,
+            productionGate = ProductionGate.CANDIDATE_ONLY,
+            isLegacyNoRender = false,
+            module = "六合",
+        )
+
+        val hit = FortuneCopyEngine.LiuheHit(
+            pairName = "子丑",
+            pairCode = "ZICHOU",
+            scope = "FLOW_MONTH_TO_NATAL",
+            branchA = "丑",
+            branchB = "子",
+            posA = "流月支",
+            posB = "原局日支",
+            validFrom = "2026-01-05",
+            validTo = "2026-02-03",
+        )
+
+        val ctx = OfflineCopyRuleEvaluator.EvaluationContext(
+            stockId = 1,
+            stockCode = "600519.SH",
+            year = 2026,
+            month = 1,
+            monthStem = "己",
+            monthBranch = "丑",
+            monthStemGod = TenGod.ZHENG_CAI,
+            monthBranchMainQiGod = TenGod.ZHENG_CAI,
+            strength = Strength.BALANCED,
+            firstDayPolarity = FirstDayPolarity.YANG,
+            hitLiuhe = hit,
+            flowMonthStartDate = "2026-01-05",
+            flowMonthEndDate = "2026-02-03",
+        )
+
+        val text = OfflineCopyRuleEvaluator.substitutePlaceholders(frozenMonthRule.text, ctx)
+        assertTrue("必须包含规范的与原局日支", text.contains("与原局日支的子"))
+        assertFalse("绝不允许出现原局原局重复措辞", text.contains("原局原局"))
+        assertTrue("必须使用真实的节气月区间", text.contains("2026-01-05—2026-02-03"))
+        assertFalse("绝不允许出现同日虚构区间", text.contains("2026-01-15—2026-01-15"))
+    }
+
+    @Test
+    fun testCase8_FlowMonthSolarTermIntervalNeverSingleDay() {
+        // 边界 8：流月六合区间必须代表真实节气月（通常 29-32 天），杜绝将起止日期设为同日单日
+        val hit = FortuneCopyEngine.LiuheHit(
+            pairName = "午未",
+            pairCode = "WUWEI",
+            scope = "FLOW_MONTH_TO_NATAL",
+            branchA = "午",
+            branchB = "未",
+            posA = "流月支",
+            posB = "原局月支",
+            validFrom = "2026-06-05",
+            validTo = "2026-07-06",
+        )
+
+        val ctx = OfflineCopyRuleEvaluator.EvaluationContext(
+            stockId = 1,
+            stockCode = "600519.SH",
+            year = 2026,
+            month = 6,
+            monthStem = "甲",
+            monthBranch = "午",
+            monthStemGod = TenGod.PIAN_YIN,
+            monthBranchMainQiGod = TenGod.SHI_SHEN,
+            strength = Strength.BALANCED,
+            firstDayPolarity = FirstDayPolarity.YANG,
+            hitLiuhe = hit,
+            flowMonthStartDate = "2026-06-05",
+            flowMonthEndDate = "2026-07-06",
+        )
+
+        val result = OfflineCopyRuleEvaluator.substitutePlaceholders(
+            "仅在已核验的流月区间{relation.valid_from}—{relation.valid_to}内，流月支{relation.branch_a}与原局{relation.position_b}的{relation.branch_b}符合午未六合支对。",
+            ctx,
+        )
+
+        assertEquals(
+            "仅在已核验的流月区间2026-06-05—2026-07-06内，流月支午与原局月支的未符合午未六合支对。",
+            result,
+        )
+        assertFalse("严禁包含单日虚构区间", result.contains("2026-06-15—2026-06-15"))
+        assertFalse("严禁包含原局原局", result.contains("原局原局"))
+    }
 }

@@ -318,6 +318,9 @@ object OfflineCopyRuleEvaluator {
             .replace("{day_master}", ctx.dayStem)
             .replace("{day_master_strength}", ctx.strength.cn)
 
+        // 消除由于规则占位符前缀重叠导致的位置称谓重复（如“与原局”拼接“原局日支”导致的“原局原局”）
+        res = res.replace("原局原局", "原局")
+
         return res
     }
 

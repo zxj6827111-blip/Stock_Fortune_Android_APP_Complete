@@ -228,6 +228,7 @@ abstract class AppDatabase : RoomDatabase() {
             if (rows.isEmpty()) return
             val sq = db.openHelper.writableDatabase
             var mappedCount = 0
+            val unmapped = mutableListOf<FavoriteBackup>()
 
             sq.beginTransaction()
             try {
@@ -269,7 +270,8 @@ abstract class AppDatabase : RoomDatabase() {
                         )
                         mappedCount++
                     } else {
-                        android.util.Log.w("AppDatabase", "收藏恢复跳过未映射股票：code=${row.code}, symbol=${row.symbol}, oldId=${row.stockId}")
+                        android.util.Log.w("AppDatabase", "收藏恢复跳过未映射股票并保留待重试：code=${row.code}, symbol=${row.symbol}, oldId=${row.stockId}")
+                        unmapped.add(row)
                     }
                 }
                 sq.setTransactionSuccessful()
@@ -277,9 +279,15 @@ abstract class AppDatabase : RoomDatabase() {
                 sq.endTransaction()
             }
 
-            // 新库收藏恢复事务成功提交并完成核验后，才清除持久备份；清除失败仅记录日志，下次启动幂等重试
-            if (mappedCount > 0 || rows.isEmpty()) {
+            // 混合恢复持久安全规则：
+            // 1. 全部成功映射时，彻底清空持久备份；
+            // 2. 存在未映射项时，仅持久保留未映射项，严禁因 mappedCount > 0 清空所有备份导致未映射项永久丢失；
+            // 3. 后续冷启动或数据库更新后可继续安全重试未映射项。
+            if (unmapped.isEmpty()) {
                 clearPersistedBackup(context)
+            } else {
+                persistBackup(context, unmapped)
+                android.util.Log.w("AppDatabase", "收藏恢复完成：已恢复 $mappedCount 条，仍有 ${unmapped.size} 条未映射股票保留在备份中待重试")
             }
         }
     }

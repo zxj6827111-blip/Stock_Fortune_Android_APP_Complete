@@ -1,0 +1,13 @@
+{
+  "engine": "Android FortuneCopyEngine (Kotlin Runtime)",
+  "totalStocks": 5395,
+  "totalMonthsEvaluated": 64740,
+  "successCount": 64740,
+  "errorCount": 0,
+  "totalForbiddenHits": 0,
+  "totalPendingReviewCount": 64740,
+  "totalUnreplacedPlaceholderHits": 0,
+  "uniqueRulesHit": 206,
+  "durationSeconds": 4.341,
+  "sampleCount": 30
+}

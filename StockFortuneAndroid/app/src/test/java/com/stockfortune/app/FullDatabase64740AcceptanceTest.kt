@@ -58,23 +58,25 @@ class FullDatabase64740AcceptanceTest {
 
     data class MonthFlow(
         val month: Int,
-        val date: String,
+        val midDate: String,
         val ganzhi: String,
+        val startDate: String,
+        val endDate: String,
     )
 
     private val months2026 = listOf(
-        MonthFlow(1, "2026-01-15", "己丑"),
-        MonthFlow(2, "2026-02-15", "庚寅"),
-        MonthFlow(3, "2026-03-15", "辛卯"),
-        MonthFlow(4, "2026-04-15", "壬辰"),
-        MonthFlow(5, "2026-05-15", "癸巳"),
-        MonthFlow(6, "2026-06-15", "甲午"),
-        MonthFlow(7, "2026-07-15", "乙未"),
-        MonthFlow(8, "2026-08-15", "丙申"),
-        MonthFlow(9, "2026-09-15", "丁酉"),
-        MonthFlow(10, "2026-10-15", "戊戌"),
-        MonthFlow(11, "2026-11-15", "己亥"),
-        MonthFlow(12, "2026-12-15", "庚子"),
+        MonthFlow(1, "2026-01-15", "己丑", "2026-01-05", "2026-02-03"),
+        MonthFlow(2, "2026-02-15", "庚寅", "2026-02-04", "2026-03-04"),
+        MonthFlow(3, "2026-03-15", "辛卯", "2026-03-05", "2026-04-04"),
+        MonthFlow(4, "2026-04-15", "壬辰", "2026-04-05", "2026-05-04"),
+        MonthFlow(5, "2026-05-15", "癸巳", "2026-05-05", "2026-06-04"),
+        MonthFlow(6, "2026-06-15", "甲午", "2026-06-05", "2026-07-06"),
+        MonthFlow(7, "2026-07-15", "乙未", "2026-07-07", "2026-08-06"),
+        MonthFlow(8, "2026-08-15", "丙申", "2026-08-07", "2026-09-06"),
+        MonthFlow(9, "2026-09-15", "丁酉", "2026-09-07", "2026-10-07"),
+        MonthFlow(10, "2026-10-15", "戊戌", "2026-10-08", "2026-11-06"),
+        MonthFlow(11, "2026-11-15", "己亥", "2026-11-07", "2026-12-06"),
+        MonthFlow(12, "2026-12-15", "庚子", "2026-12-07", "2027-01-04"),
     )
 
     @Before
@@ -371,7 +373,7 @@ class FullDatabase64740AcceptanceTest {
             months2026.forEach { m ->
                 // 按日期匹配当前大运区间 [start_date, end_date)
                 val currentPeriod = periods.firstOrNull { p ->
-                    m.date >= p.startDate && (m.date < p.endDate || (p.cycleIndex == 12 && m.date <= p.endDate))
+                    m.midDate >= p.startDate && (m.midDate < p.endDate || (p.cycleIndex == 12 && m.midDate <= p.endDate))
                 }
 
                 // 核心：使用 Android 实际运行引擎生成五段式解读
@@ -393,8 +395,8 @@ class FullDatabase64740AcceptanceTest {
                     natalRelations = natalRelations,
                     yongshen = yongshen,
                     luckCycleDirection = luckCycle?.direction,
-                    flowMonthStartDate = m.date,
-                    flowMonthEndDate = m.date,
+                    flowMonthStartDate = m.startDate,
+                    flowMonthEndDate = m.endDate,
                 )
 
                 totalGenerated++
@@ -511,6 +513,14 @@ class FullDatabase64740AcceptanceTest {
             put("sampleCount", sampleResults.length())
         }
         File(reportsDir, "acceptance_64740_android_summary.json").writeText(summaryObj.toString(2))
+
+        val rootDir = generateSequence(File(".").canonicalFile) { it.parentFile }
+            .firstOrNull { File(it, "V1.3_MASTER_PLAN.md").exists() }
+        if (rootDir != null) {
+            File(rootDir, "acceptance_64740_android_samples.json").writeText(sampleResults.toString(2))
+            File(rootDir, "acceptance_64740_android_samples.md").writeText(mdSb.toString())
+            File(rootDir, "acceptance_64740_android_summary.json").writeText(summaryObj.toString(2))
+        }
 
         // 断言验证
         assertEquals("全库流月生成总数必须精确等于 64740 份", 64740, totalGenerated)

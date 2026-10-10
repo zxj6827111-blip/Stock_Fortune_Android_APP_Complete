@@ -147,6 +147,15 @@ class AnalysisRepository(
         val stockCode = stockDao?.findById(stockId)?.code ?: ""
         val currentPeriod = luckCycleDao?.currentPeriodForDate(stockId, midGz.date)
 
+        val midDate = LocalDate.parse(midGz.date)
+        val wideGzRows = calendarDao.ganzhiRange(
+            GanzhiCalculator.iso(midDate.minusDays(35)),
+            GanzhiCalculator.iso(midDate.plusDays(35)),
+        )
+        val solarTermDays = wideGzRows.filter { it.monthGanzhi == midGz.monthGanzhi }
+        val flowMonthStartDate = solarTermDays.minOfOrNull { it.date } ?: start
+        val flowMonthEndDate = solarTermDays.maxOfOrNull { it.date } ?: end
+
         val candidateRules = copyRuleRepository?.getRules() ?: CopyRuleRepository.getDefault().getRules()
         val fiveParagraph = FortuneCopyEngine.composeMonthlyInterpretation(
             stockId = stockId,
@@ -167,8 +176,8 @@ class AnalysisRepository(
             yongshen = yongshen,
             candidateRules = candidateRules,
             luckCycleDirection = luckCycle?.direction,
-            flowMonthStartDate = start,
-            flowMonthEndDate = end,
+            flowMonthStartDate = flowMonthStartDate,
+            flowMonthEndDate = flowMonthEndDate,
         )
 
         return MonthAnalysis(

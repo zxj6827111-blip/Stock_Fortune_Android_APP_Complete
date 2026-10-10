@@ -9,7 +9,7 @@
 - **大运区间：** 甲子 (2025-04-18—2035-04-18) · 方向：reverse · 状态：AVAILABLE
 - **首日形态：** YIN · 原局关系数：4 · 喜用状态：CANDIDATE ()
 - **命中规则ID (23条)：** `["BAS_STEM_ZHENGCAI","BAS_BRANCH_ZHENGCAI","ADV_LH_PAIR_ZICHOU","ADV_YS_METHOD_FUYI","ADV_DY_PERIOD_FACT","ADV_DY_START_BASIS","ADV_DY_DIRECTION_REVERSE","ADV_DY_BASE_BIJIAN","THM_ZHENGCAI","SGS_ZHENGCAI_BALANCED","ADV_LH_MONTH_ZICHOU","CNT_IDENTICAL","ADV_DY_NATAL_FORMAL_DISTINCT","ENT_ZHENGCAI_ZHENGCAI","ADV_DY_BIJIAN_BAL","ADV_YS_STEM_YONG","ADV_YS_BRANCH_YONG","ADV_YS_ROLE_COMPARISON_SAME","ADV_LH_NO_HEHUA","ADV_LH_OTHER_EVENTS","ADV_LH_SYNTHESIS","ADV_YS_CANDIDATE_ONLY","SUM_BALANCED"]`
-- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `63fb1fa0549f82e6ac2a2d04bbf10d32e9dded4b81624f14b69459dc438c9ff0`
+- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `2d4f95a771a29e619684603659d4557dc46a76e33bdca766686549d398e3ac5e`
 
 ### 五段式完整正文：
 
@@ -17,7 +17,7 @@
 
 2. **【本月主题】** 本月主线落在主营业务与现金回笼。月干正财作为传统的常态财务意象，不等于本月现金流真实改善或经营兑现。 中和遇正财，常态资源与持续任务构成解释主轴，传统的关键不只是财星显现，还要看各方关系是否能够衔接。
 
-3. **【潜在矛盾】** 仅在已核验的流月区间2026-01-15—2026-01-15内，流月支丑与原局原局日支的子符合子丑六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气为同一十神，说明流月两处分类指向相近的象义；这是形式上的聚焦，不是已核验的原局关系事件。 大运与原局在形式分组上不同，提示解释线索并非同一类；不同类也不表示已经相冲或互相制约。
+3. **【潜在矛盾】** 仅在已核验的流月区间2026-01-05—2026-02-03内，流月支丑与原局日支的子符合子丑六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气为同一十神，说明流月两处分类指向相近的象义；这是形式上的聚焦，不是已核验的原局关系事件。 大运与原局在形式分组上不同，提示解释线索并非同一类；不同类也不表示已经相冲或互相制约。
 
 4. **【经营观察】** 经营观察可对照公开披露中的「主营收入构成」与「经营现金流与净利润差额」。这两个项目仅作为信息核对入口，不能据此认定公司已发生对应事项。
 
@@ -93,7 +93,7 @@
 - **大运区间：** 无/未起运 (N/A) · 方向：unavailable · 状态：UNAVAILABLE
 - **首日形态：** FLAT · 原局关系数：1 · 喜用状态：CANDIDATE ()
 - **命中规则ID (18条)：** `["NA_POLARITY_FLAT","BAS_STEM_ZHENGCAI","BAS_BRANCH_ZHENGCAI","ADV_LH_PAIR_ZICHOU","ADV_YS_METHOD_FUYI","THM_ZHENGCAI","SGS_ZHENGCAI_BALANCED","ADV_LH_MONTH_ZICHOU","CNT_IDENTICAL","ENT_ZHENGCAI_ZHENGCAI","ADV_YS_STEM_YONG","ADV_YS_BRANCH_YONG","ADV_YS_ROLE_COMPARISON_SAME","ADV_LH_NO_HEHUA","ADV_LH_OTHER_EVENTS","ADV_LH_SYNTHESIS","ADV_YS_CANDIDATE_ONLY","SUM_BALANCED"]`
-- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `6118a04b59e132d9403768e8fb3c06a88250af15690efd89b66d02f94b9dc6f7`
+- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `643e47acd0aae0562a31eeeef7191c0737264e162dcd0daf3c36c925aea6f204`
 
 ### 五段式完整正文：
 
@@ -101,7 +101,7 @@
 
 2. **【本月主题】** 本月主线落在主营业务与现金回笼。月干正财作为传统的常态财务意象，不等于本月现金流真实改善或经营兑现。 中和遇正财，常态资源与持续任务构成解释主轴，传统的关键不只是财星显现，还要看各方关系是否能够衔接。
 
-3. **【潜在矛盾】** 仅在已核验的流月区间2026-01-15—2026-01-15内，流月支丑与原局原局日支的子符合子丑六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气为同一十神，说明流月两处分类指向相近的象义；这是形式上的聚焦，不是已核验的原局关系事件。
+3. **【潜在矛盾】** 仅在已核验的流月区间2026-01-05—2026-02-03内，流月支丑与原局日支的子符合子丑六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气为同一十神，说明流月两处分类指向相近的象义；这是形式上的聚焦，不是已核验的原局关系事件。
 
 4. **【经营观察】** 经营观察可对照公开披露中的「主营收入构成」与「经营现金流与净利润差额」。这两个项目仅作为信息核对入口，不能据此认定公司已发生对应事项。
 
@@ -114,7 +114,7 @@
 - **大运区间：** 无/未起运 (N/A) · 方向：unavailable · 状态：UNAVAILABLE
 - **首日形态：** FLAT · 原局关系数：1 · 喜用状态：CANDIDATE ()
 - **命中规则ID (18条)：** `["NA_POLARITY_FLAT","BAS_STEM_BIJIAN","BAS_BRANCH_SHANGGUAN","ADV_LH_PAIR_WUWEI","ADV_YS_METHOD_FUYI","THM_BIJIAN","SGS_BIJIAN_BALANCED","ADV_LH_MONTH_WUWEI","CNT_DISTINCT","ENT_BIJIAN_SHANGGUAN","ADV_YS_BRANCH_YONG","ADV_YS_STEM_ZHONGXING","ADV_YS_ROLE_COMPARISON_DIFFERENT","ADV_LH_NO_HEHUA","ADV_LH_OTHER_EVENTS","ADV_LH_SYNTHESIS","ADV_YS_CANDIDATE_ONLY","SUM_BALANCED"]`
-- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `969c1d651ae33591d9280b69974512f59ea8da9f066fc7bc48479719ec04953b`
+- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `0188ec480acba528c9ef2e2a8034ffb96bec1b1eee1ce714341d3e8f306ac123`
 
 ### 五段式完整正文：
 
@@ -122,7 +122,7 @@
 
 2. **【本月主题】** 本月主线落在团队协作与责任分工。月干比肩表示同类并行的传统意象；经营层面只把分工、协作、关联方披露列为核对方向，不据此推断协作结果。 原局归为中和，比肩既可读作同辈之间的支持，也可读作责任与资源的共同承担；两面并陈，比偏向哪一面并无单一答案。
 
-3. **【潜在矛盾】** 仅在已核验的流月区间2026-06-15—2026-06-15内，流月支午与原局原局年支的未符合午未六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气来自不同十神分组，形成主题与副线的分类差异；这并非已核验的相冲、相刑或经营矛盾。
+3. **【潜在矛盾】** 仅在已核验的流月区间2026-06-05—2026-07-06内，流月支午与原局年支的未符合午未六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气来自不同十神分组，形成主题与副线的分类差异；这并非已核验的相冲、相刑或经营矛盾。
 
 4. **【经营观察】** 经营观察可对照公开披露中的「关联交易及定价」与「问询函回复全文」。这两个项目仅作为信息核对入口，不能据此认定公司已发生对应事项。
 
@@ -219,7 +219,7 @@
 - **大运区间：** 戊申 (2017-11-29—2027-11-29) · 方向：reverse · 状态：AVAILABLE
 - **首日形态：** YANG · 原局关系数：0 · 喜用状态：CONFIRMED (木)
 - **命中规则ID (22条)：** `["BAS_STEM_SHANGGUAN","BAS_BRANCH_SHANGGUAN","ADV_LH_PAIR_ZICHOU","ADV_YS_METHOD_FUYI","ADV_DY_PERIOD_FACT","ADV_DY_START_BASIS","ADV_DY_DIRECTION_REVERSE","ADV_DY_BASE_SHISHEN","THM_SHANGGUAN","SGS_SHANGGUAN_WEAK","ADV_LH_MONTH_ZICHOU","CNT_IDENTICAL","ADV_DY_NATAL_FORMAL_SAME_ELEMENT","ENT_SHANGGUAN_SHANGGUAN","ADV_DY_SHISHEN_WEK","ADV_YS_STEM_XIAOHAO","ADV_YS_BRANCH_XIAOHAO","ADV_YS_ROLE_COMPARISON_SAME","ADV_LH_NO_HEHUA","ADV_LH_SYNTHESIS","ADV_YS_CANDIDATE_ONLY","SUM_WEAK"]`
-- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `7fd658ee2d0b6d25dd47a21d4f092f34239746d5ad539d384cb3b3b897b29c91`
+- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `e1890f9930178bcdf311d7ac3302473d25529889a855f50cdab1daf1fe032d47`
 
 ### 五段式完整正文：
 
@@ -227,7 +227,7 @@
 
 2. **【本月主题】** 本月主线落在研发调整与组织变革。月干伤官强调表达和结构变化的象义，是否存在真实研发调整或管理变动仍取决于公开证据。 身弱时伤官仍有敏锐表达的一面，但作为“我生”也带来向外泄气的结构问题；说明时更需要区分表达能力与承接条件。
 
-3. **【潜在矛盾】** 仅在已核验的流月区间2026-01-15—2026-01-15内，流月支丑与原局原局日支的子符合子丑六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气为同一十神，说明流月两处分类指向相近的象义；这是形式上的聚焦，不是已核验的原局关系事件。 大运与原局的五行形式归类相近而十神标签不同，说明两种象义需要并列解释；具体作用不由类别相近自动成立。
+3. **【潜在矛盾】** 仅在已核验的流月区间2026-01-05—2026-02-03内，流月支丑与原局日支的子符合子丑六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气为同一十神，说明流月两处分类指向相近的象义；这是形式上的聚焦，不是已核验的原局关系事件。 大运与原局的五行形式归类相近而十神标签不同，说明两种象义需要并列解释；具体作用不由类别相近自动成立。
 
 4. **【经营观察】** 经营观察可对照公开披露中的「研发项目变更」与「问询函回复全文」。这两个项目仅作为信息核对入口，不能据此认定公司已发生对应事项。
 
@@ -303,7 +303,7 @@
 - **大运区间：** 庚申 (2017-03-28—2027-03-28) · 方向：reverse · 状态：AVAILABLE
 - **首日形态：** YANG · 原局关系数：5 · 喜用状态：CONFIRMED (木)
 - **命中规则ID (23条)：** `["BAS_STEM_SHISHEN","BAS_BRANCH_SHISHEN","ADV_LH_PAIR_SISHEN","ADV_YS_METHOD_FUYI","ADV_DY_PERIOD_FACT","ADV_DY_START_BASIS","ADV_DY_DIRECTION_REVERSE","ADV_DY_BASE_ZHENGCAI","THM_SHISHEN","SGS_SHISHEN_WEAK","ADV_LH_DAYUN_SISHEN","CNT_IDENTICAL","ADV_DY_NATAL_FORMAL_DISTINCT","ENT_SHISHEN_SHISHEN","ADV_DY_ZHENGCAI_WEK","ADV_YS_STEM_XIAOHAO","ADV_YS_BRANCH_XIAOHAO","ADV_YS_ROLE_COMPARISON_SAME","ADV_LH_NO_HEHUA","ADV_LH_OTHER_EVENTS","ADV_LH_SYNTHESIS","ADV_YS_CANDIDATE_ONLY","SUM_WEAK"]`
-- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `b387057054cb7e7264391ab5b64b6b33b4cd9532ecbf21a603631dd7d391eb54`
+- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `eec28f9863986e239e303ae29ec4731ba35eb467f557c144ad428b0eabddc261`
 
 ### 五段式完整正文：
 
@@ -311,7 +311,7 @@
 
 2. **【本月主题】** 本月主线落在产品交付与成果呈现。月干食神对应表达与产出一侧的传统意象，能形成观察主题，但不能直接说明订单已经兑现。 身弱原局同样可以出现食神的技艺与表达象义，但“我生”在传统生克中带出向外耗气的另一面；才华主题与承接能力需分开。
 
-3. **【潜在矛盾】** 在核验过的当前大运区间2017-03-28—2027-03-28内，大运支申与原局原局年支的巳对应巳申六合支对。这是运期与原局的联系，不能替代流月事件和合化证明。 月干与本气为同一十神，说明流月两处分类指向相近的象义；这是形式上的聚焦，不是已核验的原局关系事件。 大运与原局在形式分组上不同，提示解释线索并非同一类；不同类也不表示已经相冲或互相制约。
+3. **【潜在矛盾】** 在核验过的当前大运区间2017-03-28—2027-03-28内，大运支申与原局年支的巳对应巳申六合支对。这是运期与原局的联系，不能替代流月事件和合化证明。 月干与本气为同一十神，说明流月两处分类指向相近的象义；这是形式上的聚焦，不是已核验的原局关系事件。 大运与原局在形式分组上不同，提示解释线索并非同一类；不同类也不表示已经相冲或互相制约。
 
 4. **【经营观察】** 经营观察可对照公开披露中的「重大订单与交付」与「在手订单（如披露）」。这两个项目仅作为信息核对入口，不能据此认定公司已发生对应事项。
 
@@ -324,7 +324,7 @@
 - **大运区间：** 庚申 (2017-03-28—2027-03-28) · 方向：reverse · 状态：AVAILABLE
 - **首日形态：** YANG · 原局关系数：5 · 喜用状态：CONFIRMED (木)
 - **命中规则ID (23条)：** `["BAS_STEM_ZHENGYIN","BAS_BRANCH_BIJIAN","ADV_LH_PAIR_SISHEN","ADV_YS_METHOD_FUYI","ADV_DY_PERIOD_FACT","ADV_DY_START_BASIS","ADV_DY_DIRECTION_REVERSE","ADV_DY_BASE_ZHENGCAI","THM_ZHENGYIN","SGS_ZHENGYIN_WEAK","ADV_LH_DAYUN_SISHEN","CNT_DISTINCT","ADV_DY_NATAL_FORMAL_DISTINCT","ENT_ZHENGYIN_BIJIAN","ADV_DY_ZHENGCAI_WEK","ADV_YS_STEM_YONG","ADV_YS_BRANCH_XI","ADV_YS_ROLE_COMPARISON_DIFFERENT","ADV_LH_NO_HEHUA","ADV_LH_OTHER_EVENTS","ADV_LH_SYNTHESIS","ADV_YS_CANDIDATE_ONLY","SUM_WEAK"]`
-- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `2c9ea8219347b91f98db48d5d7c259f317b7b69302eca60c6f22dd3c2d8f527c`
+- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `8f779f95db257b91c67f909c5e6d214dc32adda44e4db05dcb2037bca671f41f`
 
 ### 五段式完整正文：
 
@@ -332,7 +332,7 @@
 
 2. **【本月主题】** 本月主线落在资质认证与持续投入。月干正印以制度资源和积累为传统侧面，相关资质或投入仅能通过资料核验。 身弱遇正印，生我之象在传统框架中更容易联想到补充与涵养；受助并不必然意味着具备独立承接能力。
 
-3. **【潜在矛盾】** 在核验过的当前大运区间2017-03-28—2027-03-28内，大运支申与原局原局年支的巳对应巳申六合支对。这是运期与原局的联系，不能替代流月事件和合化证明。 月干与本气来自不同十神分组，形成主题与副线的分类差异；这并非已核验的相冲、相刑或经营矛盾。 大运与原局在形式分组上不同，提示解释线索并非同一类；不同类也不表示已经相冲或互相制约。
+3. **【潜在矛盾】** 在核验过的当前大运区间2017-03-28—2027-03-28内，大运支申与原局年支的巳对应巳申六合支对。这是运期与原局的联系，不能替代流月事件和合化证明。 月干与本气来自不同十神分组，形成主题与副线的分类差异；这并非已核验的相冲、相刑或经营矛盾。 大运与原局在形式分组上不同，提示解释线索并非同一类；不同类也不表示已经相冲或互相制约。
 
 4. **【经营观察】** 经营观察可对照公开披露中的「资质牌照与有效期」与「关联方资金往来」。这两个项目仅作为信息核对入口，不能据此认定公司已发生对应事项。
 
@@ -429,7 +429,7 @@
 - **大运区间：** 无/未起运 (N/A) · 方向：unavailable · 状态：UNAVAILABLE
 - **首日形态：** MISSING · 原局关系数：1 · 喜用状态：CONFIRMED (土)
 - **命中规则ID (18条)：** `["NA_POLARITY_UNKNOWN","BAS_STEM_ZHENGYIN","BAS_BRANCH_ZHENGYIN","ADV_LH_PAIR_ZICHOU","ADV_YS_METHOD_FUYI","THM_ZHENGYIN","SGS_ZHENGYIN_WEAK","ADV_LH_MONTH_ZICHOU","CNT_IDENTICAL","ENT_ZHENGYIN_ZHENGYIN","ADV_YS_STEM_YONG","ADV_YS_BRANCH_YONG","ADV_YS_ROLE_COMPARISON_SAME","ADV_LH_NO_HEHUA","ADV_LH_OTHER_EVENTS","ADV_LH_SYNTHESIS","ADV_YS_CANDIDATE_ONLY","SUM_WEAK"]`
-- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `1456e261b75c3d59afacd580001ab1d5804001ae5447143b2ef31e88fdf5f0b6`
+- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `021f4237797d5e921474877e9059214f344edfd31389d07366324135e714a166`
 
 ### 五段式完整正文：
 
@@ -437,7 +437,7 @@
 
 2. **【本月主题】** 本月主线落在资质认证与持续投入。月干正印以制度资源和积累为传统侧面，相关资质或投入仅能通过资料核验。 身弱遇正印，生我之象在传统框架中更容易联想到补充与涵养；受助并不必然意味着具备独立承接能力。
 
-3. **【潜在矛盾】** 仅在已核验的流月区间2026-01-15—2026-01-15内，流月支丑与原局原局日支的子符合子丑六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气为同一十神，说明流月两处分类指向相近的象义；这是形式上的聚焦，不是已核验的原局关系事件。
+3. **【潜在矛盾】** 仅在已核验的流月区间2026-01-05—2026-02-03内，流月支丑与原局日支的子符合子丑六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气为同一十神，说明流月两处分类指向相近的象义；这是形式上的聚焦，不是已核验的原局关系事件。
 
 4. **【经营观察】** 经营观察可对照公开披露中的「资质牌照与有效期」与「资质续期公告（如适用）」。这两个项目仅作为信息核对入口，不能据此认定公司已发生对应事项。
 
@@ -471,7 +471,7 @@
 - **大运区间：** 壬午 (2023-09-16—2033-09-16) · 方向：reverse · 状态：AVAILABLE
 - **首日形态：** YIN · 原局关系数：2 · 喜用状态：CANDIDATE ()
 - **命中规则ID (23条)：** `["BAS_STEM_ZHENGYIN","BAS_BRANCH_ZHENGYIN","ADV_LH_PAIR_ZICHOU","ADV_YS_METHOD_FUYI","ADV_DY_PERIOD_FACT","ADV_DY_START_BASIS","ADV_DY_DIRECTION_REVERSE","ADV_DY_BASE_SHISHEN","THM_ZHENGYIN","SGS_ZHENGYIN_BALANCED","ADV_LH_MONTH_ZICHOU","CNT_IDENTICAL","ADV_DY_NATAL_FORMAL_DISTINCT","ENT_ZHENGYIN_ZHENGYIN","ADV_DY_SHISHEN_BAL","ADV_YS_STEM_ZHONGXING","ADV_YS_BRANCH_ZHONGXING","ADV_YS_ROLE_COMPARISON_SAME","ADV_LH_NO_HEHUA","ADV_LH_OTHER_EVENTS","ADV_LH_SYNTHESIS","ADV_YS_CANDIDATE_ONLY","SUM_BALANCED"]`
-- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `ca64cefc39d7d651c05633698f7dd2c2cff754287ebda1b2b0eb22f376679598`
+- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `f747883065dde9e1b7bf9e6304a8106f5b557331cf5aaee1daf40787b248b29e`
 
 ### 五段式完整正文：
 
@@ -479,7 +479,7 @@
 
 2. **【本月主题】** 本月主线落在资质认证与持续投入。月干正印以制度资源和积累为传统侧面，相关资质或投入仅能通过资料核验。 中和见正印，制度支援与自我展开可以并列阅读；传统重在生扶来源，也询问如何转化为具体作用。
 
-3. **【潜在矛盾】** 仅在已核验的流月区间2026-01-15—2026-01-15内，流月支丑与原局原局年支的子符合子丑六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气为同一十神，说明流月两处分类指向相近的象义；这是形式上的聚焦，不是已核验的原局关系事件。 大运与原局在形式分组上不同，提示解释线索并非同一类；不同类也不表示已经相冲或互相制约。
+3. **【潜在矛盾】** 仅在已核验的流月区间2026-01-05—2026-02-03内，流月支丑与原局年支的子符合子丑六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气为同一十神，说明流月两处分类指向相近的象义；这是形式上的聚焦，不是已核验的原局关系事件。 大运与原局在形式分组上不同，提示解释线索并非同一类；不同类也不表示已经相冲或互相制约。
 
 4. **【经营观察】** 经营观察可对照公开披露中的「资质牌照与有效期」与「资质续期公告（如适用）」。这两个项目仅作为信息核对入口，不能据此认定公司已发生对应事项。
 
@@ -492,7 +492,7 @@
 - **大运区间：** 壬午 (2023-09-16—2033-09-16) · 方向：reverse · 状态：AVAILABLE
 - **首日形态：** YIN · 原局关系数：2 · 喜用状态：CANDIDATE ()
 - **命中规则ID (23条)：** `["BAS_STEM_PIANCAI","BAS_BRANCH_ZHENGGUAN","ADV_LH_PAIR_WUWEI","ADV_YS_METHOD_FUYI","ADV_DY_PERIOD_FACT","ADV_DY_START_BASIS","ADV_DY_DIRECTION_REVERSE","ADV_DY_BASE_SHISHEN","THM_PIANCAI","SGS_PIANCAI_BALANCED","ADV_LH_MONTH_WUWEI","CNT_DISTINCT","ADV_DY_NATAL_FORMAL_DISTINCT","ENT_PIANCAI_ZHENGGUAN","ADV_DY_SHISHEN_BAL","ADV_YS_STEM_YONG","ADV_YS_BRANCH_YONG","ADV_YS_ROLE_COMPARISON_SAME","ADV_LH_NO_HEHUA","ADV_LH_OTHER_EVENTS","ADV_LH_SYNTHESIS","ADV_YS_CANDIDATE_ONLY","SUM_BALANCED"]`
-- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `a30e1a25bf19bd281845b72102005d30127acd453a1925eb7fcf4dd1dd972a76`
+- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `ca092b572d0fcc49c446c31c2c01097cc7fa241b3d86484330a3c32fdaff7bd1`
 
 ### 五段式完整正文：
 
@@ -500,7 +500,7 @@
 
 2. **【本月主题】** 本月主线落在资产交易与资金流转。月干偏财作为传统的流动性意象，只能提示核对披露口径，不能说明资产交易已发生。 中和遇偏财，流动与稳定之间没有天然的胜负，传统解读强调资源变化的路径，同时考察原局能否协调这类关系。
 
-3. **【潜在矛盾】** 仅在已核验的流月区间2026-06-15—2026-06-15内，流月支午与原局原局月支的未符合午未六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气来自不同十神分组，形成主题与副线的分类差异；这并非已核验的相冲、相刑或经营矛盾。 大运与原局在形式分组上不同，提示解释线索并非同一类；不同类也不表示已经相冲或互相制约。
+3. **【潜在矛盾】** 仅在已核验的流月区间2026-06-05—2026-07-06内，流月支午与原局月支的未符合午未六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气来自不同十神分组，形成主题与副线的分类差异；这并非已核验的相冲、相刑或经营矛盾。 大运与原局在形式分组上不同，提示解释线索并非同一类；不同类也不表示已经相冲或互相制约。
 
 4. **【经营观察】** 经营观察可对照公开披露中的「非经常性损益明细」与「董监高变更」。这两个项目仅作为信息核对入口，不能据此认定公司已发生对应事项。
 
@@ -576,7 +576,7 @@
 - **大运区间：** 无/未起运 (N/A) · 方向：unavailable · 状态：UNAVAILABLE
 - **首日形态：** FLAT · 原局关系数：2 · 喜用状态：CONFIRMED (金)
 - **命中规则ID (18条)：** `["NA_POLARITY_FLAT","BAS_STEM_SHANGGUAN","BAS_BRANCH_PIANCAI","ADV_LH_PAIR_WUWEI","ADV_YS_METHOD_FUYI","THM_SHANGGUAN","SGS_SHANGGUAN_WEAK","ADV_LH_MONTH_WUWEI","CNT_DISTINCT","ENT_SHANGGUAN_PIANCAI","ADV_YS_BRANCH_ZHIYUE","ADV_YS_STEM_XIAOHAO","ADV_YS_ROLE_COMPARISON_DIFFERENT","ADV_LH_NO_HEHUA","ADV_LH_OTHER_EVENTS","ADV_LH_SYNTHESIS","ADV_YS_CANDIDATE_ONLY","SUM_WEAK"]`
-- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `033dd3e863635a1e5d091bcb8b0ebd7131ac965acde30a573255b8f87fe8fcce`
+- **审核状态：** `PENDING_REVIEW` · **文本哈希：** `8c4bc73bb7a7cc4ea77c18f051d829510151650a6af1d9f5aaf2d7c63d4f7ec4`
 
 ### 五段式完整正文：
 
@@ -584,7 +584,7 @@
 
 2. **【本月主题】** 本月主线落在研发调整与组织变革。月干伤官强调表达和结构变化的象义，是否存在真实研发调整或管理变动仍取决于公开证据。 身弱时伤官仍有敏锐表达的一面，但作为“我生”也带来向外泄气的结构问题；说明时更需要区分表达能力与承接条件。
 
-3. **【潜在矛盾】** 仅在已核验的流月区间2026-06-15—2026-06-15内，流月支午与原局原局年支的未符合午未六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气来自不同十神分组，形成主题与副线的分类差异；这并非已核验的相冲、相刑或经营矛盾。
+3. **【潜在矛盾】** 仅在已核验的流月区间2026-06-05—2026-07-06内，流月支午与原局年支的未符合午未六合支对。两处位置必须各自对照；该事件不自动构成合化。 月干与本气来自不同十神分组，形成主题与副线的分类差异；这并非已核验的相冲、相刑或经营矛盾。
 
 4. **【经营观察】** 经营观察可对照公开披露中的「研发项目变更」与「补助计入损益口径（如有）」。这两个项目仅作为信息核对入口，不能据此认定公司已发生对应事项。
 
