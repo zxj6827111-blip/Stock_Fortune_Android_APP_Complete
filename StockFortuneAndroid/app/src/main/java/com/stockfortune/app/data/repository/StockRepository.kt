@@ -5,8 +5,15 @@ import com.stockfortune.app.data.dao.FavoriteDao
 import com.stockfortune.app.data.dao.FilterDao
 import com.stockfortune.app.data.dao.MetaDao
 import com.stockfortune.app.data.dao.StockDao
+import com.stockfortune.app.data.dao.LuckCycleDao
+import com.stockfortune.app.data.dao.NatalRelationDao
+import com.stockfortune.app.data.dao.StockYongshenDao
 import com.stockfortune.app.data.entity.FavoriteEntity
+import com.stockfortune.app.data.entity.LuckCyclePeriodEntity
+import com.stockfortune.app.data.entity.NatalRelationEntity
+import com.stockfortune.app.data.entity.StockLuckCycleEntity
 import com.stockfortune.app.data.entity.StockSearchHit
+import com.stockfortune.app.data.entity.StockYongshenEntity
 import com.stockfortune.app.domain.model.BaziChart
 import com.stockfortune.app.domain.model.PillarDisplay
 import com.stockfortune.app.domain.model.StockInfo
@@ -22,6 +29,10 @@ data class StockDetail(
     val isFavorite: Boolean,
     /** 按日主天干归类的古籍引文；与四柱其余干支无关，取不到就是无匹配 */
     val classics: ClassicQuoteResult,
+    val luckCycle: StockLuckCycleEntity? = null,
+    val luckPeriods: List<LuckCyclePeriodEntity> = emptyList(),
+    val natalRelations: List<NatalRelationEntity> = emptyList(),
+    val yongshen: StockYongshenEntity? = null,
 )
 
 class StockRepository(
@@ -31,6 +42,9 @@ class StockRepository(
     private val favoriteDao: FavoriteDao,
     private val metaDao: MetaDao,
     private val classicQuotes: ClassicQuoteRepository,
+    private val luckCycleDao: LuckCycleDao? = null,
+    private val natalRelationDao: NatalRelationDao? = null,
+    private val stockYongshenDao: StockYongshenDao? = null,
 ) {
     suspend fun search(query: String): List<StockSearchHit> {
         val q = query.trim()
@@ -54,6 +68,10 @@ class StockRepository(
         val stock = entity ?: return null
         val bazi = baziDao.findByStockId(stock.id) ?: return null
         val hidden = filterDao.hiddenOfStock(stock.id)
+        val luckCycle = luckCycleDao?.findByStockId(stock.id)
+        val luckPeriods = luckCycleDao?.periodsByStockId(stock.id) ?: emptyList()
+        val natalRelations = natalRelationDao?.getByStockId(stock.id) ?: emptyList()
+        val yongshen = stockYongshenDao?.getByStockId(stock.id)
         return StockDetail(
             stock = stock.toInfo(),
             bazi = bazi.toChart(),
@@ -68,6 +86,10 @@ class StockRepository(
             fateFeature = com.stockfortune.app.domain.calculator.FortuneText.fateFeature(bazi.dayStem),
             isFavorite = favoriteDao.isFavorite(stock.id),
             classics = classicQuotes.forDayStem(bazi.dayStem),
+            luckCycle = luckCycle,
+            luckPeriods = luckPeriods,
+            natalRelations = natalRelations,
+            yongshen = yongshen,
         )
     }
 

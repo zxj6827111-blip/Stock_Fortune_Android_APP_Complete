@@ -44,9 +44,13 @@ class RuntimeSmokeTest {
         stocks = StockRepository(
             db.stockDao(), db.baziDao(), db.filterDao(), db.favoriteDao(), db.metaDao(),
             ClassicQuoteRepository(ctx),
+            db.luckCycleDao(), db.natalRelationDao(), db.yongshenDao(),
         )
         calendar = CalendarRepository(db.calendarDao())
-        analysis = AnalysisRepository(db.calendarDao(), db.baziDao(), db.filterDao(), db.scanCacheDao())
+        analysis = AnalysisRepository(
+            db.calendarDao(), db.baziDao(), db.filterDao(), db.scanCacheDao(),
+            db.luckCycleDao(), db.natalRelationDao(), db.yongshenDao(), db.stockDao(),
+        )
     }
 
     // AppDatabase 是进程单例，测试内不关闭：关闭会让后续用例拿到已关连接池的实例
@@ -65,7 +69,7 @@ class RuntimeSmokeTest {
         val opened = db.openHelper.readableDatabase
         opened.query("PRAGMA user_version").use { c ->
             assertTrue(c.moveToFirst())
-            assertEquals(1, c.getInt(0))
+            assertEquals(com.stockfortune.app.data.db.AssetManifest.SCHEMA_VERSION, c.getInt(0))
         }
         opened.query("SELECT identity_hash FROM room_master_table WHERE id=42").use { c ->
             assertTrue("room_master_table 缺行 → Room 会拒绝打开", c.moveToFirst())
@@ -84,6 +88,12 @@ class RuntimeSmokeTest {
         assertEquals("乙巳", detail.bazi.hourPillar)
         assertEquals("大海水", detail.bazi.naYin)
         assertTrue("藏干十神为空", detail.hiddenTenGods.isNotEmpty())
+        assertNotNull("大运元数据为空", detail.luckCycle)
+        assertEquals("reverse", detail.luckCycle!!.direction)
+        assertTrue("大运周期列表为空", detail.luckPeriods.isNotEmpty())
+        assertNotNull("喜用候选事实为空", detail.yongshen)
+        assertEquals("confirmed", detail.yongshen!!.status)
+        assertTrue("原局关系为空", detail.natalRelations.isNotEmpty())
     }
 
     @Test

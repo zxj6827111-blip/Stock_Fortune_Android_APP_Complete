@@ -176,3 +176,78 @@ interface MetaDao {
     @Query("SELECT value FROM app_meta WHERE key = :key LIMIT 1")
     suspend fun value(key: String): String?
 }
+
+@Dao
+interface LuckCycleDao {
+    @Query("SELECT * FROM stock_luck_cycle WHERE stock_id = :stockId LIMIT 1")
+    suspend fun findByStockId(stockId: Long): com.stockfortune.app.data.entity.StockLuckCycleEntity?
+
+    @Query("SELECT * FROM luck_cycle_period WHERE stock_id = :stockId ORDER BY cycle_index")
+    suspend fun periodsByStockId(stockId: Long): List<com.stockfortune.app.data.entity.LuckCyclePeriodEntity>
+
+    @Query(
+        """SELECT * FROM luck_cycle_period
+           WHERE stock_id = :stockId AND :date >= start_date AND (:date < end_date OR (cycle_index = 12 AND :date <= end_date))
+           ORDER BY cycle_index ASC
+           LIMIT 1"""
+    )
+    suspend fun currentPeriodForDate(stockId: Long, date: String): com.stockfortune.app.data.entity.LuckCyclePeriodEntity?
+
+    @Query(
+        """SELECT * FROM luck_cycle_period
+           WHERE stock_id = :stockId AND :year BETWEEN start_year AND end_year
+           ORDER BY cycle_index ASC
+           LIMIT 1"""
+    )
+    suspend fun currentPeriodForYear(stockId: Long, year: Int): com.stockfortune.app.data.entity.LuckCyclePeriodEntity?
+
+    @Query("SELECT COUNT(*) FROM stock_luck_cycle")
+    suspend fun countCycles(): Int
+
+    @Query("SELECT COUNT(*) FROM luck_cycle_period")
+    suspend fun countPeriods(): Int
+}
+
+@Dao
+interface NatalRelationDao {
+    @Query("SELECT * FROM natal_relation WHERE chart_key = :chartKey")
+    suspend fun getByChartKey(chartKey: String): List<com.stockfortune.app.data.entity.NatalRelationEntity>
+
+    @Query("SELECT * FROM natal_relation WHERE listing_date = :listingDate")
+    suspend fun getByListingDate(listingDate: String): List<com.stockfortune.app.data.entity.NatalRelationEntity>
+
+    @Query(
+        """SELECT nr.* FROM natal_relation nr
+           INNER JOIN stock s ON nr.listing_date = s.listing_date
+           WHERE s.id = :stockId"""
+    )
+    suspend fun getByStockId(stockId: Long): List<com.stockfortune.app.data.entity.NatalRelationEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(relations: List<com.stockfortune.app.data.entity.NatalRelationEntity>)
+
+    @Query("SELECT COUNT(*) FROM natal_relation")
+    suspend fun count(): Long
+}
+
+@Dao
+interface StockYongshenDao {
+    @Query("SELECT * FROM stock_yongshen WHERE chart_key = :chartKey LIMIT 1")
+    suspend fun getByChartKey(chartKey: String): com.stockfortune.app.data.entity.StockYongshenEntity?
+
+    @Query(
+        """SELECT sy.* FROM stock_yongshen sy
+           INNER JOIN stock_bazi sb ON (sb.year_pillar || '_' || sb.month_pillar || '_' || sb.day_pillar) = sy.chart_key
+           WHERE sb.stock_id = :stockId LIMIT 1"""
+    )
+    suspend fun getByStockId(stockId: Long): com.stockfortune.app.data.entity.StockYongshenEntity?
+
+    @Query("SELECT * FROM stock_yongshen WHERE status = :status")
+    suspend fun getByStatus(status: String): List<com.stockfortune.app.data.entity.StockYongshenEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(rows: List<com.stockfortune.app.data.entity.StockYongshenEntity>)
+
+    @Query("SELECT COUNT(*) FROM stock_yongshen")
+    suspend fun count(): Long
+}

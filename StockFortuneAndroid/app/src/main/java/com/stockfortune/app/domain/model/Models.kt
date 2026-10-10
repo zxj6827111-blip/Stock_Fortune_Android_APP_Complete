@@ -166,6 +166,16 @@ data class MonthLabel(
     val summary: String,
 )
 
+data class AnnualSynthesis(
+    val yearGanzhi: String,
+    val currentPeriodDesc: String,
+    val tenGodDistributionSummary: String,
+    val seasonalThemes: List<Pair<String, String>>,
+    val structuredSummary: String,
+    val complianceNotice: String,
+    val hitRuleSummary: String,
+)
+
 data class YearAnalysis(
     val year: Int,
     val yearGanzhi: String,
@@ -176,6 +186,8 @@ data class YearAnalysis(
     val months: List<MonthLabel>,
     val zhengCount: Int,
     val pianCount: Int,
+    val currentPeriod: com.stockfortune.app.data.entity.LuckCyclePeriodEntity? = null,
+    val annualSynthesis: AnnualSynthesis? = null,
 )
 
 data class MonthAnalysis(
@@ -195,6 +207,8 @@ data class MonthAnalysis(
     val tip: String,
     /** 公历月跨两个干支月时的口径说明（月初那几天属上一干支月） */
     val monthNote: String? = null,
+    val fiveParagraph: FiveParagraphInterpretation? = null,
+    val currentPeriod: com.stockfortune.app.data.entity.LuckCyclePeriodEntity? = null,
 )
 
 data class ScanRow(

@@ -18,20 +18,27 @@ import sqlite3
 from pathlib import Path
 
 import bazi_core as bc
+import dayun_core as dc
+import relation_core as rc
 import solar_terms as st
 import trade_calendar as tc
+import yongshen_core as yc
 from stock_xlsx import read_industry, read_workbook
 
 from lunar_python import Solar
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_XLSX = ROOT.parent / "Stock_Fortune_Android_APP_AI_Start_Kit" / "input_data" / "生辰八字.xlsx"
+if not DEFAULT_XLSX.exists() and len(ROOT.parents) > 2:
+    alt = ROOT.parents[2] / "Stock_Fortune_Android_APP_AI_Start_Kit" / "input_data" / "生辰八字.xlsx"
+    if alt.exists():
+        DEFAULT_XLSX = alt
 INDUSTRY_XLSX = DEFAULT_XLSX.parent / "行业分类.xlsx"
 ASSETS_DB = ROOT / "app" / "src" / "main" / "assets" / "databases" / "stock_fortune.db"
 SQL_OUT = ROOT / "database" / "init_stock_fortune.sql"
 REPORT_OUT = ROOT / "database" / "import_report.json"
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 4
 CALENDAR_VERSION = "2026-09-29"
 
 DDL = """
@@ -114,6 +121,76 @@ CREATE TABLE favorite(
   added_at INTEGER NOT NULL
 );
 CREATE TABLE app_meta(key TEXT PRIMARY KEY, value TEXT NOT NULL);
+
+CREATE TABLE stock_luck_cycle(
+  stock_id INTEGER PRIMARY KEY REFERENCES stock(id) ON DELETE CASCADE,
+  stock_code TEXT NOT NULL,
+  direction TEXT NOT NULL,
+  status TEXT NOT NULL,
+  status_reason TEXT NOT NULL,
+  start_date TEXT,
+  start_age INTEGER,
+  first_day_polarity TEXT NOT NULL,
+  rule_version TEXT NOT NULL,
+  boundary_flag TEXT
+);
+
+CREATE TABLE luck_cycle_period(
+  id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  stock_id INTEGER NOT NULL REFERENCES stock(id) ON DELETE CASCADE,
+  cycle_index INTEGER NOT NULL,
+  ganzhi TEXT NOT NULL,
+  stem TEXT NOT NULL,
+  branch TEXT NOT NULL,
+  start_date TEXT NOT NULL,
+  end_date TEXT NOT NULL,
+  start_year INTEGER NOT NULL,
+  end_year INTEGER NOT NULL,
+  start_age INTEGER NOT NULL,
+  end_age INTEGER NOT NULL,
+  rule_version TEXT NOT NULL
+);
+CREATE INDEX index_luck_cycle_period_stock_id ON luck_cycle_period(stock_id);
+CREATE INDEX index_luck_cycle_period_stock_id_start_year_end_year ON luck_cycle_period(stock_id, start_year, end_year);
+
+CREATE TABLE natal_relation(
+  id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  chart_key TEXT NOT NULL,
+  listing_date TEXT NOT NULL,
+  relation_type TEXT NOT NULL,
+  category TEXT NOT NULL,
+  positions TEXT NOT NULL,
+  source_pillar TEXT NOT NULL,
+  target_pillar TEXT NOT NULL,
+  source_ganzhi TEXT NOT NULL,
+  target_ganzhi TEXT NOT NULL,
+  element TEXT,
+  notes TEXT NOT NULL,
+  rule_version TEXT NOT NULL,
+  status TEXT NOT NULL
+);
+CREATE INDEX index_natal_relation_chart_key ON natal_relation(chart_key);
+CREATE INDEX index_natal_relation_listing_date ON natal_relation(listing_date);
+CREATE INDEX index_natal_relation_relation_type ON natal_relation(relation_type);
+
+CREATE TABLE stock_yongshen(
+  chart_key TEXT PRIMARY KEY NOT NULL,
+  day_stem TEXT NOT NULL,
+  month_branch TEXT NOT NULL,
+  strength_score REAL NOT NULL,
+  strength_level TEXT NOT NULL,
+  status TEXT NOT NULL,
+  yong_shen TEXT NOT NULL,
+  xi_shen TEXT NOT NULL,
+  ji_shen TEXT NOT NULL,
+  chou_shen TEXT NOT NULL,
+  xian_shen TEXT NOT NULL,
+  candidate_elements TEXT NOT NULL,
+  tiaohou_note TEXT NOT NULL,
+  rationale TEXT NOT NULL,
+  rule_version TEXT NOT NULL
+);
+CREATE INDEX index_stock_yongshen_chart_key ON stock_yongshen(chart_key);
 """
 
 BOARD_BY_PREFIX = {
@@ -255,6 +332,95 @@ def build(start: dt.date, end: dt.date, xlsx: Path) -> dict:
     emit("stock_bazi", bazi_cols, bazi_batch)
     emit("stock_hidden_ten_god", hidden_cols, hidden_batch)
 
+    # 大运元数据与周期数据（Phase 1 P2-B）
+    luck_cols = ["stock_id", "stock_code", "direction", "status", "status_reason",
+                 "start_date", "start_age", "first_day_polarity", "rule_version", "boundary_flag"]
+    period_cols = ["stock_id", "cycle_index", "ganzhi", "stem", "branch",
+                   "start_date", "end_date", "start_year", "end_year", "start_age", "end_age", "rule_version"]
+    luck_batch, period_batch = [], []
+    for sid, r in enumerate(rows, start=1):
+        res = dc.calculate_stock_luck_cycle(
+            r.listing_date, r.year_pillar, r.month_pillar, r.day_pillar, r.hour_pillar,
+            r.first_change, r.first_day_flag,
+        )
+        luck_batch.append((
+            sid, r.code, res["direction"], res["status"], res["status_reason"],
+            res["start_date"], res["start_age"], res["first_day_polarity"],
+            res["rule_version"], res["boundary_flag"],
+        ))
+        for p in res["periods"]:
+            period_batch.append((
+                sid, p["cycle_index"], p["ganzhi"], p["stem"], p["branch"],
+                p["start_date"], p["end_date"], p["start_year"], p["end_year"],
+                p["start_age"], p["end_age"], p["rule_version"],
+            ))
+        if len(luck_batch) >= 1000:
+            emit("stock_luck_cycle", luck_cols, luck_batch)
+            emit("luck_cycle_period", period_cols, period_batch)
+            luck_batch, period_batch = [], []
+    emit("stock_luck_cycle", luck_cols, luck_batch)
+    emit("luck_cycle_period", period_cols, period_batch)
+
+    # 原局内部关系（按 2776 张唯一盘构建并映射）
+    STRUCTURAL_TYPES = frozenset({
+        "天干五合", "天干相冲", "六合", "六冲", "三合", "半合", "三会",
+        "相刑", "三刑", "自刑", "相害", "六破", "同支", "伏吟", "反吟", "天合地合", "天克地冲"
+    })
+    unique_charts = {}
+    for r in rows:
+        ld_str = r.listing_date.isoformat()
+        if ld_str not in unique_charts:
+            unique_charts[ld_str] = (r.year_pillar, r.month_pillar, r.day_pillar)
+
+    natal_cols = [
+        "chart_key", "listing_date", "relation_type", "category", "positions",
+        "source_pillar", "target_pillar", "source_ganzhi", "target_ganzhi",
+        "element", "notes", "rule_version", "status"
+    ]
+    natal_batch = []
+    for ld_str, (y, m, d) in unique_charts.items():
+        chart_key = f"{y}_{m}_{d}"
+        events = rc.compute_natal_internal_relations(y, m, d)
+        for ev in events:
+            if ev.relation_type in STRUCTURAL_TYPES:
+                pos = f"{ev.source_pillar},{ev.target_pillar}" if ev.source_pillar != ev.target_pillar else ev.source_pillar
+                natal_batch.append((
+                    chart_key, ld_str, ev.relation_type, ev.category, pos,
+                    ev.source_pillar, ev.target_pillar, ev.source_ganzhi, ev.target_ganzhi,
+                    ev.element if ev.element else None,
+                    ev.notes, ev.rule_version, ev.status
+                ))
+    emit("natal_relation", natal_cols, natal_batch)
+
+    # 喜用候选与格局解释（按 2776 张唯一盘构建并映射，Phase 3 P3-B）
+    yongshen_cols = [
+        "chart_key", "day_stem", "month_branch", "strength_score", "strength_level",
+        "status", "yong_shen", "xi_shen", "ji_shen", "chou_shen", "xian_shen",
+        "candidate_elements", "tiaohou_note", "rationale", "rule_version"
+    ]
+    yongshen_batch = []
+    for ld_str, (y, m, d) in unique_charts.items():
+        chart_key = f"{y}_{m}_{d}"
+        res = yc.compute_yongshen_candidate(y, m, d)
+        yongshen_batch.append((
+            chart_key,
+            res["day_stem"],
+            res["month_branch"],
+            res["strength_score"],
+            res["strength_level"],
+            res["status"],
+            ",".join(res["yong_shen"]),
+            ",".join(res["xi_shen"]),
+            ",".join(res["ji_shen"]),
+            ",".join(res["chou_shen"]),
+            ",".join(res["xian_shen"]),
+            ",".join(res["candidate_elements"]),
+            res["tiaohou_note"],
+            res["rationale"],
+            res["rule_version"],
+        ))
+    emit("stock_yongshen", yongshen_cols, yongshen_batch)
+
     # 日历
     gz_cols = ["date", "year_ganzhi", "month_ganzhi", "day_ganzhi", "year_stem", "year_branch",
                "month_stem", "month_branch", "day_stem", "day_branch", "month_branch_label", "solar_term"]
@@ -275,6 +441,10 @@ def build(start: dt.date, end: dt.date, xlsx: Path) -> dict:
     n_stock = cur.execute("SELECT COUNT(*) FROM stock").fetchone()[0]
     n_gz = cur.execute("SELECT COUNT(*) FROM ganzhi_calendar").fetchone()[0]
     n_td = cur.execute("SELECT COUNT(*) FROM trade_calendar WHERE is_trade_day=1").fetchone()[0]
+    n_luck = cur.execute("SELECT COUNT(*) FROM stock_luck_cycle").fetchone()[0]
+    n_period = cur.execute("SELECT COUNT(*) FROM luck_cycle_period").fetchone()[0]
+    n_natal = cur.execute("SELECT COUNT(*) FROM natal_relation").fetchone()[0]
+    n_yongshen = cur.execute("SELECT COUNT(*) FROM stock_yongshen").fetchone()[0]
     meta_rows = [
         ("schema_version", str(SCHEMA_VERSION)),
         ("data_version", meta["snapshot_max_listing_date"]),
@@ -283,8 +453,15 @@ def build(start: dt.date, end: dt.date, xlsx: Path) -> dict:
         ("calendar_end", end.isoformat()),
         ("stock_count", str(n_stock)),
         ("trade_day_count", str(n_td)),
+        ("luck_cycle_count", str(n_luck)),
+        ("luck_period_count", str(n_period)),
+        ("natal_relation_count", str(n_natal)),
+        ("yongshen_count", str(n_yongshen)),
         ("source_sha256", meta["sha256"]),
         ("rule_version", "bazi-rule-v1.2"),
+        ("dayun_rule_version", "stock-luck-cycle-v1.3"),
+        ("relation_rule_version", "natal-relation-v1.3"),
+        ("yongshen_rule_version", "yongshen-candidate-v1.3"),
         ("generated_at", dt.datetime.now().isoformat(timespec="seconds")),
     ]
     emit("app_meta", ["key", "value"], meta_rows)
@@ -309,7 +486,7 @@ def build(start: dt.date, end: dt.date, xlsx: Path) -> dict:
                      "correction_samples": [f"{d}:{r}" for d, r in corrected[:20]]},
     }
     con2 = sqlite3.connect(db_path)
-    for t in ("stock_bazi", "stock_hidden_ten_god", "app_meta"):
+    for t in ("stock_bazi", "stock_hidden_ten_god", "stock_luck_cycle", "luck_cycle_period", "natal_relation", "stock_yongshen", "app_meta"):
         report["counts"][t] = con2.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
     report["db_bytes"] = db_path.stat().st_size
     report["sql_lines"] = len(sql_lines)

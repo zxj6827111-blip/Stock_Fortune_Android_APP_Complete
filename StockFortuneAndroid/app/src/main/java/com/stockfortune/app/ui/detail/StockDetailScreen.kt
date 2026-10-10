@@ -137,9 +137,14 @@ fun StockDetailScreen(nav: NavHostController, code: String, initialTab: String) 
                     onNext = { vm.changeYear(1) },
                     onMonthClick = { label ->
                         tab = 2
-                        // 干支月序：1=寅月(约 2 月) … 11=子月(12 月)、12=丑月(次年 1 月)
-                        val targetYear = if (label.month == 12) state.yearValue + 1 else state.yearValue
-                        val targetMonth = if (label.month == 12) 1 else label.month + 1
+                        // 解析干支月实际起止日期，确保公历年、月与干支月口径严格对齐
+                        val startLocalDate = try {
+                            java.time.LocalDate.parse(label.startDate)
+                        } catch (_: Exception) {
+                            null
+                        }
+                        val targetYear = startLocalDate?.year ?: (if (label.month == 12) state.yearValue + 1 else state.yearValue)
+                        val targetMonth = startLocalDate?.monthValue ?: (if (label.month == 12) 1 else label.month + 1)
                         val delta = (targetYear - state.monthYear) * 12 + (targetMonth - state.monthValue)
                         if (delta != 0) vm.changeMonth(delta)
                     },
