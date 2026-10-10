@@ -366,4 +366,133 @@ class V12ToV13UpgradeTest {
         val finalBackupJson = backupPrefs.getString("backup_json", null)
         assertTrue("所有收藏均成功恢复后，持久备份应彻底清空", finalBackupJson == null)
     }
+
+    @Test
+    fun testCrossVersionUpgradePreservesUnmappedBackupWithoutOverwriting() = runBlocking {
+        // 步骤 1：V1.2 升级 V1.3，10 条收藏中恢复 9 条、保留 1 条
+        val realStocks = listOf(
+            Triple(4898L, "600519.SH", "贵州茅台"),
+            Triple(349L, "601318.SH", "中国平安"),
+            Triple(1541L, "002594.SZ", "比亚迪"),
+            Triple(5161L, "000001.SZ", "平安银行"),
+            Triple(2026L, "600036.SH", "招商银行"),
+            Triple(132L, "300750.SZ", "宁德时代"),
+            Triple(1793L, "000333.SZ", "美的集团"),
+            Triple(2998L, "000002.SZ", "万科A"),
+            Triple(5209L, "601857.SH", "中国石油"),
+        )
+        val initialBackup = mutableListOf<AppDatabase.Companion.FavoriteBackup>()
+        var ts = 1700000000000L
+        realStocks.forEach { (id, code, name) ->
+            initialBackup.add(
+                AppDatabase.Companion.FavoriteBackup(
+                    stockId = id,
+                    code = code,
+                    symbol = code.substringBefore("."),
+                    name = name,
+                    addedAt = ts++,
+                )
+            )
+        }
+        // 第 10 条：无法映射的股票
+        initialBackup.add(
+            AppDatabase.Companion.FavoriteBackup(
+                stockId = 99999L,
+                code = "999999.SH",
+                symbol = "999999",
+                name = "退市待查股",
+                addedAt = ts++,
+            )
+        )
+        assertEquals(10, initialBackup.size)
+
+        // 写入初始持久备份
+        val ok1 = AppDatabase.persistBackup(app, initialBackup)
+        assertTrue("初始备份持久化必须成功", ok1)
+
+        // 首次启动，触发升级恢复
+        val db1 = AppDatabase.get(app)
+        val favs1 = db1.favoriteDao().stocksWithInfo()
+        assertEquals("步骤 1：9 条真实股票成功恢复入库", 9, favs1.size)
+        val backupAfter1 = AppDatabase.loadPersistedBackup(app)
+        assertEquals("步骤 1：1 条未映射股票保留在备份中", 1, backupAfter1.size)
+        assertEquals("999999.SH", backupAfter1[0].code)
+
+        // 步骤 2：模拟下一次数据库资产版本更新（例如 V1.3 -> V1.4，或数据资产哈希变更）
+        // 重设 guard_key 使得下一次 build 触发 ensureAssetUpToDate
+        app.getSharedPreferences(AppDatabase.GUARD_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(AppDatabase.GUARD_KEY, "OLD_ASSET_VERSION_SIMULATED")
+            .commit()
+        AppDatabase.resetForTesting()
+
+        // 步骤 3 & 4：再次启动，触发新版本资产升级
+        val db2 = AppDatabase.get(app)
+        val favs2 = db2.favoriteDao().stocksWithInfo()
+        assertEquals("步骤 3：9 条已恢复收藏在新版本数据库中依然完整存在", 9, favs2.size)
+
+        val backupAfter2 = AppDatabase.loadPersistedBackup(app)
+        assertEquals("步骤 4：1 条未映射记录绝对没有被新备份覆盖，依然安全留存", 1, backupAfter2.size)
+        assertEquals("999999.SH", backupAfter2[0].code)
+        assertEquals("退市待查股", backupAfter2[0].name)
+
+        // 步骤 5：模拟后续数据字典补齐该股票（如热更或字典扩充）
+        val sq2 = db2.openHelper.writableDatabase
+        sq2.execSQL(
+            """INSERT INTO stock (id, code, symbol, name, exchange, board, listing_date, first_day_flag, industry, industry_full, stock_nature)
+               VALUES (99999, '999999.SH', '999999', '退市待查股', 'SH', '主板', '2020-01-01', 'NORMAL', '综合', '综合类', '普通股')"""
+        )
+        AppDatabase.resetForTesting()
+
+        // 重启应用，触发未映射记录重试入库
+        val db3 = AppDatabase.get(app)
+        val favs3 = db3.favoriteDao().stocksWithInfo()
+
+        // 步骤 6：验证最终全部 10 条收藏均成功恢复，且无重复、无错配
+        assertEquals("步骤 6：最终全部 10 条收藏均成功恢复", 10, favs3.size)
+        // 去重断言：代码互不重复
+        val distinctCodes = favs3.map { it.code }.toSet()
+        assertEquals("全部 10 条收藏代码唯一，绝对无重复", 10, distinctCodes.size)
+        assertTrue("第 10 条未映射股票已正确入库", favs3.any { it.code == "999999.SH" && it.name == "退市待查股" })
+        // 映射正确性：9 只股票的映射无任何错配
+        realStocks.forEach { (_, code, name) ->
+            val found = favs3.firstOrNull { it.code == code }
+            assertNotNull("股票 $code 必须存在", found)
+            assertEquals(name, found!!.name)
+        }
+        // 持久备份已完全清空
+        val finalBackup = AppDatabase.loadPersistedBackup(app)
+        assertTrue("所有收藏均成功恢复后，持久备份应已安全彻底清空", finalBackup.isEmpty())
+    }
+
+    @Test
+    fun testMergeFavoritesDeduplicationAndEarliestTimestamp() {
+        val primary = listOf(
+            AppDatabase.Companion.FavoriteBackup(
+                stockId = 1L, code = "600519.SH", symbol = "600519", name = "贵州茅台", addedAt = 2000L
+            ),
+            AppDatabase.Companion.FavoriteBackup(
+                stockId = 2L, code = "601318.SH", symbol = "601318", name = "中国平安", addedAt = 3000L
+            )
+        )
+        val secondary = listOf(
+            // 与 primary 重复（代码相同），但时间戳更早
+            AppDatabase.Companion.FavoriteBackup(
+                stockId = 100L, code = "600519.SH", symbol = "600519", name = "贵州茅台旧", addedAt = 1000L
+            ),
+            // 未在 primary 中的未映射股票
+            AppDatabase.Companion.FavoriteBackup(
+                stockId = 999L, code = "999999.SH", symbol = "999999", name = "未映射股", addedAt = 4000L
+            )
+        )
+
+        val merged = AppDatabase.mergeFavorites(primary, secondary)
+        assertEquals("去重后应只有 3 条记录", 3, merged.size)
+
+        val maotai = merged.first { it.code == "600519.SH" }
+        assertEquals("重复记录应保留最早的收藏时间戳", 1000L, maotai.addedAt)
+        assertEquals("重复记录应保留 primary 的权威名称", "贵州茅台", maotai.name)
+
+        assertTrue("未映射股票必须被包含在合并结果中", merged.any { it.code == "999999.SH" })
+    }
 }

@@ -49,11 +49,71 @@ jobs:
       - name: Verify Artifact Sizes & SHA256 Checksums
         working-directory: StockFortuneAndroid
         run: |
-          echo "=== Databases & Rules Checksums ==="
-          sha256sum app/src/main/assets/databases/stock_fortune.db
-          stat -c "%s bytes" app/src/main/assets/databases/stock_fortune.db
-          sha256sum app/src/main/assets/copywriting/copy_rules_frozen_281.json
-          stat -c "%s bytes" app/src/main/assets/copywriting/copy_rules_frozen_281.json
-          echo "=== APK Checksum & Size ==="
-          sha256sum app/build/outputs/apk/debug/app-debug.apk
-          stat -c "%s bytes" app/build/outputs/apk/debug/app-debug.apk
+          set -e
+          echo "=== 1. Enforcing Database SHA256 Checksum Gate ==="
+          EXPECTED_DB_SHA="9cc7211490134aba7bd4552c461f44aa339691eb4ce4d79440ebd4fdb3c3b287"
+          EXPECTED_DB_BYTES="18530304"
+          ACTUAL_DB_SHA=$(sha256sum app/src/main/assets/databases/stock_fortune.db | awk '{print $1}')
+          ACTUAL_DB_BYTES=$(stat -c "%s" app/src/main/assets/databases/stock_fortune.db)
+          echo "Expected DB SHA: $EXPECTED_DB_SHA ($EXPECTED_DB_BYTES bytes)"
+          echo "Actual DB SHA:   $ACTUAL_DB_SHA ($ACTUAL_DB_BYTES bytes)"
+          if [ "$ACTUAL_DB_SHA" != "$EXPECTED_DB_SHA" ]; then
+            echo "::error::Database SHA256 mismatch! Got: $ACTUAL_DB_SHA, expected: $EXPECTED_DB_SHA"
+            exit 1
+          fi
+          if [ "$ACTUAL_DB_BYTES" != "$EXPECTED_DB_BYTES" ]; then
+            echo "::error::Database size mismatch! Got: $ACTUAL_DB_BYTES bytes, expected: $EXPECTED_DB_BYTES bytes"
+            exit 1
+          fi
+          echo "✓ Database Checksum & Size Verified Successfully!"
+
+          echo "=== 2. Enforcing Frozen 281 Copy Rules Checksum Gate ==="
+          EXPECTED_RULES_SHA="857a8c862928470de93e63199fb0e0f4cdc5266b13aa5e1f79ee8c0bd742f314"
+          EXPECTED_RULES_BYTES="254431"
+          ACTUAL_RULES_SHA=$(sha256sum app/src/main/assets/copywriting/copy_rules_frozen_281.json | awk '{print $1}')
+          ACTUAL_RULES_BYTES=$(stat -c "%s" app/src/main/assets/copywriting/copy_rules_frozen_281.json)
+          echo "Expected Rules SHA: $EXPECTED_RULES_SHA ($EXPECTED_RULES_BYTES bytes)"
+          echo "Actual Rules SHA:   $ACTUAL_RULES_SHA ($ACTUAL_RULES_BYTES bytes)"
+          if [ "$ACTUAL_RULES_SHA" != "$EXPECTED_RULES_SHA" ]; then
+            echo "::error::Copy rules SHA256 mismatch! Got: $ACTUAL_RULES_SHA, expected: $EXPECTED_RULES_SHA"
+            exit 1
+          fi
+          if [ "$ACTUAL_RULES_BYTES" != "$EXPECTED_RULES_BYTES" ]; then
+            echo "::error::Copy rules size mismatch! Got: $ACTUAL_RULES_BYTES bytes, expected: $EXPECTED_RULES_BYTES bytes"
+            exit 1
+          fi
+          echo "✓ Frozen 281 Rules Checksum & Size Verified Successfully!"
+
+          echo "=== 3. Recording Actual Generated Debug APK Metrics ==="
+          APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
+          if [ ! -f "$APK_PATH" ]; then
+            echo "::error::Generated APK not found at $APK_PATH"
+            exit 1
+          fi
+          ACTUAL_APK_SHA=$(sha256sum "$APK_PATH" | awk '{print $1}')
+          ACTUAL_APK_BYTES=$(stat -c "%s" "$APK_PATH")
+          echo "Actual Generated APK SHA256: $ACTUAL_APK_SHA"
+          echo "Actual Generated APK Size:   $ACTUAL_APK_BYTES bytes"
+
+          echo "### 股运通 V1.3 CI 构建与验收产物清单" >> $GITHUB_STEP_SUMMARY
+          echo "| 产物 | 实际大小 | SHA-256 校验和 | 状态 |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| 预置 SQLite 数据库 | $ACTUAL_DB_BYTES 字节 | \`$ACTUAL_DB_SHA\` | PASS (强制门禁校验通过) |" >> $GITHUB_STEP_SUMMARY
+          echo "| 冻结 281 条文案规则 | $ACTUAL_RULES_BYTES 字节 | \`$ACTUAL_RULES_SHA\` | PASS (强制门禁校验通过) |" >> $GITHUB_STEP_SUMMARY
+          echo "| 内部测试 Debug APK | $ACTUAL_APK_BYTES 字节 | \`$ACTUAL_APK_SHA\` | BUILD SUCCESS |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Debug APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: StockFortuneAndroid/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Upload JUnit Test Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-test-reports
+          path: |
+            StockFortuneAndroid/app/build/reports/tests/testDebugUnitTest/
+            StockFortuneAndroid/app/build/test-results/testDebugUnitTest/
+          if-no-files-found: error

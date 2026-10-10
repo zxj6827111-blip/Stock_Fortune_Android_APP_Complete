@@ -63,8 +63,10 @@ abstract class AppDatabase : RoomDatabase() {
         private var instance: AppDatabase? = null
 
         private const val DB_NAME = "stock_fortune.db"
-        private const val GUARD_PREFS = "asset_guard"
-        private const val GUARD_KEY = "identity_hash"
+        internal const val GUARD_PREFS = "asset_guard"
+        internal const val GUARD_KEY = "identity_hash"
+        internal const val BACKUP_PREFS = "favorites_persistent_backup"
+        internal const val BACKUP_KEY_JSON = "backup_json"
 
         fun get(context: Context): AppDatabase = instance ?: synchronized(this) {
             // 进锁后必须再读一次：否则两个首启线程各建一个库，前一个连接被永久泄漏
@@ -78,9 +80,6 @@ abstract class AppDatabase : RoomDatabase() {
                 instance = null
             }
         }
-
-        private const val BACKUP_PREFS = "favorites_persistent_backup"
-        private const val BACKUP_KEY_JSON = "backup_json"
 
         private fun build(app: Context): AppDatabase {
             ensureAssetUpToDate(app)
@@ -98,9 +97,10 @@ abstract class AppDatabase : RoomDatabase() {
          *
          * 持久化安全升级策略：
          * 1. 升级前先将收藏与股票代码/名称写入独立持久存储（SharedPreferences commit）；
-         * 2. 删库重建，即使在复制或建库过程中发生异常中断，持久备份不会丢失；
-         * 3. 重建后优先通过股票代码与名称校验/重对齐 stock_id，防止版本间自增 ID 偏移；
-         * 4. 只有在事务写回完全成功后才清除持久备份。
+         * 2. 若持久备份中已有未映射或待恢复记录，安全合并并去重，绝不覆盖丢弃；
+         * 3. 删库重建，即使在复制或建库过程中发生异常中断，持久备份不会丢失；
+         * 4. 重建后优先通过股票代码与名称校验/重对齐 stock_id，防止版本间自增 ID 偏移；
+         * 5. 只有在事务写回完全成功后才清除持久备份。
          */
         private fun ensureAssetUpToDate(context: Context) {
             val prefs = context.getSharedPreferences(GUARD_PREFS, Context.MODE_PRIVATE)
@@ -120,9 +120,12 @@ abstract class AppDatabase : RoomDatabase() {
                 return
             }
 
-            val backup = readResult.getOrNull() ?: emptyList()
-            if (backup.isNotEmpty()) {
-                val persistedOk = persistBackup(context, backup)
+            val dbFavorites = readResult.getOrNull() ?: emptyList()
+            val existingBackup = loadPersistedBackup(context)
+            val mergedBackup = mergeFavorites(primary = dbFavorites, secondary = existingBackup)
+
+            if (mergedBackup.isNotEmpty()) {
+                val persistedOk = persistBackup(context, mergedBackup)
                 if (!persistedOk) {
                     android.util.Log.e("AppDatabase", "持久化收藏备份写入失败，终止删库以防数据丢失")
                     return
@@ -144,7 +147,8 @@ abstract class AppDatabase : RoomDatabase() {
             val addedAt: Long = 0L,
         )
 
-        private fun persistBackup(context: Context, rows: List<FavoriteBackup>): Boolean {
+        @androidx.annotation.VisibleForTesting
+        internal fun persistBackup(context: Context, rows: List<FavoriteBackup>): Boolean {
             val arr = org.json.JSONArray()
             rows.forEach { r ->
                 val o = org.json.JSONObject()
@@ -159,7 +163,8 @@ abstract class AppDatabase : RoomDatabase() {
                 .edit().putString(BACKUP_KEY_JSON, arr.toString()).commit()
         }
 
-        private fun loadPersistedBackup(context: Context): List<FavoriteBackup> {
+        @androidx.annotation.VisibleForTesting
+        internal fun loadPersistedBackup(context: Context): List<FavoriteBackup> {
             val s = context.getSharedPreferences(BACKUP_PREFS, Context.MODE_PRIVATE)
                 .getString(BACKUP_KEY_JSON, null) ?: return emptyList()
             return runCatching {
@@ -181,9 +186,89 @@ abstract class AppDatabase : RoomDatabase() {
             }.getOrDefault(emptyList())
         }
 
-        private fun clearPersistedBackup(context: Context): Boolean {
+        @androidx.annotation.VisibleForTesting
+        internal fun clearPersistedBackup(context: Context): Boolean {
             return context.getSharedPreferences(BACKUP_PREFS, Context.MODE_PRIVATE)
                 .edit().remove(BACKUP_KEY_JSON).commit()
+        }
+
+        /**
+         * 跨版本收藏安全合并与去重：
+         * 优先保留当前活跃数据库中已映射的完整股票身份信息（权威度高）；
+         * 同时合并持久备份中留存的未映射或历史待恢复记录，防止跨版本二次升级时被覆盖丢失；
+         * 严格按照统一股票代码（code）或市场纯代码（symbol）去重，避免重复恢复或错配。
+         */
+        @androidx.annotation.VisibleForTesting
+        internal fun mergeFavorites(
+            primary: List<FavoriteBackup>,
+            secondary: List<FavoriteBackup>,
+        ): List<FavoriteBackup> {
+            val result = mutableListOf<FavoriteBackup>()
+
+            fun normalizeCode(code: String): String = code.trim().uppercase()
+            fun extractSymbol(r: FavoriteBackup): String {
+                if (r.symbol.isNotBlank()) return r.symbol.trim().uppercase()
+                if (r.code.isNotBlank()) {
+                    val base = r.code.substringBefore(".").trim().uppercase()
+                    if (base.isNotEmpty()) return base
+                }
+                return ""
+            }
+
+            fun findMatchIndex(item: FavoriteBackup): Int {
+                val itemCode = normalizeCode(item.code)
+                val itemSym = extractSymbol(item)
+
+                return result.indexOfFirst { cur ->
+                    val curCode = normalizeCode(cur.code)
+                    val curSym = extractSymbol(cur)
+
+                    // 1. 若两者 code 均非空，直接比对规范化 code
+                    if (itemCode.isNotEmpty() && curCode.isNotEmpty()) {
+                        if (itemCode == curCode) return@indexOfFirst true
+                    }
+                    // 2. 若两者 symbol 均非空，比对 symbol
+                    if (itemSym.isNotEmpty() && curSym.isNotEmpty()) {
+                        if (itemSym == curSym) return@indexOfFirst true
+                    }
+                    // 3. 若均缺少代码与 symbol（极端旧表 fallback），比对 stockId
+                    if (itemCode.isEmpty() && itemSym.isEmpty() && curCode.isEmpty() && curSym.isEmpty()) {
+                        if (cur.stockId == item.stockId) return@indexOfFirst true
+                    }
+                    false
+                }
+            }
+
+            // 1. 填入 primary（当前库中的收藏）
+            primary.forEach { item ->
+                val idx = findMatchIndex(item)
+                if (idx < 0) {
+                    result.add(item)
+                } else {
+                    val cur = result[idx]
+                    val earliestTime = if (cur.addedAt > 0 && item.addedAt > 0) minOf(cur.addedAt, item.addedAt) else maxOf(cur.addedAt, item.addedAt)
+                    result[idx] = cur.copy(addedAt = earliestTime)
+                }
+            }
+
+            // 2. 合并 secondary（未映射或旧备份记录）
+            secondary.forEach { item ->
+                val idx = findMatchIndex(item)
+                if (idx < 0) {
+                    result.add(item)
+                } else {
+                    val cur = result[idx]
+                    val earliestTime = if (cur.addedAt > 0 && item.addedAt > 0) minOf(cur.addedAt, item.addedAt) else maxOf(cur.addedAt, item.addedAt)
+                    result[idx] = cur.copy(
+                        code = if (cur.code.isNotBlank()) cur.code else item.code,
+                        symbol = if (cur.symbol.isNotBlank()) cur.symbol else item.symbol,
+                        name = if (cur.name.isNotBlank()) cur.name else item.name,
+                        addedAt = earliestTime,
+                    )
+                }
+            }
+
+            return result
         }
 
         /** 旧库读取：返回 Result。若发生任何未预期异常，返回 Failure，调用方坚决禁止删库。 */
@@ -235,10 +320,13 @@ abstract class AppDatabase : RoomDatabase() {
                 rows.forEach { row ->
                     // 严格通过代码或 symbol 找回新库中的自增主键，防止错配
                     var targetId: Long? = null
-                    if (row.symbol.isNotBlank() || row.code.isNotBlank()) {
+                    val searchSym = if (row.symbol.isNotBlank()) row.symbol.trim() else row.code.substringBefore(".").trim()
+                    val searchCode = if (row.code.isNotBlank()) row.code.trim() else row.symbol.trim()
+
+                    if (searchSym.isNotBlank() || searchCode.isNotBlank()) {
                         sq.query(
                             "SELECT id FROM stock WHERE symbol = ? OR code = ? LIMIT 1",
-                            arrayOf(row.symbol, row.code),
+                            arrayOf(searchSym, searchCode),
                         ).use { c ->
                             if (c.moveToFirst()) {
                                 targetId = c.getLong(0)
@@ -247,10 +335,10 @@ abstract class AppDatabase : RoomDatabase() {
                     }
 
                     // 股票 ID 找不到可靠代码映射时，尝试验证旧 ID 是否与旧代码一致
-                    if (targetId == null && (row.symbol.isNotBlank() || row.code.isNotBlank())) {
+                    if (targetId == null && (searchSym.isNotBlank() || searchCode.isNotBlank())) {
                         sq.query(
                             "SELECT id FROM stock WHERE id = ? AND (symbol = ? OR code = ?) LIMIT 1",
-                            arrayOf(row.stockId.toString(), row.symbol, row.code),
+                            arrayOf(row.stockId.toString(), searchSym, searchCode),
                         ).use { c ->
                             if (c.moveToFirst()) {
                                 targetId = c.getLong(0)
@@ -286,7 +374,10 @@ abstract class AppDatabase : RoomDatabase() {
             if (unmapped.isEmpty()) {
                 clearPersistedBackup(context)
             } else {
-                persistBackup(context, unmapped)
+                val ok = persistBackup(context, unmapped)
+                if (!ok) {
+                    android.util.Log.e("AppDatabase", "重新持久化未映射收藏备份写入失败！")
+                }
                 android.util.Log.w("AppDatabase", "收藏恢复完成：已恢复 $mappedCount 条，仍有 ${unmapped.size} 条未映射股票保留在备份中待重试")
             }
         }
